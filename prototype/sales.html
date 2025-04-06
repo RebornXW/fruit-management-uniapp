@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水果销售 - 水果档口库存管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body data-page="sales" class="bg-gray-100 h-screen flex flex-col">
+    <!-- 状态栏 -->
+    <div id="status-bar"></div>
+    
+    <!-- 标题栏 -->
+    <div class="bg-teal-600 text-white p-4">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xl font-bold">水果销售</h1>
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-calendar-alt"></i>
+                <i class="fas fa-ellipsis-v"></i>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 销售统计卡片 -->
+    <div class="bg-white m-4 p-4 rounded-xl shadow-sm">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-base font-bold">今日销售统计</h2>
+            <button id="statistics-btn" class="text-sm text-teal-600">
+                查看统计详情 <i class="fas fa-angle-right"></i>
+            </button>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-3">
+            <div class="bg-teal-50 p-3 rounded-lg">
+                <p class="text-xs text-gray-500">销售总额</p>
+                <p class="text-xl font-bold text-teal-600">¥2,586</p>
+                <div class="flex items-center text-xs text-green-500 mt-1">
+                    <i class="fas fa-arrow-up mr-1"></i>
+                    <span>10.5%</span>
+                </div>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-lg">
+                <p class="text-xs text-gray-500">销售数量</p>
+                <p class="text-xl font-bold text-blue-600">56箱</p>
+                <div class="flex items-center text-xs text-green-500 mt-1">
+                    <i class="fas fa-arrow-up mr-1"></i>
+                    <span>8.2%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 快速销售区域 -->
+    <div class="bg-white mx-4 p-4 rounded-xl shadow-sm mb-4">
+        <div class="flex justify-between items-center mb-3">
+            <h2 class="text-base font-bold">快速销售</h2>
+        </div>
+        
+        <!-- 搜索框 -->
+        <div class="relative mb-4">
+            <input id="fruit-search" type="text" placeholder="搜索水果名称..." class="w-full p-2 pl-10 rounded-lg border border-gray-300 text-sm">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+        </div>
+        
+        <!-- 水果列表 -->
+        <div id="fruit-list" class="space-y-3">
+            <!-- 水果项目将由JavaScript动态添加 -->
+        </div>
+    </div>
+    
+    <!-- 最近销售记录 -->
+    <div class="bg-white mx-4 p-4 rounded-xl shadow-sm mb-20">
+        <h2 class="text-base font-bold mb-3">最近销售记录</h2>
+        
+        <div id="sales-records" class="space-y-3">
+            <!-- 销售记录项 1 -->
+            <div class="border-b border-gray-100 pb-3">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-200 rounded overflow-hidden mr-3">
+                            <img src="https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300" alt="苹果" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <p class="font-medium">明牌阿克苏苹果</p>
+                            <p class="text-xs text-gray-500">2箱 × ¥55.00</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-teal-600">¥110.00</p>
+                        <p class="text-xs text-gray-400">10:25</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 销售记录项 2 -->
+            <div class="border-b border-gray-100 pb-3">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-200 rounded overflow-hidden mr-3">
+                            <img src="https://images.unsplash.com/photo-1615484477778-ca3b77940c25?q=80&w=300" alt="红富士苹果" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <p class="font-medium">红富士苹果</p>
+                            <p class="text-xs text-gray-500">5箱 × ¥48.00</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-teal-600">¥240.00</p>
+                        <p class="text-xs text-gray-400">09:15</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 销售记录项 3 -->
+            <div>
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-200 rounded overflow-hidden mr-3">
+                            <img src="https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300" alt="梨子" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <p class="font-medium">砀山梨</p>
+                            <p class="text-xs text-gray-500">3箱 × ¥32.00</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-teal-600">¥96.00</p>
+                        <p class="text-xs text-gray-400">08:47</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 销售确认模态框 -->
+    <div id="sale-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-5/6 p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold" id="modal-fruit-name">水果名称</h2>
+                <button id="close-modal" class="text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="mb-4 text-center">
+                <div id="modal-fruit-image" class="w-24 h-24 bg-gray-200 rounded overflow-hidden mx-auto mb-2">
+                    <img src="" alt="" class="w-full h-full object-cover">
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">销售价格（元/箱）</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">¥</span>
+                    <input type="number" id="modal-price-input" class="w-full p-2 pl-8 pr-3 rounded-lg border border-gray-300 text-right font-bold text-teal-600" value="0.00" step="0.1" min="0">
+                </div>
+                <p class="text-xs text-gray-500 mt-1 text-right">参考价格: <span id="reference-price">¥0.00</span>/箱</p>
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">销售数量</label>
+                <div class="flex items-center justify-between bg-gray-100 rounded-lg">
+                    <button id="decrease-qty" class="w-12 h-12 flex items-center justify-center text-gray-600">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span id="quantity" class="font-bold text-xl">1</span>
+                    <button id="increase-qty" class="w-12 h-12 flex items-center justify-center text-gray-600">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-gray-500 mt-1">库存: <span id="modal-stock">0</span>箱</p>
+            </div>
+            
+            <div class="mb-6 bg-teal-50 p-3 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <p class="text-sm font-medium">销售总价:</p>
+                    <p class="text-xl font-bold text-teal-600" id="modal-total-price">¥0.00</p>
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
+                <button id="confirm-sale" class="flex-1 bg-teal-600 text-white py-3 rounded-lg">
+                    确认销售
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 统计详情模态框 -->
+    <div id="statistics-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl w-5/6 max-h-4/5 overflow-y-auto p-5">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">销售统计详情</h2>
+                <button id="close-statistics-modal" class="text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- 按日期销售统计 -->
+            <div class="mb-6">
+                <h3 class="font-medium text-base mb-3">近7天销售趋势</h3>
+                <div class="h-48 mb-4">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 销售数据统计 -->
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-teal-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500">今日销售额</p>
+                    <p class="text-2xl font-bold text-teal-600">¥2,586</p>
+                    <div class="flex items-center text-xs text-green-500 mt-1">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        <span>较昨日 +10.5%</span>
+                    </div>
+                </div>
+                <div class="bg-teal-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500">今日销售量</p>
+                    <p class="text-2xl font-bold text-teal-600">56箱</p>
+                    <div class="flex items-center text-xs text-green-500 mt-1">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        <span>较昨日 +8.2%</span>
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500">本周销售额</p>
+                    <p class="text-2xl font-bold text-blue-600">¥14,892</p>
+                    <div class="flex items-center text-xs text-green-500 mt-1">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        <span>较上周 +5.8%</span>
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500">本周销售量</p>
+                    <p class="text-2xl font-bold text-blue-600">326箱</p>
+                    <div class="flex items-center text-xs text-green-500 mt-1">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        <span>较上周 +4.3%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 热销水果排行 -->
+            <div class="mb-6">
+                <h3 class="font-medium text-base mb-3">热销水果排行</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 bg-yellow-400 text-white rounded-full flex items-center justify-center mr-3 text-xs font-bold">1</div>
+                            <div class="w-8 h-8 bg-gray-200 rounded overflow-hidden mr-2">
+                                <img src="https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300" alt="苹果" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <p class="font-medium text-sm">明牌阿克苏苹果</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">销量: 18箱</p>
+                            <p class="font-bold text-teal-600">¥990</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 bg-gray-300 text-white rounded-full flex items-center justify-center mr-3 text-xs font-bold">2</div>
+                            <div class="w-8 h-8 bg-gray-200 rounded overflow-hidden mr-2">
+                                <img src="https://images.unsplash.com/photo-1615484477778-ca3b77940c25?q=80&w=300" alt="红富士苹果" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <p class="font-medium text-sm">红富士苹果</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">销量: 15箱</p>
+                            <p class="font-bold text-teal-600">¥720</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="w-6 h-6 bg-orange-400 text-white rounded-full flex items-center justify-center mr-3 text-xs font-bold">3</div>
+                            <div class="w-8 h-8 bg-gray-200 rounded overflow-hidden mr-2">
+                                <img src="https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300" alt="橘子" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <p class="font-medium text-sm">新鲜橘子</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-500">销量: 12箱</p>
+                            <p class="font-bold text-teal-600">¥336</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="statistics-close-btn" class="w-full bg-teal-600 text-white py-3 rounded-lg">
+                关闭
+            </button>
+        </div>
+    </div>
+    
+    <!-- 底部导航栏 -->
+    <div id="tab-bar"></div>
+    
+    <script src="components.js"></script>
+    <script>
+        // 水果数据（从库存中获取）
+        const fruitInventory = [
+            { id: 1, name: '明牌阿克苏苹果', price: 55.00, stock: 18, image: 'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300' },
+            { id: 2, name: '红富士苹果', price: 48.00, stock: 25, image: 'https://images.unsplash.com/photo-1615484477778-ca3b77940c25?q=80&w=300' },
+            { id: 3, name: '砀山梨', price: 32.00, stock: 12, image: 'https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300' },
+            { id: 4, name: '新鲜橘子', price: 28.00, stock: 30, image: 'https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300' },
+            { id: 5, name: '特大西瓜', price: 25.00, stock: 0, image: 'https://images.unsplash.com/photo-1563114773-84221bd62daa?q=80&w=300' },
+            { id: 6, name: '进口香蕉', price: 32.00, stock: 22, image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?q=80&w=300' }
+        ];
+        
+        // 当前选中的水果和数量
+        let currentFruit = null;
+        let currentQuantity = 1;
+        let currentPrice = 0;
+        
+        // 格式化价格
+        function formatPrice(price) {
+            return '¥' + parseFloat(price).toFixed(2);
+        }
+        
+        // 获取当前时间
+        function getCurrentTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+        
+        // 渲染水果列表
+        function renderFruitList(searchTerm = '') {
+            const fruitListElement = document.getElementById('fruit-list');
+            fruitListElement.innerHTML = '';
+            
+            // 过滤水果
+            const filteredFruits = searchTerm ? 
+                fruitInventory.filter(fruit => fruit.name.toLowerCase().includes(searchTerm.toLowerCase())) : 
+                fruitInventory;
+            
+            if (filteredFruits.length === 0) {
+                fruitListElement.innerHTML = `
+                    <div class="text-center py-6 text-gray-500">
+                        <i class="fas fa-search text-3xl mb-2"></i>
+                        <p>未找到匹配的水果</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            filteredFruits.forEach(fruit => {
+                const fruitElement = document.createElement('div');
+                fruitElement.className = `flex justify-between items-center p-3 ${fruit.stock > 0 ? 'bg-gray-50' : 'bg-gray-100 opacity-60'} rounded-lg`;
+                
+                fruitElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-200 rounded overflow-hidden mr-3">
+                            <img src="${fruit.image}" alt="${fruit.name}" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <p class="${fruit.stock > 0 ? 'font-medium' : 'font-medium text-gray-500'}">${fruit.name}</p>
+                            <p class="text-xs ${fruit.stock > 0 ? 'text-teal-600 font-medium' : 'text-gray-500'}">
+                                参考价: ${formatPrice(fruit.price)}/箱 · 库存: ${fruit.stock}箱
+                            </p>
+                        </div>
+                    </div>
+                    <button class="sale-btn px-3 py-1 ${fruit.stock > 0 ? 'bg-teal-600 text-white' : 'bg-gray-300 text-gray-500 cursor-not-allowed'} rounded" 
+                            data-fruit-id="${fruit.id}" ${fruit.stock <= 0 ? 'disabled' : ''}>
+                        ${fruit.stock > 0 ? '销售' : '无货'}
+                    </button>
+                `;
+                
+                fruitListElement.appendChild(fruitElement);
+            });
+            
+            // 添加销售按钮事件
+            document.querySelectorAll('.sale-btn:not([disabled])').forEach(button => {
+                button.addEventListener('click', () => {
+                    const fruitId = parseInt(button.getAttribute('data-fruit-id'));
+                    const fruit = fruitInventory.find(f => f.id === fruitId);
+                    if (fruit) {
+                        openSaleModal(fruit);
+                    }
+                });
+            });
+        }
+        
+        // 打开销售模态框
+        function openSaleModal(fruit) {
+            currentFruit = fruit;
+            currentQuantity = 1;
+            currentPrice = fruit.price;
+            
+            document.getElementById('modal-fruit-name').textContent = fruit.name;
+            document.getElementById('modal-fruit-image').querySelector('img').src = fruit.image;
+            document.getElementById('modal-fruit-image').querySelector('img').alt = fruit.name;
+            document.getElementById('modal-stock').textContent = fruit.stock;
+            document.getElementById('quantity').textContent = currentQuantity;
+            document.getElementById('reference-price').textContent = formatPrice(fruit.price);
+            
+            // 设置当前价格输入框
+            const priceInput = document.getElementById('modal-price-input');
+            priceInput.value = fruit.price.toFixed(2);
+            
+            // 设置当前水果ID
+            document.getElementById('confirm-sale').setAttribute('data-fruit-id', fruit.id);
+            
+            // 更新总价
+            updateTotalPrice();
+            
+            // 显示模态框
+            document.getElementById('sale-modal').classList.remove('hidden');
+        }
+        
+        // 更新总价
+        function updateTotalPrice() {
+            if (currentFruit) {
+                const priceInput = document.getElementById('modal-price-input');
+                currentPrice = parseFloat(priceInput.value) || 0;
+                const totalPrice = currentPrice * currentQuantity;
+                document.getElementById('modal-total-price').textContent = formatPrice(totalPrice);
+            }
+        }
+        
+        // 关闭销售模态框
+        function closeSaleModal() {
+            document.getElementById('sale-modal').classList.add('hidden');
+            currentFruit = null;
+            currentQuantity = 1;
+            currentPrice = 0;
+        }
+        
+        // 添加销售记录
+        function addSaleRecord(fruit, quantity, price, time) {
+            const salesRecordsContainer = document.getElementById('sales-records');
+            const totalPrice = price * quantity;
+            
+            // 创建新的销售记录元素
+            const recordElement = document.createElement('div');
+            recordElement.className = 'border-b border-gray-100 pb-3';
+            
+            recordElement.innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 bg-gray-200 rounded overflow-hidden mr-3">
+                            <img src="${fruit.image}" alt="${fruit.name}" class="w-full h-full object-cover">
+                        </div>
+                        <div>
+                            <p class="font-medium">${fruit.name}</p>
+                            <p class="text-xs text-gray-500">${quantity}箱 × ${formatPrice(price)}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-teal-600">${formatPrice(totalPrice)}</p>
+                        <p class="text-xs text-gray-400">${time}</p>
+                    </div>
+                </div>
+            `;
+            
+            // 将新记录插入到容器的最前面
+            if (salesRecordsContainer.firstChild) {
+                salesRecordsContainer.insertBefore(recordElement, salesRecordsContainer.firstChild);
+            } else {
+                salesRecordsContainer.appendChild(recordElement);
+            }
+            
+            // 如果有超过5条记录，移除最后一条
+            const records = salesRecordsContainer.querySelectorAll(':scope > div');
+            if (records.length > 5) {
+                salesRecordsContainer.removeChild(records[records.length - 1]);
+            }
+        }
+        
+        // 初始化统计图表
+        function initSalesChart() {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                    datasets: [{
+                        label: '销售额',
+                        data: [1850, 2200, 1950, 2500, 2150, 2586, 0],
+                        backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: 'rgba(13, 148, 136, 1)',
+                        pointRadius: 4,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false,
+                                color: 'rgba(200, 200, 200, 0.2)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value;
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '销售额: ¥' + context.parsed.y;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            renderFruitList();
+            
+            // 搜索框事件
+            document.getElementById('fruit-search').addEventListener('input', function(e) {
+                renderFruitList(e.target.value);
+            });
+            
+            // 价格输入框事件
+            document.getElementById('modal-price-input').addEventListener('input', function() {
+                updateTotalPrice();
+            });
+            
+            // 增加/减少数量按钮
+            document.getElementById('increase-qty').addEventListener('click', () => {
+                if (!currentFruit) return;
+                
+                if (currentQuantity < currentFruit.stock) {
+                    currentQuantity++;
+                    document.getElementById('quantity').textContent = currentQuantity;
+                    updateTotalPrice();
+                }
+            });
+            
+            document.getElementById('decrease-qty').addEventListener('click', () => {
+                if (!currentFruit) return;
+                
+                if (currentQuantity > 1) {
+                    currentQuantity--;
+                    document.getElementById('quantity').textContent = currentQuantity;
+                    updateTotalPrice();
+                }
+            });
+            
+            // 关闭销售模态框
+            document.getElementById('close-modal').addEventListener('click', closeSaleModal);
+            
+            // 确认销售
+            document.getElementById('confirm-sale').addEventListener('click', () => {
+                if (!currentFruit) return;
+                
+                const fruitId = parseInt(document.getElementById('confirm-sale').getAttribute('data-fruit-id'));
+                if (fruitId !== currentFruit.id) return;
+                
+                // 获取当前价格
+                const priceInput = document.getElementById('modal-price-input');
+                currentPrice = parseFloat(priceInput.value) || 0;
+                
+                if (currentPrice <= 0) {
+                    alert('请输入有效的销售价格');
+                    return;
+                }
+                
+                // 确保库存充足
+                if (currentQuantity > 0 && currentQuantity <= currentFruit.stock) {
+                    // 更新库存
+                    currentFruit.stock -= currentQuantity;
+                    
+                    // 添加销售记录
+                    const currentTime = getCurrentTime();
+                    addSaleRecord(currentFruit, currentQuantity, currentPrice, currentTime);
+                    
+                    // 重新渲染水果列表
+                    renderFruitList(document.getElementById('fruit-search').value);
+                    
+                    // 关闭模态框
+                    closeSaleModal();
+                    
+                    // 显示销售成功提示
+                    alert(`成功销售 ${currentQuantity} 箱 ${currentFruit.name}`);
+                }
+            });
+            
+            // 查看统计详情
+            document.getElementById('statistics-btn').addEventListener('click', function() {
+                document.getElementById('statistics-modal').classList.remove('hidden');
+                
+                // 初始化图表
+                setTimeout(() => {
+                    initSalesChart();
+                }, 100);
+            });
+            
+            // 关闭统计详情模态框
+            document.getElementById('close-statistics-modal').addEventListener('click', function() {
+                document.getElementById('statistics-modal').classList.add('hidden');
+            });
+            
+            // 关闭统计详情模态框按钮
+            document.getElementById('statistics-close-btn').addEventListener('click', function() {
+                document.getElementById('statistics-modal').classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html> 

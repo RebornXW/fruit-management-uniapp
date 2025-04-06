@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今日报价 - 水果档口库存管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            outline: none;
+            border-radius: 2px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #0d9488;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body data-page="price" class="bg-gray-100 h-screen flex flex-col">
+    <!-- 状态栏 -->
+    <div id="status-bar"></div>
+    
+    <!-- 头部 -->
+    <header class="bg-teal-600 text-white p-4">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xl font-bold">今日报价</h1>
+            <div class="flex items-center space-x-3">
+                <span class="text-sm font-medium">
+                    <i class="far fa-calendar-alt mr-1"></i>
+                    <span id="current-date">2025年4月4日</span>
+                </span>
+                <i class="fas fa-ellipsis-v"></i>
+            </div>
+        </div>
+        
+        <!-- 搜索框 -->
+        <div class="mt-4 relative">
+            <input id="search-input" type="text" placeholder="搜索水果..." class="w-full p-2 pl-10 rounded-full text-gray-900 text-sm">
+            <i class="fas fa-search absolute left-4 top-3 text-gray-400"></i>
+        </div>
+    </header>
+    
+    <!-- 分类标签 -->
+    <div class="px-4 py-3 bg-white flex space-x-2 overflow-x-auto">
+        <span class="inline-block px-3 py-1 bg-teal-600 text-white rounded-full text-sm whitespace-nowrap">全部</span>
+        <span class="inline-block px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm whitespace-nowrap">苹果类</span>
+        <span class="inline-block px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm whitespace-nowrap">梨子类</span>
+        <span class="inline-block px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm whitespace-nowrap">柑橘类</span>
+        <span class="inline-block px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm whitespace-nowrap">瓜果类</span>
+        <span class="inline-block px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm whitespace-nowrap">其他水果</span>
+    </div>
+    
+    <!-- 水果展示区 -->
+    <div class="flex-1 overflow-y-auto p-4">
+        <div class="space-y-4" id="fruit-container">
+            <!-- 水果列表将通过JavaScript动态加载 -->
+        </div>
+    </div>
+    
+    <!-- 底部导航栏 -->
+    <div id="tab-bar"></div>
+    
+    <!-- 价格调整弹窗 -->
+    <div id="price-adjust-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 hidden">
+        <div class="bg-white rounded-t-xl w-full max-w-md p-4 animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">调整价格区间</h2>
+                <button onclick="hideModal('price-adjust-modal')" class="text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <div class="font-medium" id="adjust-fruit-name">明牌阿克苏苹果</div>
+                    <div class="text-sm text-gray-500" id="adjust-fruit-spec">85#光果13斤箱装</div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">最低价格</label>
+                    <div class="flex items-center space-x-2">
+                        <span id="min-price-value" class="text-xl font-bold text-teal-600 w-16">¥50</span>
+                        <input id="min-price-slider" type="range" min="10" max="200" value="50" class="flex-1">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">最高价格</label>
+                    <div class="flex items-center space-x-2">
+                        <span id="max-price-value" class="text-xl font-bold text-teal-600 w-16">¥60</span>
+                        <input id="max-price-slider" type="range" min="10" max="200" value="60" class="flex-1">
+                    </div>
+                </div>
+                <div class="bg-teal-50 p-3 rounded-lg">
+                    <div class="flex justify-between">
+                        <span class="text-sm">价格区间：</span>
+                        <span class="font-medium text-teal-600" id="price-range-display">¥50 - ¥60</span>
+                    </div>
+                </div>
+                <button id="price-adjust-confirm" class="w-full bg-teal-600 text-white py-3 rounded-lg font-medium">
+                    确认调整
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="components.js"></script>
+    <script>
+        // 当前操作的水果ID
+        let currentFruitId = null;
+        
+        // 从localStorage获取水果数据
+        let fruitData = [];
+        
+        // 页面加载时获取数据
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFruitData();
+            renderFruitList();
+            
+            // 当前日期
+            const dateElement = document.getElementById('current-date');
+            const now = new Date();
+            dateElement.textContent = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+        });
+        
+        // 加载水果数据
+        function loadFruitData() {
+            const storedData = localStorage.getItem('fruitData');
+            if (storedData) {
+                fruitData = JSON.parse(storedData);
+            } else {
+                // 如果本地存储中没有数据，则使用默认数据
+                fruitData = [
+                    { id: 1, name: "明牌阿克苏苹果", spec: "85#光果13斤箱装", stock: 35, minPrice: 50, maxPrice: 60, image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300" },
+                    { id: 2, name: "红富士苹果", spec: "80#12斤纸箱装", stock: 42, minPrice: 45, maxPrice: 55, image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab12?q=80&w=300" },
+                    { id: 3, name: "砀山梨", spec: "优级10斤装", stock: 28, minPrice: 30, maxPrice: 35, image: "https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300" },
+                    { id: 4, name: "新鲜橘子", spec: "5斤精品袋装", stock: 15, minPrice: 25, maxPrice: 30, image: "https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300" }
+                ];
+                localStorage.setItem('fruitData', JSON.stringify(fruitData));
+            }
+        }
+        
+        // 渲染水果列表
+        function renderFruitList() {
+            const fruitContainer = document.getElementById('fruit-container');
+            fruitContainer.innerHTML = '';
+            
+            fruitData.forEach(fruit => {
+                const fruitElement = document.createElement('div');
+                fruitElement.className = 'bg-white rounded-lg shadow-sm';
+                
+                fruitElement.innerHTML = `
+                    <div class="p-4">
+                        <div class="flex items-center">
+                            <div class="relative w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                                <img src="${fruit.image}" alt="${fruit.name}" class="w-full h-full object-cover">
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold">${fruit.name}</h3>
+                                    <div class="text-teal-600 font-bold" id="price-display-${fruit.id}">
+                                        ¥${fruit.minPrice} - ¥${fruit.maxPrice}
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">${fruit.spec}</p>
+                                <div class="flex justify-between items-center mt-2">
+                                    <div class="flex items-center">
+                                        <span class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">
+                                            今日库存: ${fruit.stock}箱
+                                        </span>
+                                    </div>
+                                    <button onclick="showPriceAdjust(${fruit.id})" class="text-xs px-3 py-1 border border-teal-600 text-teal-600 rounded-full">
+                                        调整价格
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                fruitContainer.appendChild(fruitElement);
+            });
+        }
+        
+        // 显示价格调整弹窗
+        function showPriceAdjust(fruitId) {
+            currentFruitId = fruitId;
+            const fruit = fruitData.find(f => f.id === fruitId);
+            
+            if (fruit) {
+                document.getElementById('adjust-fruit-name').textContent = fruit.name;
+                document.getElementById('adjust-fruit-spec').textContent = fruit.spec;
+                
+                const minPriceSlider = document.getElementById('min-price-slider');
+                const maxPriceSlider = document.getElementById('max-price-slider');
+                const minPriceValue = document.getElementById('min-price-value');
+                const maxPriceValue = document.getElementById('max-price-value');
+                
+                minPriceSlider.value = fruit.minPrice;
+                maxPriceSlider.value = fruit.maxPrice;
+                minPriceValue.textContent = `¥${fruit.minPrice}`;
+                maxPriceValue.textContent = `¥${fruit.maxPrice}`;
+                
+                updatePriceRangeDisplay();
+                document.getElementById('price-adjust-modal').classList.remove('hidden');
+            }
+        }
+        
+        // 隐藏弹窗
+        function hideModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        
+        // 价格滑块事件
+        document.getElementById('min-price-slider').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            document.getElementById('min-price-value').textContent = `¥${value}`;
+            
+            // 确保最小价格不超过最大价格
+            const maxPriceSlider = document.getElementById('max-price-slider');
+            if (value > parseInt(maxPriceSlider.value)) {
+                maxPriceSlider.value = value;
+                document.getElementById('max-price-value').textContent = `¥${value}`;
+            }
+            
+            updatePriceRangeDisplay();
+        });
+        
+        document.getElementById('max-price-slider').addEventListener('input', function() {
+            const value = parseInt(this.value);
+            document.getElementById('max-price-value').textContent = `¥${value}`;
+            
+            // 确保最大价格不低于最小价格
+            const minPriceSlider = document.getElementById('min-price-slider');
+            if (value < parseInt(minPriceSlider.value)) {
+                minPriceSlider.value = value;
+                document.getElementById('min-price-value').textContent = `¥${value}`;
+            }
+            
+            updatePriceRangeDisplay();
+        });
+        
+        // 更新价格区间显示
+        function updatePriceRangeDisplay() {
+            const minPrice = document.getElementById('min-price-slider').value;
+            const maxPrice = document.getElementById('max-price-slider').value;
+            document.getElementById('price-range-display').textContent = `¥${minPrice} - ¥${maxPrice}`;
+        }
+        
+        // 确认价格调整
+        document.getElementById('price-adjust-confirm').addEventListener('click', function() {
+            if (currentFruitId) {
+                const minPrice = parseInt(document.getElementById('min-price-slider').value);
+                const maxPrice = parseInt(document.getElementById('max-price-slider').value);
+                
+                // 更新数据
+                const fruitIndex = fruitData.findIndex(f => f.id === currentFruitId);
+                if (fruitIndex !== -1) {
+                    fruitData[fruitIndex].minPrice = minPrice;
+                    fruitData[fruitIndex].maxPrice = maxPrice;
+                    
+                    // 更新本地存储
+                    localStorage.setItem('fruitData', JSON.stringify(fruitData));
+                    
+                    // 更新界面上的价格显示
+                    document.getElementById(`price-display-${currentFruitId}`).textContent = `¥${minPrice} - ¥${maxPrice}`;
+                    
+                    // 关闭弹窗
+                    hideModal('price-adjust-modal');
+                }
+            }
+        });
+        
+        // 搜索功能
+        document.getElementById('search-input').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const fruitItems = document.querySelectorAll('#fruit-container > div');
+            
+            fruitItems.forEach((item, index) => {
+                const fruit = fruitData[index];
+                if (fruit.name.toLowerCase().includes(searchTerm) || 
+                    fruit.spec.toLowerCase().includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+        
+        // 为弹窗添加动画
+        document.styleSheet.insertRule(`
+            @keyframes slide-up {
+                from { transform: translateY(100%); }
+                to { transform: translateY(0); }
+            }
+            .animate-slide-up {
+                animation: slide-up 0.3s ease-out forwards;
+            }
+        `, 0);
+    </script>
+</body>
+</html> 

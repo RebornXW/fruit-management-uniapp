@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>库存管理 - 水果档口库存管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body data-page="inventory" class="bg-gray-100 h-screen flex flex-col">
+    <!-- 状态栏 -->
+    <div id="status-bar"></div>
+    
+    <!-- 头部 -->
+    <header class="bg-teal-600 text-white p-4">
+        <div class="flex justify-between items-center">
+            <h1 class="text-xl font-bold">库存管理</h1>
+            <div class="flex items-center space-x-3">
+                <span class="text-sm font-medium">
+                    <i class="far fa-calendar-alt mr-1"></i>
+                    <span id="current-date">2025年4月4日</span>
+                </span>
+                <i class="fas fa-ellipsis-v"></i>
+            </div>
+        </div>
+        
+        <!-- 搜索框 -->
+        <div class="mt-4 relative">
+            <input type="text" placeholder="搜索库存水果" class="w-full p-2 pl-10 rounded-full text-gray-900 text-sm">
+            <i class="fas fa-search absolute left-4 top-3 text-gray-400"></i>
+        </div>
+    </header>
+    
+    <!-- 库存数据统计 -->
+    <div class="bg-white p-4 shadow-sm">
+        <div class="grid grid-cols-3 gap-4">
+            <div class="text-center">
+                <p class="text-xs text-gray-500">当前库存总量</p>
+                <p class="text-xl font-bold text-teal-600">145箱</p>
+            </div>
+            <div class="text-center">
+                <p class="text-xs text-gray-500">今日入库</p>
+                <p class="text-xl font-bold text-green-600">+12箱</p>
+            </div>
+            <div class="text-center">
+                <p class="text-xs text-gray-500">今日出库</p>
+                <p class="text-xl font-bold text-red-600">-8箱</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新增水果按钮 -->
+    <div class="px-4 py-3 bg-white border-b border-gray-200">
+        <button id="add-fruit-btn" class="bg-teal-600 text-white w-full py-2 rounded-lg font-medium flex items-center justify-center">
+            <i class="fas fa-plus-circle mr-2"></i>
+            新增水果
+        </button>
+    </div>
+    
+    <!-- 内容区 - 库存列表 -->
+    <div class="flex-1 overflow-y-auto">
+        <div class="px-4 py-2">
+            <h2 class="text-sm font-medium text-gray-500">库存水果列表</h2>
+        </div>
+        
+        <div class="space-y-3 px-4 pb-4" id="fruit-list">
+            <!-- 水果项 1 -->
+            <div class="bg-white rounded-lg overflow-hidden shadow-sm" data-id="1" data-name="明牌阿克苏苹果" data-spec="85#光果13斤箱装" data-stock="35">
+                <div class="flex p-3">
+                    <div class="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300" alt="明牌阿克苏苹果" class="w-full h-full object-cover">
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h3 class="font-bold">明牌阿克苏苹果</h3>
+                        <p class="text-xs text-gray-500 mt-1">85#光果13斤箱装</p>
+                        <div class="mt-1 flex items-center">
+                            <span class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">
+                                库存: 35箱
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex border-t border-gray-100">
+                    <button class="flex-1 py-2 text-sm text-center text-green-600 border-r border-gray-100" onclick="showInventoryOperation('in', '明牌阿克苏苹果')">
+                        <i class="fas fa-arrow-circle-down mr-1"></i> 入库
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-red-600 border-r border-gray-100" onclick="showInventoryOperation('out', '明牌阿克苏苹果')">
+                        <i class="fas fa-arrow-circle-up mr-1"></i> 出库
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-blue-600 border-r border-gray-100" onclick="showEditFruit('明牌阿克苏苹果')">
+                        <i class="fas fa-edit mr-1"></i> 编辑
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-gray-600" onclick="confirmDelete('明牌阿克苏苹果')">
+                        <i class="fas fa-trash-alt mr-1"></i> 删除
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 水果项 2 -->
+            <div class="bg-white rounded-lg overflow-hidden shadow-sm" data-id="2" data-name="红富士苹果" data-spec="80#12斤纸箱装" data-stock="42">
+                <div class="flex p-3">
+                    <div class="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1611080626919-7cf5a9dbab12?q=80&w=300" alt="红富士苹果" class="w-full h-full object-cover">
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h3 class="font-bold">红富士苹果</h3>
+                        <p class="text-xs text-gray-500 mt-1">80#12斤纸箱装</p>
+                        <div class="mt-1 flex items-center">
+                            <span class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">
+                                库存: 42箱
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex border-t border-gray-100">
+                    <button class="flex-1 py-2 text-sm text-center text-green-600 border-r border-gray-100" onclick="showInventoryOperation('in', '红富士苹果')">
+                        <i class="fas fa-arrow-circle-down mr-1"></i> 入库
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-red-600 border-r border-gray-100" onclick="showInventoryOperation('out', '红富士苹果')">
+                        <i class="fas fa-arrow-circle-up mr-1"></i> 出库
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-blue-600 border-r border-gray-100" onclick="showEditFruit('红富士苹果')">
+                        <i class="fas fa-edit mr-1"></i> 编辑
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-gray-600" onclick="confirmDelete('红富士苹果')">
+                        <i class="fas fa-trash-alt mr-1"></i> 删除
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 水果项 3 -->
+            <div class="bg-white rounded-lg overflow-hidden shadow-sm" data-id="3" data-name="砀山梨" data-spec="优级10斤装" data-stock="28">
+                <div class="flex p-3">
+                    <div class="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300" alt="砀山梨" class="w-full h-full object-cover">
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h3 class="font-bold">砀山梨</h3>
+                        <p class="text-xs text-gray-500 mt-1">优级10斤装</p>
+                        <div class="mt-1 flex items-center">
+                            <span class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">
+                                库存: 28箱
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex border-t border-gray-100">
+                    <button class="flex-1 py-2 text-sm text-center text-green-600 border-r border-gray-100" onclick="showInventoryOperation('in', '砀山梨')">
+                        <i class="fas fa-arrow-circle-down mr-1"></i> 入库
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-red-600 border-r border-gray-100" onclick="showInventoryOperation('out', '砀山梨')">
+                        <i class="fas fa-arrow-circle-up mr-1"></i> 出库
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-blue-600 border-r border-gray-100" onclick="showEditFruit('砀山梨')">
+                        <i class="fas fa-edit mr-1"></i> 编辑
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-gray-600" onclick="confirmDelete('砀山梨')">
+                        <i class="fas fa-trash-alt mr-1"></i> 删除
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 水果项 4 -->
+            <div class="bg-white rounded-lg overflow-hidden shadow-sm" data-id="4" data-name="新鲜橘子" data-spec="5斤精品袋装" data-stock="15">
+                <div class="flex p-3">
+                    <div class="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src="https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300" alt="新鲜橘子" class="w-full h-full object-cover">
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h3 class="font-bold">新鲜橘子</h3>
+                        <p class="text-xs text-gray-500 mt-1">5斤精品袋装</p>
+                        <div class="mt-1 flex items-center">
+                            <span class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">
+                                库存: 15箱
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex border-t border-gray-100">
+                    <button class="flex-1 py-2 text-sm text-center text-green-600 border-r border-gray-100" onclick="showInventoryOperation('in', '新鲜橘子')">
+                        <i class="fas fa-arrow-circle-down mr-1"></i> 入库
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-red-600 border-r border-gray-100" onclick="showInventoryOperation('out', '新鲜橘子')">
+                        <i class="fas fa-arrow-circle-up mr-1"></i> 出库
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-blue-600 border-r border-gray-100" onclick="showEditFruit('新鲜橘子')">
+                        <i class="fas fa-edit mr-1"></i> 编辑
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-gray-600" onclick="confirmDelete('新鲜橘子')">
+                        <i class="fas fa-trash-alt mr-1"></i> 删除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部导航栏 -->
+    <div id="tab-bar"></div>
+    
+    <!-- 新增水果弹窗 -->
+    <div id="add-fruit-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 hidden">
+        <div class="bg-white rounded-t-xl w-full max-w-md p-4 animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold">新增水果</h2>
+                <button onclick="hideModal('add-fruit-modal')" class="text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">水果名称</label>
+                    <input id="fruit-name" type="text" placeholder="请输入水果名称" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">规格详情</label>
+                    <input id="fruit-spec" type="text" placeholder="如：85#光果13斤箱装" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">初始库存量</label>
+                    <div class="flex items-center">
+                        <button class="w-10 h-10 bg-gray-200 rounded-l-lg flex items-center justify-center" onclick="decreaseInitialStock()">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <input id="initial-stock" type="number" value="1" min="1" class="w-full p-2 border-t border-b border-gray-300 text-center h-10">
+                        <button class="w-10 h-10 bg-gray-200 rounded-r-lg flex items-center justify-center" onclick="increaseInitialStock()">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">设置价格区间</label>
+                    <div class="flex space-x-2">
+                        <div class="flex-1">
+                            <label class="text-xs text-gray-500">最低价格</label>
+                            <input id="min-price" type="number" placeholder="¥" class="w-full p-2 border border-gray-300 rounded-lg" value="20">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-xs text-gray-500">最高价格</label>
+                            <input id="max-price" type="number" placeholder="¥" class="w-full p-2 border border-gray-300 rounded-lg" value="30">
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">水果图片</label>
+                    <div class="flex items-center">
+                        <div id="preview-container" class="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                            <i id="camera-icon" class="fas fa-camera text-gray-400 text-xl"></i>
+                            <img id="preview-image" class="w-full h-full object-cover hidden" src="" alt="预览图">
+                        </div>
+                        <div class="ml-3 space-y-2">
+                            <button id="upload-btn" class="px-3 py-1 border border-teal-600 text-teal-600 rounded-lg text-sm flex items-center">
+                                <i class="fas fa-upload mr-1"></i>
+                                上传图片
+                            </button>
+                            <select id="sample-images" class="text-xs p-1 border border-gray-300 rounded w-full">
+                                <option value="">选择示例图片</option>
+                                <option value="https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300">苹果</option>
+                                <option value="https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300">梨子</option>
+                                <option value="https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300">橘子</option>
+                                <option value="https://images.unsplash.com/photo-1550258987-190a2d41a8ba?q=80&w=300">西瓜</option>
+                                <option value="https://images.unsplash.com/photo-1543218024-57a70143c369?q=80&w=300">香蕉</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-2">
+                    <div class="bg-teal-50 p-3 rounded-lg mb-3">
+                        <h3 class="font-medium text-sm mb-2">水果卡片预览</h3>
+                        <div class="bg-white rounded-lg overflow-hidden shadow-sm">
+                            <div class="flex p-3">
+                                <div class="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                                    <img id="preview-card-image" src="https://via.placeholder.com/150" alt="水果预览" class="w-full h-full object-cover">
+                                </div>
+                                <div class="ml-3 flex-1">
+                                    <h3 id="preview-card-name" class="font-bold">水果名称</h3>
+                                    <p id="preview-card-spec" class="text-xs text-gray-500 mt-1">规格详情</p>
+                                    <div class="mt-1 flex items-center">
+                                        <span class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">
+                                            库存: <span id="preview-card-stock">0</span>箱
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="add-fruit-confirm" class="w-full bg-teal-600 text-white py-3 rounded-lg font-medium">
+                        确认添加
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 库存操作弹窗 -->
+    <div id="inventory-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center z-50 hidden">
+        <div class="bg-white rounded-t-xl w-full max-w-md p-4 animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="inventory-modal-title" class="text-lg font-bold">水果入库</h2>
+                <button onclick="hideModal('inventory-modal')" class="text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="p-3 bg-gray-50 rounded-lg">
+                    <div class="font-medium" id="inventory-fruit-name">明牌阿克苏苹果</div>
+                    <div class="text-sm text-gray-500" id="inventory-fruit-spec">85#光果13斤箱装</div>
+                    <div class="mt-1 text-sm">
+                        <span>当前库存：</span>
+                        <span class="text-teal-600 font-medium" id="current-stock">35箱</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">操作数量</label>
+                    <div class="flex items-center">
+                        <button class="w-10 h-10 bg-gray-200 rounded-l-lg flex items-center justify-center" onclick="decreaseQuantity()">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                        <input id="quantity-input" type="number" value="1" min="1" class="w-full p-2 border-t border-b border-gray-300 text-center h-10">
+                        <button class="w-10 h-10 bg-gray-200 rounded-r-lg flex items-center justify-center" onclick="increaseQuantity()">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                    <input type="text" placeholder="请输入备注信息" class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <button id="inventory-confirm-btn" class="w-full bg-teal-600 text-white py-3 rounded-lg font-medium">
+                    确认入库
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="components.js"></script>
+    <script>
+        // 将水果数据存储在本地，供其他页面使用
+        const fruitData = [
+            { id: 1, name: "明牌阿克苏苹果", spec: "85#光果13斤箱装", stock: 35, minPrice: 50, maxPrice: 60, image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300" },
+            { id: 2, name: "红富士苹果", spec: "80#12斤纸箱装", stock: 42, minPrice: 45, maxPrice: 55, image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab12?q=80&w=300" },
+            { id: 3, name: "砀山梨", spec: "优级10斤装", stock: 28, minPrice: 30, maxPrice: 35, image: "https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300" },
+            { id: 4, name: "新鲜橘子", spec: "5斤精品袋装", stock: 15, minPrice: 25, maxPrice: 30, image: "https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300" }
+        ];
+        
+        // 存储到本地存储
+        localStorage.setItem('fruitData', JSON.stringify(fruitData));
+        
+        // 当前日期
+        const dateElement = document.getElementById('current-date');
+        const now = new Date();
+        dateElement.textContent = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+        
+        // 显示新增水果弹窗
+        document.getElementById('add-fruit-btn').addEventListener('click', function() {
+            document.getElementById('add-fruit-modal').classList.remove('hidden');
+            updatePreview();
+        });
+        
+        // 显示库存操作弹窗
+        function showInventoryOperation(type, fruitName) {
+            const modal = document.getElementById('inventory-modal');
+            const titleElement = document.getElementById('inventory-modal-title');
+            const btnElement = document.getElementById('inventory-confirm-btn');
+            const fruitElement = document.getElementById('inventory-fruit-name');
+            
+            if (type === 'in') {
+                titleElement.textContent = '水果入库';
+                btnElement.textContent = '确认入库';
+                btnElement.classList.remove('bg-red-600');
+                btnElement.classList.add('bg-teal-600');
+            } else {
+                titleElement.textContent = '水果出库';
+                btnElement.textContent = '确认出库';
+                btnElement.classList.remove('bg-teal-600');
+                btnElement.classList.add('bg-red-600');
+            }
+            
+            // 找到水果数据
+            const fruit = fruitData.find(f => f.name === fruitName);
+            if (fruit) {
+                fruitElement.textContent = fruit.name;
+                document.getElementById('inventory-fruit-spec').textContent = fruit.spec;
+                document.getElementById('current-stock').textContent = fruit.stock + '箱';
+            }
+            
+            modal.classList.remove('hidden');
+        }
+        
+        // 隐藏弹窗
+        function hideModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        
+        // 增减数量
+        function increaseQuantity() {
+            const input = document.getElementById('quantity-input');
+            input.value = parseInt(input.value) + 1;
+        }
+        
+        function decreaseQuantity() {
+            const input = document.getElementById('quantity-input');
+            if (parseInt(input.value) > 1) {
+                input.value = parseInt(input.value) - 1;
+            }
+        }
+        
+        function increaseInitialStock() {
+            const input = document.getElementById('initial-stock');
+            input.value = parseInt(input.value) + 1;
+            updatePreview();
+        }
+        
+        function decreaseInitialStock() {
+            const input = document.getElementById('initial-stock');
+            if (parseInt(input.value) > 1) {
+                input.value = parseInt(input.value) - 1;
+                updatePreview();
+            }
+        }
+        
+        // 编辑水果
+        function showEditFruit(fruitName) {
+            alert(`编辑水果：${fruitName}`);
+        }
+        
+        // 删除确认
+        function confirmDelete(fruitName) {
+            if (confirm(`确定要删除 ${fruitName} 吗？`)) {
+                alert(`已删除：${fruitName}`);
+            }
+        }
+        
+        // 实时预览新增水果卡片
+        function updatePreview() {
+            const nameInput = document.getElementById('fruit-name');
+            const specInput = document.getElementById('fruit-spec');
+            const stockInput = document.getElementById('initial-stock');
+            const previewImg = document.getElementById('preview-image');
+            
+            document.getElementById('preview-card-name').textContent = nameInput.value || '水果名称';
+            document.getElementById('preview-card-spec').textContent = specInput.value || '规格详情';
+            document.getElementById('preview-card-stock').textContent = stockInput.value || '0';
+            
+            // 更新预览图
+            if(!previewImg.classList.contains('hidden')) {
+                document.getElementById('preview-card-image').src = previewImg.src;
+            }
+        }
+        
+        // 监听输入变化更新预览
+        document.getElementById('fruit-name').addEventListener('input', updatePreview);
+        document.getElementById('fruit-spec').addEventListener('input', updatePreview);
+        document.getElementById('initial-stock').addEventListener('input', updatePreview);
+        
+        // 示例图片选择
+        document.getElementById('sample-images').addEventListener('change', function() {
+            if (this.value) {
+                document.getElementById('camera-icon').classList.add('hidden');
+                document.getElementById('preview-image').classList.remove('hidden');
+                document.getElementById('preview-image').src = this.value;
+                document.getElementById('preview-card-image').src = this.value;
+            }
+        });
+        
+        // 添加新水果
+        document.getElementById('add-fruit-confirm').addEventListener('click', function() {
+            const name = document.getElementById('fruit-name').value;
+            const spec = document.getElementById('fruit-spec').value;
+            const stock = parseInt(document.getElementById('initial-stock').value);
+            const minPrice = parseInt(document.getElementById('min-price').value);
+            const maxPrice = parseInt(document.getElementById('max-price').value);
+            const image = document.getElementById('preview-image').classList.contains('hidden') ? 
+                        'https://via.placeholder.com/150' : document.getElementById('preview-image').src;
+            
+            if (!name) {
+                alert('请输入水果名称');
+                return;
+            }
+            
+            // 生成新ID
+            const newId = fruitData.length > 0 ? Math.max(...fruitData.map(f => f.id)) + 1 : 1;
+            
+            // 创建新水果数据
+            const newFruit = {
+                id: newId,
+                name: name,
+                spec: spec || '未设置规格',
+                stock: stock || 0,
+                minPrice: minPrice || 0,
+                maxPrice: maxPrice || 0,
+                image: image
+            };
+            
+            // 添加到数据
+            fruitData.push(newFruit);
+            localStorage.setItem('fruitData', JSON.stringify(fruitData));
+            
+            // 添加新DOM元素
+            const fruitList = document.getElementById('fruit-list');
+            const newFruitElement = document.createElement('div');
+            newFruitElement.className = 'bg-white rounded-lg overflow-hidden shadow-sm';
+            newFruitElement.setAttribute('data-id', newFruit.id);
+            newFruitElement.setAttribute('data-name', newFruit.name);
+            newFruitElement.setAttribute('data-spec', newFruit.spec);
+            newFruitElement.setAttribute('data-stock', newFruit.stock);
+            
+            newFruitElement.innerHTML = `
+                <div class="flex p-3">
+                    <div class="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                        <img src="${newFruit.image}" alt="${newFruit.name}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h3 class="font-bold">${newFruit.name}</h3>
+                        <p class="text-xs text-gray-500 mt-1">${newFruit.spec}</p>
+                        <div class="mt-1 flex items-center">
+                            <span class="text-xs bg-teal-100 text-teal-600 px-2 py-1 rounded-full">
+                                库存: ${newFruit.stock}箱
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex border-t border-gray-100">
+                    <button class="flex-1 py-2 text-sm text-center text-green-600 border-r border-gray-100" onclick="showInventoryOperation('in', '${newFruit.name}')">
+                        <i class="fas fa-arrow-circle-down mr-1"></i> 入库
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-red-600 border-r border-gray-100" onclick="showInventoryOperation('out', '${newFruit.name}')">
+                        <i class="fas fa-arrow-circle-up mr-1"></i> 出库
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-blue-600 border-r border-gray-100" onclick="showEditFruit('${newFruit.name}')">
+                        <i class="fas fa-edit mr-1"></i> 编辑
+                    </button>
+                    <button class="flex-1 py-2 text-sm text-center text-gray-600" onclick="confirmDelete('${newFruit.name}')">
+                        <i class="fas fa-trash-alt mr-1"></i> 删除
+                    </button>
+                </div>
+            `;
+            
+            fruitList.prepend(newFruitElement);
+            
+            // 重置表单并关闭弹窗
+            document.getElementById('fruit-name').value = '';
+            document.getElementById('fruit-spec').value = '';
+            document.getElementById('initial-stock').value = '1';
+            document.getElementById('min-price').value = '20';
+            document.getElementById('max-price').value = '30';
+            document.getElementById('camera-icon').classList.remove('hidden');
+            document.getElementById('preview-image').classList.add('hidden');
+            document.getElementById('sample-images').value = '';
+            
+            hideModal('add-fruit-modal');
+            
+            alert('水果添加成功');
+        });
+        
+        // 为弹窗添加动画
+        document.styleSheet.insertRule(`
+            @keyframes slide-up {
+                from { transform: translateY(100%); }
+                to { transform: translateY(0); }
+            }
+            .animate-slide-up {
+                animation: slide-up 0.3s ease-out forwards;
+            }
+        `, 0);
+    </script>
+</body>
+</html> 
