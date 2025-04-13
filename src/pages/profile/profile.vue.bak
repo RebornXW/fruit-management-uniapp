@@ -1,0 +1,571 @@
+<template>
+	<view class="profile-container">
+		<!-- 用户信息头部 -->
+		<view class="bg-teal-600 text-white p-4 pb-12">
+			<view class="flex justify-between items-center mb-4">
+				<text class="text-xl font-bold">个人中心</text>
+				<view class="flex items-center space-x-3">
+					<uni-icons type="gear" size="24" color="#ffffff" @click="showSettings"></uni-icons>
+				</view>
+			</view>
+			
+			<view class="flex items-center justify-between">
+				<view class="flex items-center">
+					<view class="relative mr-4">
+						<view class="w-16 h-16 bg-white rounded-full overflow-hidden border-2 border-white shadow-sm">
+							<image :src="userData.avatar" :alt="userData.name" class="w-full h-full object-cover"></image>
+						</view>
+						<view class="absolute bottom-0 right-0 w-5 h-5 bg-green-400 border-2 border-white rounded-full"></view>
+					</view>
+					
+					<view>
+						<view class="flex items-center">
+							<text class="text-xl font-bold">{{userData.name}}</text>
+						</view>
+						<view class="flex items-center mt-1">
+							<text class="text-sm opacity-80">档口：{{userData.shopName}}</text>
+						</view>
+					</view>
+				</view>
+				
+				<view @tap="editProfile">
+					<uni-icons type="compose" size="20" color="#ffffff"></uni-icons>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 销售数据统计卡片 -->
+		<view class="px-4 -mt-8 mb-4">
+			<view class="bg-white rounded-2xl shadow-lg p-4">
+				<view class="flex justify-between items-center mb-3">
+					<text class="font-bold text-gray-800">销售数据统计</text>
+					<view class="flex items-center">
+						<view class="text-sm bg-gray-100 rounded-full px-3 py-1 mr-2">
+							<picker @change="onStaffChange" :value="staffIndex" :range="staffList" range-key="name">
+								<text class="text-teal-600 font-medium">{{staffList[staffIndex].name}}</text>
+							</picker>
+						</view>
+						<view class="text-sm bg-gray-100 rounded-full px-3 py-1">
+							<picker @change="onReportTypeChange" :value="reportTypeIndex" :range="reportTypes">
+								<text class="text-teal-600 font-medium">{{reportTypes[reportTypeIndex]}}</text>
+							</picker>
+						</view>
+					</view>
+				</view>
+				
+				<!-- 销售数据展示区 -->
+				<view class="stats-container w-4/5 mx-auto">
+					<!-- 销售总额卡片 -->
+					<view class="stats-card bg-gradient-to-r from-teal-500 to-teal-600 rounded-lg p-4 mb-3 shadow-md">
+						<text class="text-xs text-white opacity-80 block mb-1">销售总额</text>
+						<view class="flex items-end justify-between">
+							<text class="text-2xl font-bold text-white">¥{{currentData.amount}}</text>
+						</view>
+					</view>
+					
+					<!-- 销售量卡片 -->
+					<view class="stats-card bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg p-4 shadow-sm">
+						<text class="text-xs text-gray-500 block mb-1">销售量</text>
+						<view class="flex items-end justify-between">
+							<text class="text-xl font-bold text-teal-700">{{currentData.volume}}箱</text>
+						</view>
+					</view>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 功能项 -->
+		<view class="px-4 mb-2">
+			<view class="bg-white rounded-xl overflow-hidden shadow-sm">
+				<view class="grid-menu">
+					<view class="p-4" @tap="showFunction('salesRecord')">
+						<view class="w-12 h-12 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center mx-auto">
+							<uni-icons type="list" size="24" color="#0D9488"></uni-icons>
+						</view>
+						<text class="text-sm mt-2 block text-center">销售记录</text>
+					</view>
+					<view class="p-4" @tap="showFunction('inventoryManage')">
+						<view class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto">
+							<uni-icons type="shop" size="24" color="#2563EB"></uni-icons>
+						</view>
+						<text class="text-sm mt-2 block text-center">库存管理</text>
+					</view>
+					<view class="p-4" @tap="showFunction('customerManage')">
+						<view class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto">
+							<uni-icons type="person" size="24" color="#D97706"></uni-icons>
+						</view>
+						<text class="text-sm mt-2 block text-center">客户管理</text>
+					</view>
+					<view class="p-4" @tap="showFunction('financialManage')">
+						<view class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto">
+							<uni-icons type="wallet" size="24" color="#7C3AED"></uni-icons>
+						</view>
+						<text class="text-sm mt-2 block text-center">财务管理</text>
+					</view>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 热销水果排行 -->
+		<view class="px-4 mb-20">
+			<text class="text-base font-bold mb-2 block">热销水果排行</text>
+			<view class="bg-white rounded-xl p-4 shadow-sm">
+				<view class="w-full">
+					<!-- 排行项 1 -->
+					<view class="py-3 border-b border-gray-100">
+						<view class="flex items-center justify-between">
+							<view class="flex items-center">
+								<view class="w-6 h-6 bg-yellow-400 text-white rounded-full flex items-center justify-center mr-3 text-xs font-bold">
+									<text>1</text>
+								</view>
+								<view class="w-10 h-10 bg-gray-200 rounded overflow-hidden mr-3">
+									<image :src="topSales[0].image" :alt="topSales[0].name" class="w-full h-full object-cover"></image>
+								</view>
+								<view>
+									<text class="font-medium">{{topSales[0].name}}</text>
+									<text class="text-xs text-gray-500 block">销量：{{topSales[0].quantity}}箱</text>
+								</view>
+							</view>
+							<text class="text-teal-600 font-bold">¥{{topSales[0].amount}}</text>
+						</view>
+					</view>
+					
+					<!-- 排行项 2 -->
+					<view class="py-3 border-b border-gray-100">
+						<view class="flex items-center justify-between">
+							<view class="flex items-center">
+								<view class="w-6 h-6 bg-gray-300 text-white rounded-full flex items-center justify-center mr-3 text-xs font-bold">
+									<text>2</text>
+								</view>
+								<view class="w-10 h-10 bg-gray-200 rounded overflow-hidden mr-3">
+									<image :src="topSales[1].image" :alt="topSales[1].name" class="w-full h-full object-cover"></image>
+								</view>
+								<view>
+									<text class="font-medium">{{topSales[1].name}}</text>
+									<text class="text-xs text-gray-500 block">销量：{{topSales[1].quantity}}箱</text>
+								</view>
+							</view>
+							<text class="text-teal-600 font-bold">¥{{topSales[1].amount}}</text>
+						</view>
+					</view>
+					
+					<!-- 排行项 3 -->
+					<view class="py-3">
+						<view class="flex items-center justify-between">
+							<view class="flex items-center">
+								<view class="w-6 h-6 bg-orange-400 text-white rounded-full flex items-center justify-center mr-3 text-xs font-bold">
+									<text>3</text>
+								</view>
+								<view class="w-10 h-10 bg-gray-200 rounded overflow-hidden mr-3">
+									<image :src="topSales[2].image" :alt="topSales[2].name" class="w-full h-full object-cover"></image>
+								</view>
+								<view>
+									<text class="font-medium">{{topSales[2].name}}</text>
+									<text class="text-xs text-gray-500 block">销量：{{topSales[2].quantity}}箱</text>
+								</view>
+							</view>
+							<text class="text-teal-600 font-bold">¥{{topSales[2].amount}}</text>
+						</view>
+					</view>
+				</view>
+				<view class="mt-3 text-center">
+					<button class="text-sm text-teal-600" @tap="viewFullRanking">
+						查看完整排行 <uni-icons type="right" size="14" color="#0D9488"></uni-icons>
+					</button>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 功能模态弹窗 -->
+		<uni-popup ref="functionPopup" type="center">
+			<view class="bg-white rounded-xl w-4/5 max-h-3/4 overflow-y-auto p-5">
+				<view class="flex justify-between items-center mb-4">
+					<text class="text-xl font-bold">{{currentFunction.title}}</text>
+					<text class="text-gray-500" @tap="closePopup">
+						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
+					</text>
+				</view>
+				<view class="function-content">
+					<text class="text-gray-600">{{currentFunction.content}}</text>
+				</view>
+				<view class="mt-4 text-center">
+					<button class="w-full bg-teal-600 text-white py-2 rounded-lg" @tap="closePopup">
+						关闭
+					</button>
+				</view>
+			</view>
+		</uni-popup>
+		
+		<!-- 设置弹窗 -->
+		<uni-popup ref="settingsPopup" type="bottom">
+			<view class="bg-white rounded-t-xl p-5">
+				<view class="flex justify-between items-center mb-4">
+					<text class="text-xl font-bold">设置</text>
+					<text class="text-gray-500" @tap="closeSettings">
+						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
+					</text>
+				</view>
+				<view class="settings-menu space-y-3">
+					<view class="p-3 flex items-center justify-between border-b border-gray-100">
+						<text>个人信息</text>
+						<uni-icons type="right" size="16" color="#9CA3AF"></uni-icons>
+					</view>
+					<view class="p-3 flex items-center justify-between border-b border-gray-100">
+						<text>账号安全</text>
+						<uni-icons type="right" size="16" color="#9CA3AF"></uni-icons>
+					</view>
+					<view class="p-3 flex items-center justify-between border-b border-gray-100">
+						<text>通知设置</text>
+						<uni-icons type="right" size="16" color="#9CA3AF"></uni-icons>
+					</view>
+					<view class="p-3 flex items-center justify-between border-b border-gray-100">
+						<text>关于我们</text>
+						<uni-icons type="right" size="16" color="#9CA3AF"></uni-icons>
+					</view>
+					<view class="p-3 flex items-center justify-between text-red-500">
+						<text>退出登录</text>
+						<uni-icons type="close" size="16" color="#EF4444"></uni-icons>
+					</view>
+				</view>
+			</view>
+		</uni-popup>
+		
+		<!-- 时间范围选择器 -->
+		<uni-popup ref="timeRangePopup" type="bottom">
+			<view class="bg-white rounded-t-xl p-5">
+				<view class="flex justify-between items-center mb-4">
+					<text class="text-xl font-bold">选择时间范围</text>
+					<text class="text-gray-500" @tap="closeTimeRange">
+						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
+					</text>
+				</view>
+				<view class="space-y-3">
+					<view 
+						v-for="(range, index) in timeRanges" 
+						:key="index"
+						class="p-3 flex items-center justify-between border-b border-gray-100"
+						@tap="selectTimeRange(range)"
+					>
+						<text>{{range}}</text>
+						<uni-icons v-if="timeRange === range" type="checkmarkempty" size="16" color="#0D9488"></uni-icons>
+					</view>
+				</view>
+			</view>
+		</uni-popup>
+		
+		<!-- 底部TabBar -->
+		<custom-tab-bar></custom-tab-bar>
+	</view>
+</template>
+
+<script setup>
+import { ref, reactive, onMounted, computed } from 'vue';
+import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
+import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
+import CustomTabBar from '@/components/CustomTabBar.vue';
+
+// 用户数据
+const userData = ref({
+	name: '老周',
+	shopName: '果聚果业',
+	role: '档口老板',
+	phone: '98765432100',
+	avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
+});
+
+// 业务员列表
+const staffList = ref([
+	{ id: 0, name: '全部业务员' },
+	{ id: 1, name: '李业务' },
+	{ id: 2, name: '王业务' },
+	{ id: 3, name: '张业务' }
+]);
+const staffIndex = ref(0);
+
+// 报表类型
+const reportTypes = ['日报', '周报', '月报'];
+const reportTypeIndex = ref(0);
+
+// 销售数据面板
+const dashboardData = reactive({
+	daily: {
+		amount: '8,356',
+		amountTrend: 12.5,
+		volume: 156,
+		volumeTrend: 8.2,
+		customers: 56,
+		customersTrend: -3.1
+	},
+	weekly: {
+		amount: '58,420',
+		amountTrend: 8.7,
+		volume: 1024,
+		volumeTrend: 5.3,
+		customers: 128,
+		customersTrend: -2.1
+	},
+	monthly: {
+		amount: '246,850',
+		amountTrend: 15.2,
+		volume: 4268,
+		volumeTrend: 11.5,
+		customers: 320,
+		customersTrend: 4.8
+	}
+});
+
+// 当前显示的数据
+const currentData = computed(() => {
+	if (reportTypeIndex.value === 0) {
+		return dashboardData.daily;
+	} else if (reportTypeIndex.value === 1) {
+		return dashboardData.weekly;
+	} else {
+		return dashboardData.monthly;
+	}
+});
+
+// 热销水果排行
+const topSales = ref([
+	{ name: '明牌阿克苏苹果', quantity: 52, amount: '2,860', image: 'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300' },
+	{ name: '砀山梨', quantity: 38, amount: '1,216', image: 'https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300' },
+	{ name: '新鲜橘子', quantity: 25, amount: '750', image: 'https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300' }
+]);
+
+// 当前功能
+const currentFunction = ref({
+	title: '',
+	content: ''
+});
+
+// 时间范围
+const timeRange = ref('本周');
+const timeRanges = ref(['今日', '本周', '本月', '本季度', '本年']);
+
+// 获取弹窗组件引用
+const functionPopup = ref(null);
+const settingsPopup = ref(null);
+const timeRangePopup = ref(null);
+
+// 业务员切换
+function onStaffChange(e) {
+	staffIndex.value = e.detail.value;
+	refreshDashboardData();
+}
+
+// 报表类型切换
+function onReportTypeChange(e) {
+	reportTypeIndex.value = e.detail.value;
+	refreshDashboardData();
+}
+
+// 刷新面板数据
+function refreshDashboardData() {
+	// 这里可以根据选择的业务员和报表类型加载不同的数据
+	uni.showToast({
+		title: `${reportTypes[reportTypeIndex.value]}，${staffList.value[staffIndex.value].name}`,
+		icon: 'none'
+	});
+	// 模拟数据刷新
+	// 实际应用中应该调用API获取数据
+}
+
+// 显示功能弹窗
+function showFunction(type) {
+	switch(type) {
+		case 'salesRecord':
+			currentFunction.value = {
+				title: '销售记录',
+				content: '这里将显示水果销售的完整记录，包括销售数量、价格、客户等信息。'
+			};
+			break;
+		case 'inventoryManage':
+			currentFunction.value = {
+				title: '库存管理',
+				content: '这里将提供库存管理功能，包括查看库存、入库、出库等操作。'
+			};
+			break;
+		case 'customerManage':
+			currentFunction.value = {
+				title: '客户管理',
+				content: '这里将提供客户信息管理，帮助你维护客户关系。'
+			};
+			break;
+		case 'financialManage':
+			currentFunction.value = {
+				title: '财务管理',
+				content: '这里将提供财务管理功能，包括收支记录、对账、财务报表等。'
+			};
+			break;
+	}
+	functionPopup.value.open();
+}
+
+// 编辑个人信息
+function editProfile() {
+	uni.showToast({
+		title: '编辑个人信息功能开发中',
+		icon: 'none'
+	});
+}
+
+// 关闭弹窗
+function closePopup() {
+	functionPopup.value.close();
+}
+
+// 查看完整排行
+function viewFullRanking() {
+	currentFunction.value = {
+		title: '热销水果排行榜',
+		content: '这里将显示所有水果的销售排行信息。'
+	};
+	functionPopup.value.open();
+}
+
+// 显示设置
+function showSettings() {
+	settingsPopup.value.open();
+}
+
+// 关闭设置
+function closeSettings() {
+	settingsPopup.value.close();
+}
+
+// 显示时间范围选择器
+function toggleTimeRangeSelector() {
+	timeRangePopup.value.open();
+}
+
+// 关闭时间范围选择器
+function closeTimeRange() {
+	timeRangePopup.value.close();
+}
+
+// 选择时间范围
+function selectTimeRange(range) {
+	timeRange.value = range;
+	closeTimeRange();
+}
+
+// 页面加载
+onMounted(() => {
+	// 这里可以加载用户数据、销售统计等信息
+});
+</script>
+
+<style>
+.profile-container {
+	min-height: 100vh;
+	background-color: #F5F5F5;
+	padding-bottom: 100rpx; /* 为底部导航栏留出空间 */
+}
+
+.bg-teal-600 {
+	background-color: #0D9488;
+}
+
+.text-teal-600 {
+	color: #0D9488;
+}
+
+.bg-teal-50 {
+	background-color: #F0FDFA;
+}
+
+.bg-teal-100 {
+	background-color: #E6FFFA;
+}
+
+.bg-blue-100 {
+	background-color: #DBEAFE;
+}
+
+.text-blue-600 {
+	color: #2563EB;
+}
+
+.bg-yellow-100 {
+	background-color: #FEF9C3;
+}
+
+.text-yellow-600 {
+	color: #D97706;
+}
+
+.bg-purple-100 {
+	background-color: #F3E8FF;
+}
+
+.text-purple-600 {
+	color: #9333EA;
+}
+
+.bg-yellow-400 {
+	background-color: #FBBF24;
+}
+
+.bg-orange-400 {
+	background-color: #FB923C;
+}
+
+.text-green-500 {
+	color: #10B981;
+}
+
+.text-red-500 {
+	color: #EF4444;
+}
+
+.grid-stats {
+	display: flex;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.grid-stats > view {
+	flex: 1;
+}
+
+.grid-menu {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.grid-menu > view {
+	width: 25%;
+	box-sizing: border-box;
+}
+
+.space-y-3 > view:not(:first-child) {
+	margin-top: 0.75rem;
+}
+
+.info-item {
+	margin-bottom: 16rpx;
+}
+
+.info-label {
+	font-size: 26rpx;
+	color: #6B7280;
+	margin-bottom: 4rpx;
+	display: block;
+}
+
+.info-value {
+	font-size: 30rpx;
+	color: #1F2937;
+	font-weight: 500;
+}
+
+.stats-container {
+	display: flex;
+	flex-direction: column;
+	gap: 12rpx;
+}
+
+.stats-card {
+	width: 100%;
+}
+</style> 

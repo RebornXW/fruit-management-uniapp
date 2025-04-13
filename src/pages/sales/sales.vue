@@ -1,209 +1,263 @@
 <template>
 	<view class="sales-container">
 		<!-- 标题栏 -->
-		<view class="bg-teal-600 text-white p-4">
-			<view class="flex justify-between items-center">
-				<text class="text-xl font-bold">水果销售</text>
-				<view class="flex items-center space-x-3">
-					<uni-icons type="calendar" size="20" color="#ffffff" class="mr-2"></uni-icons>
-					<text>{{currentDate}}</text>
+		<view class="sales-header">
+			<view class="sales-header-content">
+				<text class="sales-title">水果销售</text>
+				<view class="sales-date-display">
+					<uni-icons type="calendar" size="20" color="#ffffff" class="sales-date-icon"></uni-icons>
+					<text class="sales-date-text">{{currentDate}}</text>
 				</view>
 			</view>
 		</view>
 		
-		<!-- 销售统计卡片 -->
-		<view class="bg-white m-4 p-4 rounded-xl shadow-sm">
-			<view class="flex justify-between items-center mb-2">
-				<text class="text-base font-bold">今日销售统计</text>
-				<text class="text-sm text-teal-600" @tap="showStatistics">
-					查看统计详情 <uni-icons type="right" size="14" color="#0D9488"></uni-icons>
-				</text>
-			</view>
-			<view class="grid-stats mt-3">
-				<view class="bg-teal-50 p-3 rounded-lg">
-					<text class="text-xs text-gray-500">销售总额</text>
-					<text class="text-xl font-bold text-teal-600 block">¥{{totalSalesAmount}}</text>
-					<view class="flex items-center text-xs text-green-500 mt-1">
-						<uni-icons type="top" size="12" color="#10B981" class="mr-1"></uni-icons>
-						<text>10.5%</text>
-					</view>
-				</view>
-				<view class="bg-blue-50 p-3 rounded-lg">
-					<text class="text-xs text-gray-500">销售数量</text>
-					<text class="text-xl font-bold text-blue-600 block">{{totalSalesQuantity}}箱</text>
-					<view class="flex items-center text-xs text-green-500 mt-1">
-						<uni-icons type="top" size="12" color="#10B981" class="mr-1"></uni-icons>
-						<text>8.2%</text>
-					</view>
-				</view>
-			</view>
-		</view>
-		
-		<!-- 快速销售区域 -->
-		<view class="bg-white mx-4 p-4 rounded-xl shadow-sm mb-4">
-			<view class="flex justify-between items-center mb-3">
-				<text class="text-base font-bold">快速销售</text>
-			</view>
-			
-			<!-- 搜索框 -->
-			<view class="relative mb-4">
-				<input v-model="searchText" type="text" placeholder="搜索水果名称..." class="w-full p-2 pl-10 rounded-lg border border-gray-300 text-sm" />
-				<view class="absolute left-3 top-1/2 text-gray-400">
-					<uni-icons type="search" size="18" color="#9CA3AF"></uni-icons>
-				</view>
-			</view>
-			
-			<!-- 水果列表 -->
-			<view class="space-y-3">
-				<view 
-					v-for="fruit in filteredFruits" 
-					:key="fruit.id"
-					class="flex items-center p-3 bg-gray-50 rounded-lg"
-					@tap="showSaleModal(fruit)"
-				>
-					<view class="w-14 h-14 bg-gray-200 rounded-lg overflow-hidden">
-						<image :src="fruit.image" :alt="fruit.name" class="w-full h-full object-cover"></image>
-					</view>
-					<view class="ml-3 flex-1">
-						<view class="flex justify-between">
-							<view>
-								<text class="font-bold">{{fruit.name}}</text>
-								<text class="text-xs text-gray-500 block">{{fruit.spec}}</text>
-							</view>
-							<view class="text-right">
-								<text class="text-sm text-teal-600">¥{{fruit.minPrice}} - ¥{{fruit.maxPrice}}</text>
-								<text class="text-xs text-gray-400 block">库存: {{fruit.stock}}箱</text>
-							</view>
-						</view>
-					</view>
-				</view>
-			</view>
-		</view>
-		
-		<!-- 最近销售记录 -->
-		<view class="bg-white mx-4 p-4 rounded-xl shadow-sm mb-20">
-			<text class="text-base font-bold mb-3 block">最近销售记录</text>
-			
-			<view class="space-y-3">
-				<view 
-					v-for="(record, index) in salesRecords" 
-					:key="index"
-					:class="['pb-3', index < salesRecords.length - 1 ? 'border-b border-gray-100' : '']"
-				>
-					<view class="flex justify-between items-center">
-						<view class="flex items-center">
-							<view class="w-10 h-10 bg-gray-200 rounded overflow-hidden mr-3">
-								<image :src="record.image" :alt="record.name" class="w-full h-full object-cover"></image>
-							</view>
-							<view>
-								<text class="font-medium">{{record.name}}</text>
-								<text class="text-xs text-gray-500 block">{{record.quantity}}箱 × ¥{{record.price}}</text>
-							</view>
-						</view>
-						<view class="text-right">
-							<text class="font-bold text-teal-600">¥{{record.total}}</text>
-							<text class="text-xs text-gray-400 block">{{record.time}}</text>
-						</view>
-					</view>
-				</view>
-			</view>
-		</view>
-		
-		<!-- 销售确认弹窗 -->
-		<uni-popup ref="salePopup" type="center">
-			<view class="bg-white rounded-xl w-5/6 p-5">
-				<view class="flex justify-between items-center mb-4">
-					<text class="text-xl font-bold">{{currentFruit.name}}</text>
-					<text class="text-gray-500" @tap="closePopup">
-						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
+		<!-- 滚动内容区域 -->
+		<scroll-view scroll-y class="sales-content-scroll">
+			<!-- 销售统计卡片 -->
+			<view class="sales-stats-card">
+				<view class="sales-card-header">
+					<text class="sales-card-title">今日销售统计</text>
+					<text class="sales-view-more" @tap="showStatistics">
+						查看统计详情 <uni-icons type="right" size="14" color="#0D9488"></uni-icons>
 					</text>
 				</view>
-				<view class="mb-4 text-center">
-					<view class="w-24 h-24 bg-gray-200 rounded overflow-hidden mx-auto mb-2">
-						<image :src="currentFruit.image" :alt="currentFruit.name" class="w-full h-full object-cover"></image>
+				<view class="sales-stats-grid">
+					<view class="sales-stats-item sales-amount-item">
+						<text class="sales-stats-label">销售总额</text>
+						<text class="sales-stats-value">¥{{totalSalesAmount}}</text>
+						<view class="sales-stats-trend">
+							<uni-icons type="top" size="12" color="#10B981" class="sales-trend-icon"></uni-icons>
+							<text class="sales-trend-text">10.5%</text>
+						</view>
+					</view>
+					<view class="sales-stats-item sales-quantity-item">
+						<text class="sales-stats-label">销售数量</text>
+						<text class="sales-stats-value">{{totalSalesQuantity}}箱</text>
+						<view class="sales-stats-trend">
+							<uni-icons type="top" size="12" color="#10B981" class="sales-trend-icon"></uni-icons>
+							<text class="sales-trend-text">8.2%</text>
+						</view>
+					</view>
+				</view>
+			</view>
+			
+			<!-- 快速销售区域 -->
+			<view class="sales-quick-card">
+				<view class="sales-card-header">
+					<text class="sales-card-title">快速销售</text>
+				</view>
+				
+				<!-- 搜索框 -->
+				<view class="sales-search-container">
+					<input v-model="searchText" type="text" placeholder="搜索水果名称..." class="sales-search-input" />
+					<view class="sales-search-icon-container">
+						<uni-icons type="search" size="18" color="#9CA3AF"></uni-icons>
 					</view>
 				</view>
 				
-				<view class="mb-4">
-					<text class="block text-sm font-medium mb-1">销售价格（元/箱）</text>
-					<view class="relative">
-						<text class="absolute left-3 top-1/2 text-gray-500">¥</text>
+				<!-- 水果列表 -->
+				<view class="sales-fruits-list">
+					<view 
+						v-for="fruit in filteredFruits" 
+						:key="fruit.id"
+						class="sales-fruit-item"
+						@tap="showSaleModal(fruit)"
+					>
+						<view class="sales-fruit-image-container">
+							<image :src="fruit.image" :alt="fruit.name" class="sales-fruit-image"></image>
+						</view>
+						<view class="sales-fruit-info">
+							<view class="sales-fruit-content">
+								<view class="sales-fruit-details">
+									<text class="sales-fruit-name">{{fruit.name}}</text>
+									<text class="sales-fruit-spec">{{fruit.spec}}</text>
+								</view>
+								<view class="sales-fruit-price-info">
+									<text class="sales-fruit-price">¥{{fruit.minPrice}} - ¥{{fruit.maxPrice}}</text>
+									<text class="sales-fruit-stock">库存: {{fruit.stock}}箱</text>
+								</view>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+			
+			<!-- 最近销售记录 -->
+			<view class="sales-history-card">
+				<text class="sales-card-title">最近销售记录</text>
+				
+				<view class="sales-history-list">
+					<view 
+						v-for="(record, index) in salesRecords" 
+						:key="index"
+						:class="['sales-history-item', index < salesRecords.length - 1 ? 'sales-history-border' : '']"
+					>
+						<view class="sales-history-content">
+							<view class="sales-history-left">
+								<view class="sales-history-image-container">
+									<image :src="record.image" :alt="record.name" class="sales-history-image"></image>
+								</view>
+								<view class="sales-history-details">
+									<text class="sales-history-name">{{record.name}}</text>
+									<view class="sales-history-info">
+										<text class="sales-history-quantity">{{record.quantity}}箱 × ¥{{record.price}}</text>
+										<text class="sales-history-customer" v-if="record.customer">
+											客户: {{record.customer.name}}
+										</text>
+									</view>
+								</view>
+							</view>
+							<view class="sales-history-right">
+								<text class="sales-history-total">¥{{record.total}}</text>
+								<text class="sales-history-time">{{record.time}}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+			</view>
+		</scroll-view>
+		
+		<!-- 销售确认弹窗 -->
+		<uni-popup ref="salePopup" type="center">
+			<view class="sales-popup-container">
+				<view class="sales-popup-header">
+					<text class="sales-popup-title">{{currentFruit.name}}</text>
+					<text class="sales-popup-close" @tap="closePopup">
+						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
+					</text>
+				</view>
+				<view class="sales-popup-image-container">
+					<image :src="currentFruit.image" :alt="currentFruit.name" class="sales-popup-image"></image>
+				</view>
+				
+				<!-- 客户选择 -->
+				<view class="sales-popup-form-item">
+					<text class="sales-popup-label">选择客户</text>
+					<view class="sales-popup-customer-selector" @tap="showCustomerSelector">
+						<text class="sales-popup-customer-name">{{selectedCustomer.name || '选择客户'}}</text>
+						<uni-icons type="right" size="16" color="#6B7280"></uni-icons>
+					</view>
+				</view>
+				
+				<view class="sales-popup-form-item">
+					<text class="sales-popup-label">销售价格（元/箱）</text>
+					<view class="sales-popup-price-input">
+						<text class="sales-popup-currency">¥</text>
 						<input 
 							type="digit" 
 							v-model="salePrice" 
-							class="w-full p-2 pl-8 pr-3 rounded-lg border border-gray-300 text-right font-bold text-teal-600" 
+							class="sales-popup-input" 
 							step="0.1" 
 							min="0"
 						/>
 					</view>
-					<view class="text-xs text-gray-500 mt-1 text-right">
+					<view class="sales-popup-price-hint">
 						参考价格: ¥{{currentFruit.minPrice}} - ¥{{currentFruit.maxPrice}}/箱
 					</view>
 				</view>
 				
-				<view class="mb-4">
-					<text class="block text-sm font-medium mb-1">销售数量</text>
-					<view class="flex items-center justify-between bg-gray-100 rounded-lg">
-						<button class="w-12 h-12 flex items-center justify-center text-gray-600" @tap="decrementQuantity">
-							<uni-icons type="minus" size="20" color="#4B5563"></uni-icons>
+				<view class="sales-popup-form-item">
+					<text class="sales-popup-label">销售数量</text>
+					<view class="sales-popup-quantity-wrapper">
+						<button class="sales-popup-quantity-btn" @tap="decrementQuantity">
+							<text class="iconfont icon-minus"></text>
 						</button>
-						<text class="font-bold text-xl">{{saleQuantity}}</text>
-						<button class="w-12 h-12 flex items-center justify-center text-gray-600" @tap="incrementQuantity">
-							<uni-icons type="plus" size="20" color="#4B5563"></uni-icons>
+						<input 
+							type="number" 
+							v-model="saleQuantity" 
+							class="sales-popup-quantity-input" 
+							@input="validateQuantity"
+						/>
+						<button class="sales-popup-quantity-btn" @tap="incrementQuantity">
+							<text class="iconfont icon-add"></text>
 						</button>
 					</view>
-					<text class="text-sm text-gray-500 mt-1">库存: {{currentFruit.stock}}箱</text>
+					<text class="sales-popup-stock">库存: {{currentFruit.stock}}箱</text>
 				</view>
 				
-				<view class="mb-6 bg-teal-50 p-3 rounded-lg">
-					<view class="flex justify-between items-center">
-						<text class="text-sm font-medium">销售总价:</text>
-						<text class="text-xl font-bold text-teal-600">¥{{totalPrice}}</text>
+				<view class="sales-popup-total">
+					<view class="sales-popup-total-content">
+						<text class="sales-popup-total-label">销售总价:</text>
+						<text class="sales-popup-total-value">¥{{totalPrice}}</text>
 					</view>
 				</view>
 				
-				<view class="flex gap-2">
-					<button class="flex-1 bg-teal-600 text-white py-3 rounded-lg" @tap="confirmSale">
+				<view class="sales-popup-actions">
+					<button class="sales-popup-confirm-btn" @tap="confirmSale">
 						确认销售
 					</button>
 				</view>
 			</view>
 		</uni-popup>
 		
-		<!-- 统计详情弹窗 -->
-		<uni-popup ref="statisticsPopup" type="center">
-			<view class="bg-white rounded-xl w-5/6 max-h-4/5 overflow-y-auto p-5">
-				<view class="flex justify-between items-center mb-4">
-					<text class="text-xl font-bold">销售统计详情</text>
-					<text class="text-gray-500" @tap="closeStatisticsPopup">
+		<!-- 客户选择弹窗 -->
+		<uni-popup ref="customerSelectorPopup" type="bottom">
+			<view class="customer-selector-container">
+				<view class="customer-selector-header">
+					<text class="customer-selector-title">选择客户</text>
+					<text class="customer-selector-close" @tap="closeCustomerSelector">
 						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
 					</text>
 				</view>
 				
-				<view class="mb-4">
-					<text class="block text-sm font-medium mb-2">今日销售趋势</text>
+				<view class="customer-selector-search">
+					<uni-icons type="search" size="18" color="#9CA3AF"></uni-icons>
+					<input 
+						v-model="customerSearchText" 
+						type="text" 
+						placeholder="搜索客户名称..." 
+						class="customer-search-input"
+					/>
+				</view>
+				
+				<scroll-view scroll-y class="customer-selector-list">
+					<view 
+						v-for="customer in filteredCustomersList" 
+						:key="customer.id"
+						class="customer-selector-item"
+						@tap="selectCustomer(customer)"
+					>
+						<text class="customer-selector-name">{{customer.name}}</text>
+						<text class="customer-selector-phone">{{customer.phone}}</text>
+					</view>
+				</scroll-view>
+			</view>
+		</uni-popup>
+		
+		<!-- 统计详情弹窗 -->
+		<uni-popup ref="statisticsPopup" type="center">
+			<view class="sales-stats-popup">
+				<view class="sales-popup-header">
+					<text class="sales-popup-title">销售统计详情</text>
+					<text class="sales-popup-close" @tap="closeStatisticsPopup">
+						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
+					</text>
+				</view>
+				
+				<view class="sales-stats-section">
+					<text class="sales-stats-section-title">今日销售趋势</text>
 					<!-- 此处在实际应用中应该使用图表组件 -->
-					<view class="bg-gray-100 h-40 rounded-lg flex items-center justify-center">
-						<text class="text-gray-500">图表数据展示区域</text>
+					<view class="sales-chart-placeholder">
+						<text class="sales-chart-text">图表数据展示区域</text>
 					</view>
 				</view>
 				
-				<view class="mb-4">
-					<text class="block text-sm font-medium mb-2">销售排行榜</text>
-					<view class="space-y-2">
+				<view class="sales-stats-section">
+					<text class="sales-stats-section-title">销售排行榜</text>
+					<view class="sales-ranking-list">
 						<view 
 							v-for="(item, index) in salesRanking" 
 							:key="index"
-							class="flex items-center bg-gray-50 p-2 rounded-lg"
+							class="sales-ranking-item"
 						>
-							<text class="w-6 h-6 flex items-center justify-center rounded-full bg-teal-600 text-white text-xs mr-2">{{index + 1}}</text>
-							<text class="flex-1 font-medium">{{item.name}}</text>
-							<text class="text-teal-600 font-bold">¥{{item.amount}}</text>
+							<text class="sales-ranking-badge">{{index + 1}}</text>
+							<text class="sales-ranking-name">{{item.name}}</text>
+							<text class="sales-ranking-amount">¥{{item.amount}}</text>
 						</view>
 					</view>
 				</view>
 				
-				<button class="w-full bg-gray-200 text-gray-700 py-2 rounded-lg mt-4" @tap="closeStatisticsPopup">
+				<button class="sales-popup-close-btn" @tap="closeStatisticsPopup">
 					关闭
 				</button>
 			</view>
@@ -230,6 +284,22 @@ const salesRecords = ref([]);
 const currentDate = ref('');
 const totalSalesAmount = ref('2,586');
 const totalSalesQuantity = ref(56);
+
+// 客户相关数据
+const customersList = ref([]);
+const selectedCustomer = ref({});
+const customerSearchText = ref('');
+
+// 过滤后的客户列表
+const filteredCustomersList = computed(() => {
+	if (!customerSearchText.value) return customersList.value;
+	
+	const query = customerSearchText.value.toLowerCase();
+	return customersList.value.filter(customer => {
+		return customer.name.toLowerCase().includes(query) || 
+			customer.phone.includes(query);
+	});
+});
 
 // 销售排行榜数据
 const salesRanking = ref([
@@ -258,6 +328,7 @@ const totalPrice = computed(() => {
 // 获取弹窗组件引用
 const salePopup = ref(null);
 const statisticsPopup = ref(null);
+const customerSelectorPopup = ref(null);
 
 // 显示销售弹窗
 function showSaleModal(fruit) {
@@ -301,6 +372,43 @@ function incrementQuantity() {
 	}
 }
 
+// 验证销售数量
+function validateQuantity() {
+	// 转换为数字
+	let quantity = parseInt(saleQuantity.value);
+	
+	// 非数字或负数处理
+	if (isNaN(quantity) || quantity < 1) {
+		saleQuantity.value = 1;
+		return;
+	}
+	
+	// 超过库存处理
+	if (quantity > currentFruit.value.stock) {
+		uni.showToast({
+			title: '超出库存数量',
+			icon: 'none'
+		});
+		saleQuantity.value = currentFruit.value.stock;
+	}
+}
+
+// 显示客户选择器
+function showCustomerSelector() {
+	customerSelectorPopup.value.open();
+}
+
+// 关闭客户选择器
+function closeCustomerSelector() {
+	customerSelectorPopup.value.close();
+}
+
+// 选择客户
+function selectCustomer(customer) {
+	selectedCustomer.value = customer;
+	closeCustomerSelector();
+}
+
 // 确认销售
 function confirmSale() {
 	if (saleQuantity.value > currentFruit.value.stock) {
@@ -314,6 +422,14 @@ function confirmSale() {
 	if (salePrice.value <= 0) {
 		uni.showToast({
 			title: '请输入有效价格',
+			icon: 'none'
+		});
+		return;
+	}
+	
+	if (!selectedCustomer.value.id) {
+		uni.showToast({
+			title: '请选择客户',
 			icon: 'none'
 		});
 		return;
@@ -334,7 +450,11 @@ function confirmSale() {
 		quantity: saleQuantity.value,
 		price: parseFloat(salePrice.value).toFixed(2),
 		total: parseFloat(totalPrice.value).toFixed(2),
-		time: time
+		time: time,
+		customer: {
+			id: selectedCustomer.value.id,
+			name: selectedCustomer.value.name
+		}
 	};
 	
 	salesRecords.value.unshift(newRecord);
@@ -343,6 +463,9 @@ function confirmSale() {
 	if (salesRecords.value.length > 10) {
 		salesRecords.value = salesRecords.value.slice(0, 10);
 	}
+	
+	// 重置选择的客户
+	selectedCustomer.value = {};
 	
 	// 在实际应用中，这里应该调用API保存销售记录
 	uni.showToast({
@@ -364,6 +487,9 @@ onMounted(() => {
 	
 	// 加载销售记录
 	loadSalesRecords();
+	
+	// 加载客户数据
+	loadCustomersData();
 });
 
 // 加载水果数据
@@ -387,6 +513,18 @@ function loadSalesRecords() {
 		{ name: "砀山梨", quantity: 3, price: "32.00", total: "96.00", time: "08:47", image: "https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300" }
 	];
 }
+
+// 加载客户数据
+function loadCustomersData() {
+	// 模拟从服务器获取数据
+	// 实际应用中，这里应该是API调用
+	customersList.value = [
+		{ id: 1, name: "李明", type: "零售客户", phone: "13812345678", orders: 5 },
+		{ id: 2, name: "张三水果店", type: "批发客户", phone: "15912345678", orders: 12 },
+		{ id: 3, name: "王五超市", type: "批发客户", phone: "17712345678", orders: 8 },
+		{ id: 4, name: "赵六水果配送", type: "合作商", phone: "18612345678", orders: 15 }
+	];
+}
 </script>
 
 <style>
@@ -394,44 +532,752 @@ function loadSalesRecords() {
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
-	padding-bottom: 100rpx; /* 为底部导航栏留出空间 */
+	padding-bottom: 150rpx;
+	background-color: #F5F8FA;
+	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+	box-sizing: border-box;
 }
 
-.bg-teal-600 {
-	background-color: #0D9488;
+/* 头部样式 */
+.sales-header {
+	background: linear-gradient(135deg, #0D9488, #0F766E);
+	padding: 40rpx 30rpx;
+	border-bottom-left-radius: 20rpx;
+	border-bottom-right-radius: 20rpx;
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
-.text-teal-600 {
+.sales-header-content {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.sales-title {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: white;
+	letter-spacing: 1rpx;
+}
+
+.sales-date-display {
+	display: flex;
+	align-items: center;
+	background-color: rgba(255, 255, 255, 0.2);
+	padding: 8rpx 16rpx;
+	border-radius: 30rpx;
+}
+
+.sales-date-icon {
+	margin-right: 8rpx;
+}
+
+.sales-date-text {
+	color: white;
+	font-size: 24rpx;
+}
+
+/* 滚动区域 */
+.sales-content-scroll {
+	flex: 1;
+	height: calc(100vh - 240rpx);
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/* 卡片通用样式 */
+.sales-stats-card {
+	background-color: white;
+	border-radius: 24rpx;
+	margin: 24rpx;
+	padding: 30rpx 20rpx;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+	box-sizing: border-box;
+	width: calc(100% - 48rpx);
+}
+
+.sales-quick-card {
+	background-color: white;
+	border-radius: 24rpx;
+	margin: 24rpx;
+	padding: 30rpx 20rpx;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+	box-sizing: border-box;
+	width: calc(100% - 48rpx);
+}
+
+.sales-history-card {
+	background-color: white;
+	border-radius: 24rpx;
+	margin: 24rpx;
+	padding: 30rpx 20rpx;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+	margin-bottom: 120rpx;
+	box-sizing: border-box;
+	width: calc(100% - 48rpx);
+}
+
+.sales-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 24rpx;
+}
+
+.sales-card-title {
+	font-size: 30rpx;
+	font-weight: bold;
+	color: #1F2937;
+}
+
+.sales-view-more {
+	font-size: 24rpx;
+	color: #0D9488;
+	display: flex;
+	align-items: center;
+}
+
+/* 统计数据样式 */
+.sales-stats-grid {
+	display: flex;
+	gap: 20rpx;
+}
+
+.sales-stats-item {
+	flex: 1;
+	padding: 24rpx;
+	border-radius: 16rpx;
+}
+
+.sales-amount-item {
+	background: linear-gradient(135deg, #F0FDFA, #E6FFFA);
+	border: 1rpx solid rgba(13, 148, 136, 0.1);
+}
+
+.sales-quantity-item {
+	background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
+	border: 1rpx solid rgba(37, 99, 235, 0.1);
+}
+
+.sales-stats-label {
+	font-size: 22rpx;
+	color: #6B7280;
+	margin-bottom: 8rpx;
+	display: block;
+}
+
+.sales-stats-value {
+	font-size: 36rpx;
+	font-weight: bold;
+	display: block;
+	margin-bottom: 8rpx;
+}
+
+.sales-amount-item .sales-stats-value {
 	color: #0D9488;
 }
 
-.bg-teal-50 {
-	background-color: #F0FDFA;
-}
-
-.bg-blue-50 {
-	background-color: #EFF6FF;
-}
-
-.text-blue-600 {
+.sales-quantity-item .sales-stats-value {
 	color: #2563EB;
 }
 
-.text-green-500 {
+.sales-stats-trend {
+	display: flex;
+	align-items: center;
+}
+
+.sales-trend-icon {
+	margin-right: 4rpx;
+}
+
+.sales-trend-text {
+	font-size: 22rpx;
 	color: #10B981;
 }
 
-.space-y-3 > view:not(:first-child) {
-	margin-top: 0.75rem;
+/* 搜索框样式 */
+.sales-search-container {
+	position: relative;
+	margin-bottom: 24rpx;
+	width: 100%;
+	box-sizing: border-box;
 }
 
-.grid-stats {
+.sales-search-input {
+	width: 100%;
+	height: 80rpx;
+	padding: 0 16rpx 0 60rpx;
+	background-color: #F9FAFB;
+	border: 1rpx solid #E5E7EB;
+	border-radius: 40rpx;
+	font-size: 26rpx;
+	color: #1F2937;
+	box-sizing: border-box;
+}
+
+.sales-search-icon-container {
+	position: absolute;
+	left: 20rpx;
+	top: 50%;
+	transform: translateY(-50%);
+	z-index: 1;
+}
+
+/* 水果列表样式 */
+.sales-fruits-list {
+	display: flex;
+	flex-direction: column;
+	gap: 20rpx;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.sales-fruit-item {
+	display: flex;
+	padding: 20rpx;
+	background-color: #F9FAFB;
+	border-radius: 16rpx;
+	transition: all 0.3s ease;
+}
+
+.sales-fruit-item:active {
+	transform: scale(0.98);
+	opacity: 0.9;
+}
+
+.sales-fruit-image-container {
+	width: 110rpx;
+	height: 110rpx;
+	border-radius: 12rpx;
+	overflow: hidden;
+	background-color: #F3F4F6;
+	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+	flex-shrink: 0;
+}
+
+.sales-fruit-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.sales-fruit-info {
+	flex: 1;
+	margin-left: 20rpx;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.sales-fruit-content {
 	display: flex;
 	justify-content: space-between;
-	gap: 1rem;
+	width: 100%;
 }
 
-.grid-stats > view {
+.sales-fruit-name {
+	font-size: 28rpx;
+	font-weight: bold;
+	color: #1F2937;
+	margin-bottom: 6rpx;
+	display: block;
+}
+
+.sales-fruit-spec {
+	font-size: 22rpx;
+	color: #6B7280;
+	display: block;
+}
+
+.sales-fruit-price-info {
+	text-align: right;
+}
+
+.sales-fruit-price {
+	font-size: 26rpx;
+	color: #0D9488;
+	font-weight: bold;
+	display: block;
+	margin-bottom: 6rpx;
+}
+
+.sales-fruit-stock {
+	font-size: 22rpx;
+	color: #9CA3AF;
+	display: block;
+}
+
+/* 销售记录样式 */
+.sales-history-list {
+	margin-top: 24rpx;
+}
+
+.sales-history-item {
+	padding-bottom: 24rpx;
+}
+
+.sales-history-border {
+	border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+	margin-bottom: 24rpx;
+}
+
+.sales-history-content {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+}
+
+.sales-history-left {
+	display: flex;
+	align-items: center;
 	flex: 1;
+	overflow: hidden;
+}
+
+.sales-history-image-container {
+	width: 80rpx;
+	height: 80rpx;
+	border-radius: 12rpx;
+	overflow: hidden;
+	background-color: #F3F4F6;
+	flex-shrink: 0;
+}
+
+.sales-history-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.sales-history-details {
+	margin-left: 16rpx;
+	flex: 1;
+	overflow: hidden;
+}
+
+.sales-history-name {
+	font-size: 26rpx;
+	font-weight: 500;
+	color: #1F2937;
+	margin-bottom: 4rpx;
+}
+
+.sales-history-info {
+	display: flex;
+	flex-direction: column;
+}
+
+.sales-history-quantity {
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
+.sales-history-customer {
+	font-size: 22rpx;
+	color: #0D9488;
+	background-color: rgba(13, 148, 136, 0.1);
+	padding: 2rpx 8rpx;
+	border-radius: 6rpx;
+	margin-top: 4rpx;
+	display: inline-block;
+}
+
+.sales-history-right {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+}
+
+.sales-history-total {
+	font-size: 28rpx;
+	font-weight: bold;
+	color: #0D9488;
+	display: block;
+	margin-bottom: 4rpx;
+}
+
+.sales-history-time {
+	font-size: 22rpx;
+	color: #9CA3AF;
+	display: block;
+}
+
+/* 弹窗样式 */
+.sales-popup-container {
+	background-color: white;
+	border-radius: 24rpx;
+	width: 92%;
+	padding: 40rpx;
+	box-sizing: border-box;
+	margin: 0 auto;
+	position: relative;
+	top: 0;
+	left: 0;
+	transform: none;
+	max-width: 650rpx;
+}
+
+.sales-popup-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 30rpx;
+}
+
+.sales-popup-title {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #1F2937;
+}
+
+.sales-popup-close {
+	padding: 10rpx;
+}
+
+.sales-popup-image-container {
+	width: 200rpx;
+	height: 200rpx;
+	border-radius: 16rpx;
+	overflow: hidden;
+	background-color: #F3F4F6;
+	margin: 0 auto 30rpx;
+	box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.sales-popup-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.sales-popup-form-item {
+	margin-bottom: 24rpx;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.sales-popup-label {
+	font-size: 26rpx;
+	font-weight: 500;
+	color: #374151;
+	margin-bottom: 10rpx;
+	display: block;
+}
+
+.sales-popup-price-input {
+	position: relative;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.sales-popup-currency {
+	position: absolute;
+	left: 30rpx;
+	top: 50%;
+	transform: translateY(-50%);
+	color: #6B7280;
+	z-index: 1;
+}
+
+.sales-popup-input {
+	width: 100%;
+	height: 80rpx;
+	padding: 0 20rpx 0 60rpx;
+	background-color: white;
+	border: 1rpx solid #E5E7EB;
+	border-radius: 12rpx;
+	font-size: 30rpx;
+	font-weight: bold;
+	color: #0D9488;
+	text-align: right;
+	box-sizing: border-box;
+}
+
+.sales-popup-price-hint {
+	font-size: 22rpx;
+	color: #6B7280;
+	margin-top: 8rpx;
+	text-align: right;
+	width: 100%;
+	box-sizing: border-box;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.sales-popup-quantity-wrapper {
+	display: flex;
+	align-items: center;
+	border-radius: 16rpx;
+	background-color: #F9FAFB;
+	padding: 10rpx 20rpx;
+	margin: 15rpx 0;
+	box-shadow: inset 0 1rpx 3rpx rgba(0, 0, 0, 0.05);
+}
+
+.sales-popup-quantity-btn {
+	width: 60rpx;
+	height: 60rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: none;
+	padding: 0;
+	position: relative;
+	flex-shrink: 0;
+	background: transparent;
+	box-shadow: none;
+	margin: 0;
+}
+
+.sales-popup-quantity-btn::after {
+	border: none;
+	display: none;
+}
+
+.sales-popup-quantity-input {
+	flex: 1;
+	height: 80rpx;
+	text-align: center;
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #1F2937;
+	background: transparent;
+	border: none;
+	margin: 0 20rpx;
+}
+
+/* 使用与库存管理页一致的图标样式 */
+.sales-popup-quantity-btn .iconfont {
+	font-size: 32rpx;
+	color: #4B5563;
+}
+
+.sales-popup-stock {
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
+.sales-popup-total {
+	margin: 30rpx 0;
+	padding: 24rpx;
+	background-color: #F9FAFB;
+	border-radius: 16rpx;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.sales-popup-total-content {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.sales-popup-total-label {
+	font-size: 26rpx;
+	font-weight: 500;
+	color: #374151;
+}
+
+.sales-popup-total-value {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #0D9488;
+}
+
+.sales-popup-actions {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.sales-popup-confirm-btn {
+	width: 100%;
+	height: 96rpx;
+	background: linear-gradient(135deg, #0D9488, #0F766E);
+	color: white;
+	font-size: 32rpx;
+	font-weight: 500;
+	border-radius: 48rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 4rpx 12rpx rgba(13, 148, 136, 0.2);
+	border: none;
+	margin-top: 10rpx;
+}
+
+/* 统计弹窗样式 */
+.sales-stats-popup {
+	background-color: white;
+	border-radius: 24rpx;
+	width: 84%;
+	padding: 40rpx;
+	max-height: 80vh;
+	overflow-y: auto;
+}
+
+.sales-stats-section {
+	margin-bottom: 30rpx;
+}
+
+.sales-stats-section-title {
+	font-size: 26rpx;
+	font-weight: 500;
+	color: #374151;
+	margin-bottom: 16rpx;
+	display: block;
+}
+
+.sales-chart-placeholder {
+	height: 320rpx;
+	background-color: #F9FAFB;
+	border-radius: 16rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.sales-chart-text {
+	color: #6B7280;
+	font-size: 28rpx;
+}
+
+.sales-ranking-list {
+	display: flex;
+	flex-direction: column;
+	gap: 16rpx;
+}
+
+.sales-ranking-item {
+	display: flex;
+	align-items: center;
+	padding: 16rpx;
+	background-color: #F9FAFB;
+	border-radius: 12rpx;
+}
+
+.sales-ranking-badge {
+	width: 48rpx;
+	height: 48rpx;
+	border-radius: 24rpx;
+	background-color: #0D9488;
+	color: white;
+	font-size: 24rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-right: 16rpx;
+}
+
+.sales-ranking-name {
+	flex: 1;
+	font-size: 26rpx;
+	font-weight: 500;
+	color: #1F2937;
+}
+
+.sales-ranking-amount {
+	font-size: 28rpx;
+	font-weight: bold;
+	color: #0D9488;
+}
+
+.sales-popup-close-btn {
+	width: 100%;
+	height: 80rpx;
+	background-color: #F3F4F6;
+	color: #4B5563;
+	font-size: 28rpx;
+	border-radius: 40rpx;
+	margin-top: 20rpx;
+}
+
+/* 客户选择器样式 */
+.sales-popup-customer-selector {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin: 12rpx 0;
+	padding: 20rpx;
+	background-color: #F9FAFB;
+	border-radius: 12rpx;
+}
+
+.sales-popup-customer-name {
+	font-size: 28rpx;
+	color: #374151;
+	font-weight: 500;
+}
+
+.customer-selector-container {
+	background-color: white;
+	border-top-left-radius: 24rpx;
+	border-top-right-radius: 24rpx;
+	padding: 30rpx;
+	padding-bottom: env(safe-area-inset-bottom);
+	max-height: 70vh;
+	box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.customer-selector-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 24rpx;
+}
+
+.customer-selector-title {
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #1F2937;
+}
+
+.customer-selector-close {
+	padding: 10rpx;
+}
+
+.customer-selector-search {
+	display: flex;
+	align-items: center;
+	background-color: #F3F4F6;
+	border-radius: 32rpx;
+	padding: 0 16rpx;
+	margin-bottom: 20rpx;
+	height: 70rpx;
+}
+
+.customer-search-input {
+	flex: 1;
+	height: 70rpx;
+	font-size: 28rpx;
+	padding-left: 12rpx;
+	color: #374151;
+}
+
+.customer-selector-list {
+	max-height: 50vh;
+}
+
+.customer-selector-item {
+	padding: 20rpx 16rpx;
+	border-bottom: 1rpx solid #E5E7EB;
+}
+
+.customer-selector-item:active {
+	background-color: #F3F4F6;
+}
+
+.customer-selector-name {
+	font-size: 28rpx;
+	font-weight: 500;
+	color: #1F2937;
+	display: block;
+	margin-bottom: 4rpx;
+}
+
+.customer-selector-phone {
+	font-size: 24rpx;
+	color: #6B7280;
 }
 </style> 

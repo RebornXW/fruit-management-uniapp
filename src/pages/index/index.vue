@@ -1,129 +1,290 @@
 <template>
-	<view class="container p-4">
-		<view class="header bg-teal-600 text-white p-4 rounded-lg mb-4">
-			<text class="text-xl font-bold">图标测试页面</text>
+	<view class="container">
+		<view class="login-header">
+			<image class="logo" src="/static/logo.png" mode="aspectFit"></image>
+			<text class="app-name">水果档口管理系统</text>
+			<text class="app-slogan">高效管理 · 轻松销售</text>
 		</view>
 		
-		<!-- Iconfont CSS样式图标测试 -->
-		<view class="bg-white p-4 rounded-lg mb-4">
-			<text class="text-base font-bold mb-2 block">Iconfont 样式图标</text>
-			<view class="flex flex-wrap">
-				<view class="icon-item">
-					<text class="iconfont icon-search"></text>
-					<text class="icon-name">搜索</text>
+		<view class="login-form">
+			<view class="form-item">
+				<view class="input-label">
+					<text class="fas fa-user"></text>
+					<text>账号</text>
 				</view>
-				<view class="icon-item">
-					<text class="iconfont icon-more"></text>
-					<text class="icon-name">更多</text>
-				</view>
-				<view class="icon-item">
-					<text class="iconfont icon-add"></text>
-					<text class="icon-name">添加</text>
-				</view>
-				<view class="icon-item">
-					<text class="iconfont icon-delete"></text>
-					<text class="icon-name">删除</text>
-				</view>
-				<view class="icon-item">
-					<text class="iconfont icon-edit"></text>
-					<text class="icon-name">编辑</text>
-				</view>
-				<view class="icon-item">
-					<text class="iconfont icon-check"></text>
-					<text class="icon-name">确认</text>
-				</view>
-				<view class="icon-item">
-					<text class="iconfont icon-close"></text>
-					<text class="icon-name">关闭</text>
-				</view>
-				<view class="icon-item">
-					<text class="iconfont icon-setting"></text>
-					<text class="icon-name">设置</text>
-				</view>
+				<input class="input" type="text" v-model="username" placeholder="请输入账号" />
 			</view>
-		</view>
-		
-		<!-- CustomIcon组件测试 -->
-		<view class="bg-white p-4 rounded-lg mb-4">
-			<text class="text-base font-bold mb-2 block">CustomIcon 组件</text>
-			<view class="flex flex-wrap">
-				<view class="icon-item">
-					<custom-icon type="search" size="24" color="#0D9488"></custom-icon>
-					<text class="icon-name">搜索</text>
+			
+			<view class="form-item">
+				<view class="input-label">
+					<text class="fas fa-lock"></text>
+					<text>密码</text>
 				</view>
-				<view class="icon-item">
-					<custom-icon type="more" size="24" color="#0D9488"></custom-icon>
-					<text class="icon-name">更多</text>
-				</view>
-				<view class="icon-item">
-					<custom-icon type="add" size="24" color="#0D9488"></custom-icon>
-					<text class="icon-name">添加</text>
-				</view>
-				<view class="icon-item">
-					<custom-icon type="delete" size="24" color="#0D9488"></custom-icon>
-					<text class="icon-name">删除</text>
-				</view>
-				<view class="icon-item">
-					<custom-icon type="edit" size="24" color="#0D9488"></custom-icon>
-					<text class="icon-name">编辑</text>
-				</view>
-				<view class="icon-item">
-					<custom-icon type="check" size="24" color="#0D9488"></custom-icon>
-					<text class="icon-name">确认</text>
-				</view>
-				<view class="icon-item">
-					<custom-icon type="close" size="24" color="#0D9488"></custom-icon>
-					<text class="icon-name">关闭</text>
-				</view>
-				<view class="icon-item">
-					<custom-icon type="setting" size="24" color="#0D9488"></custom-icon>
-					<text class="icon-name">设置</text>
-				</view>
+				<input class="input" type="password" v-model="password" placeholder="请输入密码" password />
 			</view>
+			
+			<view class="remember-row">
+				<label class="remember-pwd">
+					<checkbox :checked="rememberPwd" @tap="rememberPwd = !rememberPwd" color="#0D9488" style="transform:scale(0.7)" />
+					<text>记住密码</text>
+				</label>
+			</view>
+			
+			<button class="login-btn" @tap="handleLogin" :disabled="!username || !password">登录</button>
 		</view>
 		
-		<!-- 测试完成后的按钮 -->
-		<view class="bg-white p-4 rounded-lg">
-			<button class="bg-teal-600 text-white py-2 rounded-lg" @tap="goToMainPage">
-				进入应用
-			</button>
+		<view class="account-notice">
+			<text>* 账号由管理员统一创建和分配</text>
 		</view>
 	</view>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
-import CustomIcon from '@/components/CustomIcon.vue';
+import { ref, onMounted } from 'vue';
 
-// 进入主页面
-function goToMainPage() {
-	uni.switchTab({
-		url: '/pages/price/price'
-	});
+// 登录表单数据
+const username = ref('');
+const password = ref('');
+const rememberPwd = ref(false);
+
+// 从本地存储中获取保存的账号密码
+onMounted(() => {
+	try {
+		const rememberedAccount = uni.getStorageSync('rememberedAccount');
+		if (rememberedAccount) {
+			username.value = rememberedAccount.username;
+			password.value = rememberedAccount.password;
+			rememberPwd.value = true;
+		}
+		
+		// 检查是否已登录
+		const loginUser = uni.getStorageSync('loginUser');
+		if (loginUser) {
+			// 已登录，直接跳转到主页
+			setTimeout(() => {
+				uni.switchTab({
+					url: '/pages/profile/profile'
+				});
+			}, 100);
+		}
+	} catch (e) {
+		console.error('读取存储数据失败', e);
+	}
+});
+
+// 默认账号
+const defaultAccounts = [
+	{
+		username: 'admin',
+		password: '123456',
+		name: '管理员',
+		role: '管理员',
+		phone: '13800000000',
+		avatar: '/static/default-avatar.png',
+		storeName: '水果大档口'
+	},
+	{
+		username: 'sales',
+		password: '123456',
+		name: '张业务',
+		role: '业务员',
+		phone: '13900000000',
+		avatar: '/static/default-avatar.png',
+		storeName: '水果大档口'
+	},
+	{
+		username: 'finance',
+		password: '123456',
+		name: '王财务',
+		role: '财务',
+		phone: '13700000000',
+		avatar: '/static/default-avatar.png',
+		storeName: '水果大档口'
+	},
+	{
+		username: 'owner',
+		password: '123456',
+		name: '李老板',
+		role: '货主',
+		phone: '13600000000',
+		avatar: '/static/default-avatar.png',
+		storeName: '水果大档口'
+	}
+];
+
+// 处理登录
+function handleLogin() {
+	if (!username.value || !password.value) {
+		uni.showToast({
+			title: '请输入账号和密码',
+			icon: 'none'
+		});
+		return;
+	}
+	
+	// 模拟登录验证
+	const user = defaultAccounts.find(
+		account => account.username === username.value && account.password === password.value
+	);
+	
+	if (user) {
+		// 保存登录状态
+		try {
+			uni.setStorageSync('loginUser', user);
+			
+			// 记住密码
+			if (rememberPwd.value) {
+				uni.setStorageSync('rememberedAccount', {
+					username: username.value,
+					password: password.value
+				});
+			} else {
+				uni.removeStorageSync('rememberedAccount');
+			}
+			
+			// 显示登录成功提示
+			uni.showToast({
+				title: '登录成功',
+				icon: 'success',
+				duration: 1500,
+				success: () => {
+					// 登录成功后跳转到个人中心页面
+					setTimeout(() => {
+						uni.switchTab({
+							url: '/pages/profile/profile'
+						});
+					}, 1500);
+				}
+			});
+		} catch (e) {
+			console.error('保存登录状态失败', e);
+			uni.showToast({
+				title: '登录失败，请重试',
+				icon: 'none'
+			});
+		}
+	} else {
+		// 登录失败
+		uni.showToast({
+			title: '账号或密码错误',
+			icon: 'none'
+		});
+	}
 }
 </script>
 
 <style>
 .container {
-	padding-bottom: 40px;
-}
-
-.icon-item {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	width: 25%;
-	margin-bottom: 20px;
+	justify-content: center;
+	height: 100vh;
+	background-color: #f8f8f8;
+	padding: 40rpx;
 }
 
-.icon-name {
-	font-size: 12px;
-	margin-top: 6px;
-	color: #666;
+.login-header {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-bottom: 60rpx;
 }
 
-.iconfont {
-	font-size: 24px;
+.logo {
+	width: 160rpx;
+	height: 160rpx;
+	margin-bottom: 30rpx;
+}
+
+.app-name {
+	font-size: 48rpx;
+	font-weight: bold;
 	color: #0D9488;
+	margin-bottom: 20rpx;
+}
+
+.app-slogan {
+	font-size: 28rpx;
+	color: #6B7280;
+}
+
+.login-form {
+	width: 100%;
+	background-color: #fff;
+	border-radius: 24rpx;
+	padding: 40rpx;
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+	margin-bottom: 40rpx;
+}
+
+.form-item {
+	margin-bottom: 30rpx;
+}
+
+.input-label {
+	display: flex;
+	align-items: center;
+	margin-bottom: 16rpx;
+	font-size: 28rpx;
+	color: #4B5563;
+}
+
+.input-label .fas {
+	margin-right: 10rpx;
+	color: #0D9488;
+}
+
+.input {
+	width: 100%;
+	height: 80rpx;
+	border: 1px solid #E5E7EB;
+	border-radius: 12rpx;
+	padding: 0 20rpx;
+	font-size: 28rpx;
+	background-color: #F9FAFB;
+}
+
+.remember-row {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 40rpx;
+}
+
+.remember-pwd {
+	display: flex;
+	align-items: center;
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
+.login-btn {
+	width: 100%;
+	height: 88rpx;
+	background-color: #0D9488;
+	color: #fff;
+	border-radius: 12rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 32rpx;
+	font-weight: 500;
+	border: none;
+}
+
+.login-btn:active {
+	background-color: #0F766E;
+}
+
+.login-btn[disabled] {
+	background-color: #9CA3AF;
+	color: #F3F4F6;
+}
+
+.account-notice {
+	font-size: 24rpx;
+	color: #9CA3AF;
+	text-align: center;
+	margin-top: 20rpx;
 }
 </style>

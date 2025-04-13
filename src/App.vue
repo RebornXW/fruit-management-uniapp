@@ -5,6 +5,8 @@ export default {
   },
   onShow: function () {
     console.log('App Show')
+    // 触发全局onShow事件，让各页面响应
+    uni.$emit('onShow')
   },
   onHide: function () {
     console.log('App Hide')
@@ -92,6 +94,10 @@ page {
   content: "\f067";
 }
 
+.icon-clipboard:before {
+  content: "\f0ea";
+}
+
 .icon-exchange:before {
   content: "\f362";
 }
@@ -110,6 +116,14 @@ page {
 
 .icon-close:before {
   content: "\f00d";
+}
+
+.icon-user:before {
+  content: "\f007";
+}
+
+.icon-lock:before {
+  content: "\f023";
 }
 
 /* 通用样式 */

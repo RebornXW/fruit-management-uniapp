@@ -1,0 +1,1137 @@
+<template>
+	<view class="record-viewer">
+		<!-- 顶部标题和操作栏 -->
+		<view class="header-container">
+			<view class="header-inner">
+				<view class="back-button" @tap="goBack">
+					<uni-icons type="left" size="16" color="#ffffff"></uni-icons>
+				</view>
+				<view class="search-container">
+					<uni-icons type="search" size="16" color="#ffffff80"></uni-icons>
+					<input type="text" 
+						:placeholder="isFocused ? '' : title" 
+						placeholder-style="color: rgba(255, 255, 255, 0.6); font-weight: normal; font-size: 24rpx;" 
+						class="search-field" 
+						v-model="searchKeyword" 
+						@input="filterRecords"
+						@focus="handleFocus"
+						@blur="handleBlur" />
+				</view>
+				<view class="filter-container" @tap="showFilterOptions">
+					<uni-icons type="funnel" size="16" color="#ffffff"></uni-icons>
+				</view>
+			</view>
+		</view>
+		
+		<!-- 筛选控制区域 -->
+		<view class="filter-control-container">
+			<view class="segment-control">
+				<view 
+					v-for="(option, index) in dateOptions" 
+					:key="index" 
+					class="segment-item" 
+					:class="{'segment-active': dateRange === option.value}"
+					@tap="setDateRange(option.value)"
+				>
+					<text>{{option.label}}</text>
+				</view>
+			</view>
+			
+			<view class="status-dropdown" @tap.stop="toggleStatusDropdown">
+				<text>{{getStatusLabel()}}</text>
+				<uni-icons type="down" size="12" color="#4B5563"></uni-icons>
+			</view>
+		</view>
+		
+		<!-- 状态下拉菜单 -->
+		<view class="status-dropdown-menu" v-if="showStatusDropdown" @tap.stop>
+			<view 
+				class="status-option" 
+				:class="{'status-option-active': statusFilter === 'all'}"
+				@tap="setStatusFilter('all')"
+			>
+				<text>全部</text>
+			</view>
+			<view 
+				v-for="(status, index) in statusOptions" 
+				:key="index"
+				class="status-option" 
+				:class="{'status-option-active': statusFilter === status.value}"
+				@tap="setStatusFilter(status.value)"
+			>
+				<text>{{status.label}}</text>
+			</view>
+		</view>
+		
+		<!-- 数据汇总条 -->
+		<view class="data-summary">
+			<view class="summary-item">
+				<text class="summary-label">总计:</text>
+				<text class="summary-value">{{filteredRecords.length}} 条</text>
+			</view>
+			<view class="summary-item" v-if="showTotal">
+				<text class="summary-label">{{totalLabel}}:</text>
+				<text class="summary-value">¥{{totalValue}}</text>
+			</view>
+			<view class="summary-item" v-if="showCount">
+				<text class="summary-label">{{countLabel}}:</text>
+				<text class="summary-value">{{totalCount}}{{countUnit}}</text>
+			</view>
+		</view>
+		
+		<!-- 列表视图 -->
+		<view v-if="viewType === 'list'" class="table-content flex-1">
+			<!-- 表头 - 固定在顶部 -->
+			<scroll-view scroll-x class="table-horizontal-scroll" :scroll-left="scrollLeft" @scroll="onTableScroll" scroll-with-animation show-scrollbar="false" id="headerScroll">
+				<view class="table-header-container">
+					<view class="table-header">
+						<view v-for="(column, index) in columns" :key="index" :class="[column.width, 'table-header-column']">
+							<view class="column-title-wrapper">
+								<text class="column-main-title">{{column.title}}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+			</scroll-view>
+			
+			<!-- 表格内容 - 可垂直滚动 -->
+			<scroll-view scroll-y class="table-body-scroll" @scroll="onVerticalScroll">
+				<!-- 内容区域 - 可水平滚动 -->
+				<scroll-view scroll-x class="table-body-horizontal-scroll" :scroll-left="scrollLeft" @scroll="onTableScroll" show-scrollbar="false" id="bodyScroll">
+					<!-- 表格行 -->
+					<view v-for="(item, index) in currentPageRecords" :key="index" 
+						class="table-row" :class="index % 2 === 0 ? 'row-even' : 'row-odd'"
+						@tap="showRecordDetail(item)">
+						<view class="table-row-inner">
+							<template v-for="(column, colIndex) in columns" :key="colIndex">
+								<view :class="[column.width, 'table-cell']">
+									<block v-if="column.type === 'text'">
+										<text class="block text-sm">{{item[column.field]}}</text>
+									</block>
+									<block v-else-if="column.type === 'date'">
+										<text class="block text-sm">{{formatDate(item[column.field])}}</text>
+									</block>
+									<block v-else-if="column.type === 'number'">
+										<text class="block text-sm">{{item[column.field]}}{{column.unit || ''}}</text>
+									</block>
+									<block v-else-if="column.type === 'price'">
+										<text class="block text-sm text-emerald-600">¥{{item[column.field]}}</text>
+									</block>
+									<block v-else-if="column.type === 'status'">
+										<view class="flex items-center justify-end">
+											<text class="text-sm text-emerald-600 font-medium mr-1" v-if="column.showPrice">¥{{item[column.priceField]}}</text>
+											<view class="status-dot" :class="getStatusClass(item[column.field])"></view>
+										</view>
+									</block>
+								</view>
+							</template>
+						</view>
+					</view>
+				</scroll-view>
+				
+				<!-- 无数据提示 -->
+				<view v-if="filteredRecords.length === 0" class="empty-tip">
+					<uni-icons type="info" size="24" color="#9CA3AF"></uni-icons>
+					<text class="text-gray-400 mt-2">暂无记录</text>
+				</view>
+			</scroll-view>
+		</view>
+		
+		<!-- 卡片视图 -->
+		<scroll-view v-if="viewType === 'card'" scroll-y class="card-content flex-1">
+			<view class="grid-cards px-4 py-2">
+				<view v-for="(item, index) in currentPageRecords" :key="index" 
+					class="record-card" @tap="showRecordDetail(item)">
+					<view class="card-header flex justify-between items-center">
+						<view class="flex items-center">
+							<text class="text-xs text-gray-400">{{cardNoPrefix}}{{item[cardNoField] || 'S' + item[cardDateField].replace(/-/g, '')}}</text>
+						</view>
+						<text class="text-xs text-gray-400">{{item[cardDateField]}}</text>
+					</view>
+					
+					<view class="card-customer flex justify-between items-center mt-2">
+						<text class="text-sm font-medium text-ellipsis">{{item[cardTitleField]}}</text>
+						<view class="status-tag" :class="getStatusTagClass(item[cardStatusField])">
+							{{item[cardStatusField]}}
+						</view>
+					</view>
+					
+					<view class="card-divider my-2"></view>
+					
+					<view class="card-product">
+						<view class="flex justify-between">
+							<text class="text-sm text-ellipsis">{{item[cardContentField]}}</text>
+							<text class="text-sm">{{item[cardQuantityField]}}{{cardQuantityUnit}}</text>
+						</view>
+						<view class="flex justify-between items-center mt-1">
+							<text class="text-xs text-gray-400 text-ellipsis">{{item[cardSpecField] || '--'}}</text>
+							<text class="text-xs text-gray-400" v-if="showUnitPrice">¥{{item[cardUnitPriceField] || '--'}}{{cardUnitPriceUnit}}</text>
+						</view>
+					</view>
+					
+					<view class="card-divider my-2"></view>
+					
+					<view class="card-footer flex justify-between items-center">
+						<text class="text-xs text-gray-400">{{cardFooterLabel}}: {{item[cardFooterField]}}</text>
+						<text class="text-emerald-600 font-medium">¥{{item[cardPriceField]}}</text>
+					</view>
+				</view>
+				
+				<!-- 无数据提示 -->
+				<view v-if="filteredRecords.length === 0" class="empty-tip">
+					<uni-icons type="info" size="24" color="#9CA3AF"></uni-icons>
+					<text class="text-gray-400 mt-2">暂无记录</text>
+				</view>
+			</view>
+		</scroll-view>
+		
+		<!-- 分页控制 -->
+		<view class="pagination border-t border-gray-100 bg-white">
+			<view class="pagination-inner">
+				<button class="page-btn" :disabled="currentPage === 1" :class="{'disabled': currentPage === 1}" @tap="prevPage">
+					<uni-icons type="left" size="14" color="#4B5563"></uni-icons>
+					<text class="page-btn-text">上一页</text>
+				</button>
+				<view class="page-nums">
+					<text>第</text>
+					<text class="page-current">{{currentPage}}</text>
+					<text>/ {{totalPages}}页</text>
+				</view>
+				<button class="page-btn" :disabled="currentPage === totalPages" :class="{'disabled': currentPage === totalPages}" @tap="nextPage">
+					<text class="page-btn-text">下一页</text>
+					<uni-icons type="right" size="14" color="#4B5563"></uni-icons>
+				</button>
+			</view>
+		</view>
+		
+		<!-- 详情弹窗 -->
+		<uni-popup ref="recordDetailPopup" type="bottom">
+			<view class="record-detail-popup bg-white rounded-t-xl">
+				<view class="drag-handle"></view>
+				
+				<view class="p-4">
+					<view class="flex justify-between items-center mb-4">
+						<view class="flex items-center">
+							<text class="text-lg font-bold">{{detailTitle}}</text>
+							<text class="text-sm text-gray-400 ml-2">{{recordNoPrefix}}{{selectedRecord[recordNoField] || '--'}}</text>
+						</view>
+						<uni-icons type="close" size="20" color="#9CA3AF" @tap="closeRecordDetail"></uni-icons>
+					</view>
+					
+					<view class="detail-sections">
+						<template v-for="(section, sectionIndex) in detailSections" :key="sectionIndex">
+							<view v-if="shouldRenderSection(section)" class="detail-section">
+								<view class="section-title">{{section.title}}</view>
+								<view class="section-content">
+									<template v-for="(field, fieldIndex) in section.fields" :key="fieldIndex">
+										<view v-if="shouldRenderField(field)" class="detail-item" :class="{ 'remark-item': field.type === 'remark' }">
+											<text class="label">{{field.label}}</text>
+											
+											<template v-if="field.type === 'text'">
+												<text class="value">{{selectedRecord[field.field] || '--'}}</text>
+											</template>
+											
+											<template v-else-if="field.type === 'date'">
+												<text class="value">{{selectedRecord[field.field] || '--'}} {{selectedRecord[field.timeField] || ''}}</text>
+											</template>
+											
+											<template v-else-if="field.type === 'price'">
+												<text class="value text-emerald-600 font-medium">¥{{selectedRecord[field.field] || '--'}}</text>
+											</template>
+											
+											<template v-else-if="field.type === 'number'">
+												<text class="value">{{selectedRecord[field.field] || '--'}}{{field.unit || ''}}</text>
+											</template>
+											
+											<template v-else-if="field.type === 'status'">
+												<view class="status-tag" :class="getStatusTagClass(selectedRecord[field.field])">
+													{{selectedRecord[field.field] || '--'}}
+												</view>
+											</template>
+											
+											<template v-else-if="field.type === 'remark'">
+												<text class="value full-width">{{selectedRecord[field.field] || '无'}}</text>
+											</template>
+										</view>
+									</template>
+								</view>
+							</view>
+						</template>
+					</view>
+				</view>
+				
+				<!-- 底部操作区 -->
+				<view class="detail-footer p-4 border-t border-gray-100">
+					<view class="flex space-x-2">
+						<button class="action-btn secondary flex-1" @tap="closeRecordDetail">关闭</button>
+						<button v-if="showPrintButton" class="action-btn primary flex-1" @tap="printRecord">打印小票</button>
+					</view>
+				</view>
+			</view>
+		</uni-popup>
+	</view>
+</template>
+
+<script setup>
+import { ref, computed, watch } from 'vue';
+import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
+import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
+
+// Props定义
+const props = defineProps({
+	// 基本配置
+	title: { type: String, default: '记录查看' },
+	records: { type: Array, default: () => [] },
+	
+	// 列表视图配置
+	columns: { type: Array, default: () => [] },
+	
+	// 卡片视图配置
+	cardNoPrefix: { type: String, default: '#' },
+	cardNoField: { type: String, default: 'orderNo' },
+	cardDateField: { type: String, default: 'date' },
+	cardTitleField: { type: String, default: 'customerName' },
+	cardStatusField: { type: String, default: 'status' },
+	cardContentField: { type: String, default: 'productName' },
+	cardQuantityField: { type: String, default: 'quantity' },
+	cardQuantityUnit: { type: String, default: '箱' },
+	cardSpecField: { type: String, default: 'spec' },
+	cardUnitPriceField: { type: String, default: 'unitPrice' },
+	cardUnitPriceUnit: { type: String, default: '/箱' },
+	cardFooterLabel: { type: String, default: '业务员' },
+	cardFooterField: { type: String, default: 'salesPerson' },
+	cardPriceField: { type: String, default: 'amount' },
+	showUnitPrice: { type: Boolean, default: true },
+	
+	// 详情弹窗配置
+	detailTitle: { type: String, default: '详情' },
+	recordNoPrefix: { type: String, default: '#' },
+	recordNoField: { type: String, default: 'orderNo' },
+	detailSections: { type: Array, default: () => [] },
+	showPrintButton: { type: Boolean, default: false },
+	
+	// 状态配置
+	statusOptions: { type: Array, default: () => [] },
+	statusMap: { type: Object, default: () => ({}) },
+	
+	// 汇总配置
+	showTotal: { type: Boolean, default: true },
+	totalLabel: { type: String, default: '总金额' },
+	totalField: { type: String, default: 'amount' },
+	showCount: { type: Boolean, default: true },
+	countLabel: { type: String, default: '总数量' },
+	countField: { type: String, default: 'quantity' },
+	countUnit: { type: String, default: '箱' }
+});
+
+// 视图状态
+const viewType = ref('list'); // 默认始终使用列表视图
+const currentPage = ref(1);
+const pageSize = ref(20);
+const searchKeyword = ref('');
+const dateRange = ref('week');
+const statusFilter = ref('all');
+// 水平滚动位置
+const scrollLeft = ref(0);
+
+// 弹窗引用
+const recordDetailPopup = ref(null);
+const selectedRecord = ref({});
+
+// 计算属性：过滤后的记录
+const filteredRecords = ref([...props.records]);
+
+// 计算属性：总页数
+const totalPages = computed(() => Math.ceil(filteredRecords.value.length / pageSize.value));
+
+// 计算属性：当前页的记录
+const currentPageRecords = computed(() => {
+	const start = (currentPage.value - 1) * pageSize.value;
+	const end = start + pageSize.value;
+	return filteredRecords.value.slice(start, end);
+});
+
+// 计算属性：总金额
+const totalValue = computed(() => {
+	return filteredRecords.value.reduce((sum, record) => {
+		const amount = typeof record[props.totalField] === 'string' 
+			? parseFloat(record[props.totalField].replace(/,/g, '')) 
+			: record[props.totalField];
+		return sum + (isNaN(amount) ? 0 : amount);
+	}, 0).toLocaleString();
+});
+
+// 计算属性：总数量
+const totalCount = computed(() => {
+	return filteredRecords.value.reduce((sum, record) => {
+		return sum + (record[props.countField] || 0);
+	}, 0);
+});
+
+// 监听props.records变化
+watch(() => props.records, (newRecords) => {
+	filteredRecords.value = [...newRecords];
+	filterRecords();
+}, { deep: true });
+
+// 处理表格水平滚动事件
+function onTableScroll(e) {
+	scrollLeft.value = e.detail.scrollLeft;
+}
+
+// 处理表格垂直滚动事件
+function onVerticalScroll(e) {
+	// 保持垂直滚动位置，为未来的优化做准备
+}
+
+// 过滤记录的方法
+function filterRecords() {
+	let filtered = [...props.records];
+	
+	// 关键词筛选
+	if (searchKeyword.value) {
+		const keyword = searchKeyword.value.toLowerCase();
+		filtered = filtered.filter(record => {
+			// 搜索所有字符串类型的字段
+			return Object.entries(record).some(([key, value]) => {
+				return typeof value === 'string' && value.toLowerCase().includes(keyword);
+			});
+		});
+	}
+	
+	// 日期范围筛选
+	if (dateRange.value !== 'all') {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		
+		if (dateRange.value === 'today') {
+			const todayStr = today.toISOString().split('T')[0];
+			filtered = filtered.filter(record => record.date === todayStr);
+		} else if (dateRange.value === 'yesterday') {
+			const yesterday = new Date(today);
+			yesterday.setDate(yesterday.getDate() - 1);
+			const yesterdayStr = yesterday.toISOString().split('T')[0];
+			filtered = filtered.filter(record => record.date === yesterdayStr);
+		} else if (dateRange.value === 'week') {
+			const weekStart = new Date(today);
+			weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+			filtered = filtered.filter(record => {
+				const recordDate = new Date(record.date);
+				return recordDate >= weekStart;
+			});
+		} else if (dateRange.value === 'month') {
+			const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+			filtered = filtered.filter(record => {
+				const recordDate = new Date(record.date);
+				return recordDate >= monthStart;
+			});
+		}
+	}
+	
+	// 状态筛选
+	if (statusFilter.value !== 'all') {
+		filtered = filtered.filter(record => {
+			// 查找匹配的状态选项
+			const statusOption = props.statusOptions.find(option => option.value === statusFilter.value);
+			if (statusOption && statusOption.field) {
+				return record[statusOption.field] === statusOption.matchValue;
+			}
+			return record.status === statusFilter.value;
+		});
+	}
+	
+	filteredRecords.value = filtered;
+	currentPage.value = 1; // 重置到第一页
+}
+
+// 设置日期范围
+function setDateRange(range) {
+	dateRange.value = range;
+	filterRecords();
+}
+
+// 设置状态筛选
+function setStatusFilter(status) {
+	statusFilter.value = status;
+	filterRecords();
+}
+
+// 显示筛选选项
+function showFilterOptions() {
+	uni.showToast({
+		title: '高级筛选功能开发中',
+		icon: 'none'
+	});
+}
+
+// 分页方法
+function prevPage() {
+	if (currentPage.value > 1) {
+		currentPage.value--;
+	}
+}
+
+function nextPage() {
+	if (currentPage.value < totalPages.value) {
+		currentPage.value++;
+	}
+}
+
+// 显示记录详情
+function showRecordDetail(record) {
+	selectedRecord.value = record;
+	recordDetailPopup.value.open();
+}
+
+// 关闭记录详情
+function closeRecordDetail() {
+	recordDetailPopup.value.close();
+}
+
+// 打印小票
+function printRecord() {
+	uni.showToast({
+		title: '打印功能开发中',
+		icon: 'none'
+	});
+}
+
+// 获取状态类名
+function getStatusClass(status) {
+	return props.statusMap[status] || 'bg-gray-500';
+}
+
+// 获取状态标签类名
+function getStatusTagClass(status) {
+	const className = props.statusMap[status] ? props.statusMap[status].replace('bg-', '') : '';
+	return className ? className : 'gray';
+}
+
+// 判断是否应该渲染某个详情部分
+function shouldRenderSection(section) {
+	if (!section.condition) return true;
+	
+	// 如果有条件字段，检查该字段值是否满足条件
+	if (section.condition.field && section.condition.value !== undefined) {
+		return selectedRecord.value[section.condition.field] === section.condition.value;
+	}
+	
+	return true;
+}
+
+// 判断是否应该渲染某个字段
+function shouldRenderField(field) {
+	if (!field.condition) return true;
+	
+	// 如果有条件字段，检查该字段值是否满足条件
+	if (field.condition.field && field.condition.value !== undefined) {
+		return selectedRecord.value[field.condition.field] === field.condition.value;
+	}
+	
+	return true;
+}
+
+// 返回上一页
+function goBack() {
+	// 使用通用的返回方法
+	uni.navigateBack({
+		delta: 1,
+		fail: function() {
+			// 如果无法返回，则退回到首页
+			uni.switchTab({
+				url: '/pages/index/index'
+			});
+		}
+	});
+}
+
+// 日期选项
+const dateOptions = [
+	{ label: '今日', value: 'today' },
+	{ label: '昨日', value: 'yesterday' },
+	{ label: '本周', value: 'week' },
+	{ label: '本月', value: 'month' }
+];
+
+// 状态下拉控制
+const showStatusDropdown = ref(false);
+
+// 切换状态下拉
+function toggleStatusDropdown() {
+	showStatusDropdown.value = !showStatusDropdown.value;
+}
+
+// 获取状态显示文本
+function getStatusLabel() {
+	if (statusFilter.value === 'all') return '全部状态';
+	const status = props.statusOptions.find(option => option.value === statusFilter.value);
+	return status ? status.label : '全部状态';
+}
+
+// 搜索框相关状态
+const isFocused = ref(false);
+const searchText = ref('');
+
+// 表格滚动相关状态
+const tableBodyRef = ref(null);
+const tableHeaderRef = ref(null);
+
+// 处理搜索框获取焦点
+function handleFocus() {
+	isFocused.value = true;
+}
+
+// 处理搜索框失去焦点
+function handleBlur() {
+	isFocused.value = false;
+}
+
+// 格式化日期，只显示月和日
+function formatDate(dateStr) {
+	if (!dateStr) return '--';
+	
+	try {
+		const date = new Date(dateStr);
+		const month = date.getMonth() + 1;
+		const day = date.getDate();
+		return `${month}月${day}日`;
+	} catch(e) {
+		return dateStr;
+	}
+}
+
+/* 表格行背景色 */
+.row-even {
+	background-color: #ffffff;
+}
+
+.row-odd {
+	background-color: #f9fafb;
+}
+
+.table-content {
+	flex: 1;
+	position: relative;
+	height: calc(100vh - 350rpx);
+	overflow: hidden;
+	background-color: #f5f5f5;
+}
+
+.table-horizontal-scroll {
+	width: 100%;
+	height: 70rpx;
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE和Edge */
+}
+
+.table-horizontal-scroll::-webkit-scrollbar {
+	display: none;
+}
+
+.table-body-scroll {
+	height: calc(100% - 70rpx);
+	width: 100%;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.table-body-scroll::-webkit-scrollbar {
+	display: none;
+}
+
+.table-body-horizontal-scroll {
+	width: 100%;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+
+.table-body-horizontal-scroll::-webkit-scrollbar {
+	display: none;
+}
+
+.table-header-container {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	background-color: #f9fafb;
+	border-bottom: 1px solid #f0f0f0;
+}
+
+.table-header, .table-row-inner {
+	display: flex;
+	min-width: 200%;
+	padding: 12rpx 24rpx;
+}
+
+.table-header {
+	background-color: #f9fafb;
+}
+
+.table-header-column {
+	padding: 6rpx 8rpx;
+	flex-shrink: 0;
+}
+
+.table-cell {
+	padding: 10rpx 8rpx;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.status-dot {
+	width: 16rpx;
+	height: 16rpx;
+	border-radius: 50%;
+	margin-left: 8rpx;
+}
+
+.grid-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(320rpx, 1fr));
+	gap: 20rpx;
+}
+
+.record-card {
+	background-color: #ffffff;
+	border-radius: 16rpx;
+	padding: 24rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.card-divider {
+	height: 1px;
+	background-color: #f5f5f5;
+}
+
+.empty-tip {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 80rpx 0;
+}
+
+.pagination {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 10;
+	background-color: #ffffff;
+	box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.pagination-inner {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 24rpx 32rpx;
+}
+
+.page-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 72rpx;
+	padding: 0 24rpx;
+	background-color: #f9fafb;
+	border: 1px solid #e5e7eb;
+	border-radius: 8rpx;
+	font-size: 26rpx;
+	color: #374151;
+}
+
+.page-btn.disabled {
+	opacity: 0.5;
+	background-color: #f3f4f6;
+	color: #9ca3af;
+}
+
+.page-btn-text {
+	margin: 0 6rpx;
+}
+
+.page-nums {
+	display: flex;
+	align-items: center;
+	font-size: 26rpx;
+	color: #6b7280;
+}
+
+.page-current {
+	color: #4f46e5;
+	font-weight: bold;
+	margin: 0 6rpx;
+	font-size: 32rpx;
+}
+
+.record-detail-popup {
+	border-radius: 32rpx 32rpx 0 0;
+	max-height: 80vh;
+	overflow-y: auto;
+}
+
+.drag-handle {
+	width: 60rpx;
+	height: 6rpx;
+	background-color: #e5e7eb;
+	border-radius: 3rpx;
+	margin: 16rpx auto;
+}
+
+.detail-section {
+	margin-bottom: 32rpx;
+}
+
+.section-title {
+	font-size: 28rpx;
+	font-weight: 600;
+	color: #374151;
+	margin-bottom: 16rpx;
+	padding-bottom: 8rpx;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.section-content {
+	margin-top: 16rpx;
+}
+
+.detail-item {
+	display: flex;
+	justify-content: space-between;
+	padding: 8rpx 0;
+	align-items: center;
+}
+
+.remark-item {
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.label {
+	font-size: 24rpx;
+	color: #6b7280;
+	margin-right: 16rpx;
+}
+
+.value {
+	font-size: 24rpx;
+	color: #1f2937;
+	text-align: right;
+}
+
+.full-width {
+	width: 100%;
+	margin-top: 8rpx;
+	text-align: left;
+	line-height: 1.5;
+	white-space: pre-wrap;
+}
+
+.detail-footer {
+	padding: 24rpx;
+	margin-top: 16rpx;
+}
+
+.action-btn {
+	border-radius: 8rpx;
+	padding: 16rpx;
+	font-size: 28rpx;
+	text-align: center;
+}
+
+.action-btn.primary {
+	background-color: #4f46e5;
+	color: #ffffff;
+}
+
+.action-btn.secondary {
+	background-color: #f3f4f6;
+	color: #4b5563;
+}
+
+.bg-white {
+	background-color: #ffffff;
+}
+
+.bg-gray-50 {
+	background-color: #f9fafb;
+}
+
+.bg-gray-100 {
+	background-color: #f3f4f6;
+}
+
+.text-lg {
+	font-size: 32rpx;
+}
+
+.text-sm {
+	font-size: 26rpx;
+}
+
+.text-xs {
+	font-size: 22rpx;
+}
+
+.font-bold {
+	font-weight: 600;
+}
+
+.font-medium {
+	font-weight: 500;
+}
+
+.text-gray-400 {
+	color: #9ca3af;
+}
+
+.text-gray-500 {
+	color: #6b7280;
+}
+
+.text-emerald-600 {
+	color: #059669;
+}
+
+.border-b {
+	border-bottom-width: 1px;
+}
+
+.border-gray-100 {
+	border-color: #f3f4f6;
+}
+
+.flex {
+	display: flex;
+}
+
+.flex-1 {
+	flex: 1;
+}
+
+.items-center {
+	align-items: center;
+}
+
+.justify-between {
+	justify-content: space-between;
+}
+
+.justify-end {
+	justify-content: flex-end;
+}
+
+.p-4 {
+	padding: 32rpx;
+}
+
+.px-4 {
+	padding-left: 32rpx;
+	padding-right: 32rpx;
+}
+
+.py-2 {
+	padding-top: 16rpx;
+	padding-bottom: 16rpx;
+}
+
+.py-3 {
+	padding-top: 24rpx;
+	padding-bottom: 24rpx;
+}
+
+.mt-2 {
+	margin-top: 16rpx;
+}
+
+.my-2 {
+	margin-top: 16rpx;
+	margin-bottom: 16rpx;
+}
+
+.mr-1 {
+	margin-right: 8rpx;
+}
+
+.mr-2 {
+	margin-right: 16rpx;
+}
+
+.ml-2 {
+	margin-left: 16rpx;
+}
+
+.mb-4 {
+	margin-bottom: 32rpx;
+}
+
+.text-ellipsis {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 180rpx;
+}
+
+.w-1-5 {
+	width: 10%;
+	flex-shrink: 0;
+}
+
+.header-container {
+	background: linear-gradient(135deg, #0D9488, #059669);
+	padding: 20rpx;
+	position: sticky;
+	top: 0;
+	z-index: 100;
+}
+
+.header-inner {
+	display: flex;
+	align-items: center;
+	height: 72rpx;
+	position: relative;
+}
+
+.back-button {
+	width: 60rpx;
+	height: 60rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(255, 255, 255, 0.15);
+	border-radius: 16rpx;
+	margin-right: 16rpx;
+}
+
+.search-container {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	background-color: rgba(255, 255, 255, 0.15);
+	border-radius: 16rpx;
+	padding: 0 24rpx;
+	height: 60rpx;
+}
+
+.search-field {
+	flex: 1;
+	height: 60rpx;
+	padding-left: 16rpx;
+	font-size: 28rpx;
+	color: #ffffff;
+}
+
+.filter-container {
+	width: 60rpx;
+	height: 60rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(255, 255, 255, 0.15);
+	border-radius: 16rpx;
+	margin-left: 16rpx;
+}
+
+.filter-control-container {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16rpx 20rpx;
+	background-color: #ffffff;
+	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.05);
+	position: sticky;
+	top: 112rpx;
+	z-index: 99;
+}
+
+.segment-control {
+	display: flex;
+	background-color: #f3f4f6;
+	border-radius: 16rpx;
+	overflow: hidden;
+	flex: 1;
+	margin-right: 20rpx;
+}
+
+.segment-item {
+	flex: 1;
+	padding: 14rpx 0;
+	text-align: center;
+	font-size: 24rpx;
+	color: #6b7280;
+	transition: all 0.3s;
+}
+
+.segment-active {
+	background-color: #ffffff;
+	color: #0d9488;
+	font-weight: 500;
+	border-radius: 12rpx;
+	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+}
+
+.status-dropdown {
+	display: flex;
+	align-items: center;
+	background-color: #f3f4f6;
+	border-radius: 16rpx;
+	padding: 14rpx 20rpx;
+	font-size: 24rpx;
+	color: #4b5563;
+}
+
+.status-dropdown-menu {
+	position: absolute;
+	top: 176rpx;
+	right: 20rpx;
+	width: 220rpx;
+	background-color: #ffffff;
+	border-radius: 16rpx;
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+	z-index: 100;
+	overflow: hidden;
+}
+
+.status-option {
+	padding: 20rpx;
+	font-size: 26rpx;
+	color: #4b5563;
+	border-bottom: 1rpx solid #f3f4f6;
+}
+
+.status-option-active {
+	color: #0d9488;
+	font-weight: 500;
+	background-color: #f0fdfa;
+}
+
+.data-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16rpx 20rpx;
+	background-color: #f9fafb;
+	border-bottom: 1rpx solid #f3f4f6;
+}
+
+.summary-item {
+	display: flex;
+	align-items: center;
+}
+
+.summary-label {
+	font-size: 24rpx;
+	color: #6b7280;
+	margin-right: 8rpx;
+}
+
+.summary-value {
+	font-size: 24rpx;
+	color: #1f2937;
+	font-weight: 500;
+}
+</style> 

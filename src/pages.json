@@ -42,6 +42,41 @@
 				"navigationBarTextStyle": "white",
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "pages/customer/customer",
+			"style": {
+				"navigationBarTitleText": "客户管理",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/records/sales-records",
+			"style": {
+				"navigationBarTitleText": "销售记录",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/records/inventory-records",
+			"style": {
+				"navigationBarTitleText": "库存记录",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/records/operation-records",
+			"style": {
+				"navigationBarTitleText": "操作记录",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/profile/userInfo",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": false
+			}
 		}
 	],
 	"globalStyle": {
@@ -51,38 +86,41 @@
 		"backgroundColor": "#F5F5F5"
 	},
 	"tabBar": {
+		"custom": false,
 		"color": "#7A7E83",
 		"selectedColor": "#0D9488",
-		"backgroundColor": "#FFFFFF",
 		"borderStyle": "black",
+		"backgroundColor": "#ffffff",
 		"list": [
 			{
 				"pagePath": "pages/price/price",
 				"text": "今日报价",
-				"iconPath": "static/images/tabbar/price.png",
-				"selectedIconPath": "static/images/tabbar/price-active.png",
-				"iconClass": "fas fa-tag"
+				"iconPath": "static/icons/price.png",
+				"selectedIconPath": "static/icons/price-active.png"
 			},
 			{
 				"pagePath": "pages/inventory/inventory",
 				"text": "库存管理",
-				"iconPath": "static/images/tabbar/inventory.png",
-				"selectedIconPath": "static/images/tabbar/inventory-active.png",
-				"iconClass": "fas fa-warehouse"
+				"iconPath": "static/icons/inventory.png",
+				"selectedIconPath": "static/icons/inventory-active.png"
+			},
+			{
+				"pagePath": "pages/customer/customer",
+				"text": "客户管理",
+				"iconPath": "static/icons/customer.png",
+				"selectedIconPath": "static/icons/customer-active.png"
 			},
 			{
 				"pagePath": "pages/sales/sales",
 				"text": "水果销售",
-				"iconPath": "static/images/tabbar/sales.png",
-				"selectedIconPath": "static/images/tabbar/sales-active.png",
-				"iconClass": "fas fa-shopping-cart"
+				"iconPath": "static/icons/sales.png",
+				"selectedIconPath": "static/icons/sales-active.png"
 			},
 			{
 				"pagePath": "pages/profile/profile",
 				"text": "个人中心",
-				"iconPath": "static/images/tabbar/profile.png",
-				"selectedIconPath": "static/images/tabbar/profile-active.png",
-				"iconClass": "fas fa-user"
+				"iconPath": "static/icons/profile.png",
+				"selectedIconPath": "static/icons/profile-active.png"
 			}
 		]
 	},

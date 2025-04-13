@@ -1,0 +1,19 @@
+<!-- 状态下拉菜单 -->
+<view class="status-dropdown-menu" v-if="showStatusDropdown" @tap.stop>
+	<view
+		class="status-option"
+		:class="{'status-option-active': statusFilter === 'all'}"
+		@tap="setStatusFilter('all')"
+	>
+		<text>{{getStatusLabel()}}</text>
+	</view>
+	<view
+		v-for="(option, index) in props.statusOptions"
+		:key="index"
+		class="status-option"
+		:class="{'status-option-active': statusFilter === option.value}"
+		@tap="setStatusFilter(option.value)"
+	>
+		<text>{{option.label}}</text>
+	</view>
+</view>
