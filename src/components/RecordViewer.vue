@@ -1630,6 +1630,7 @@ function handleSort(field) {
 	width: 64rpx;
 	height: 64rpx;
 	border-radius: 50%;
+	box-sizing: border-box;
 	background-color: #f3f4f6;
 	display: flex;
 	align-items: center;
