@@ -102,6 +102,7 @@
 								:max="200"
 								:value="minPrice"
 								@change="onMinPriceChange"
+								@changing="onMinPriceChange"
 								activeColor="#0D9488"
 								class="price-adjust-slider"
 							/>
@@ -117,6 +118,7 @@
 								:max="200"
 								:value="maxPrice"
 								@change="onMaxPriceChange"
+								@changing="onMaxPriceChange"
 								activeColor="#0D9488"
 								class="price-adjust-slider"
 							/>
@@ -212,7 +214,8 @@ function onMinPriceChange(e) {
 function onMaxPriceChange(e) {
 	maxPrice.value = e.detail.value;
 	if (maxPrice.value < minPrice.value) {
-		minPrice.value = maxPrice.value;
+		// 当最高价格小于最低价格时，保持最高价格不低于最低价格
+		maxPrice.value = minPrice.value;
 	}
 }
 
