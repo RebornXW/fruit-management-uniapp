@@ -1,0 +1,45 @@
+# 用户偏好
+- 用户希望后续回答都使用中文。
+- 用户希望AI直接修改代码而不是提供修改指导。
+- 用户希望操作记录简洁明了（标题中不要有备注），并希望简化编辑记录中的图片变更显示方式，无需展示修改前后的图片，只记录图片是否变更，使用'是'或'否'而非详细说明。
+- User prefers consistent code style and logic throughout the application, especially for UI interaction patterns like dropdown controls.
+
+# 功能需求
+- 用户希望价格调整滑块实时更新显示值，且当拖动最低价格超过最高价格时，最高价应自动跟随最低价变化。
+- 用户希望今日报价页面只展示库存管理中存在的水果，并在库存增删时自动同步更新报价页面。
+- User wants to improve RecordViewer component by making the getStatusLabel function customizable by page.
+- User wants to rename '财务报表' (Financial Report) to '操作记录' (Operation Records) in the personal center with an appropriate icon.
+- 用户希望开发一个操作记录页面，用于跟踪库存管理操作（添加/编辑/删除水果），包含详细的前后信息，包括日期、时间、员工、操作类型、品牌、水果品类、水果品种、规格、包装、重量、价格范围和图片。
+- 用户希望将出入库操作和水果信息编辑（如名称、规格、参考价的修改）分开记录，建议创建单独的操作记录表和页面。
+- 用户希望库存管理页面的新增、删除、编辑操作自动记录到操作记录中。
+- 用户希望库存管理页面的出入库操作自动记录到个人中心的操作记录中。
+- User is interested in the location of inventory records development in the codebase.
+- 用户希望库存管理页面中水果规格字段为必填项。
+- 用户希望点击其他位置时，下拉菜单（如编辑/删除选项）自动关闭。
+- 用户希望优化库存管理中的入库和出库操作弹框。
+- 用户希望库存管理页面的出入库操作弹框中操作数量数字垂直居中，确保确认按钮可见，并修正框框歪斜的问题。
+- 用户希望今日报价页面的分类标签按水果品类来组织。
+- 用户希望今日报价页面的分类标签完全按照库存中水果品类的实际顺序展示，不要自定义排序。
+- User prefers today's price page tags to be displayed without icons and wants tags to accurately reflect fruit categories from the data.
+- User wants to use fruitCategories as the data source for fruit categories instead of fruitData.value.
+- User wants to remove default fruitData.value data as it's unnecessary and can cause logical errors, and plans to integrate with a backend in the future.
+- 用户希望水果销售页面使用直角设计而非圆角，并且销售页面应从库存水果列表获取真实数据而非使用假数据。
+
+# 页面展示优化
+- 用户希望界面设计美观，特别是数据统计部分的排版需要更加美观，注重标题和数字的位置、比例、颜色等细节，以达到更好的视觉效果。
+- 用户希望个人中心-库存记录功能中操作类型字体大小与其他一致，且库存变更详情不展示单价和价值变更。
+- 用户希望库存记录页面只展示出库、入库、销售三种操作类型，库存变更详情中显示品牌、水果品类、水果品种、规格、变更数量，标题上方保留总计和总变更量但删除总价值变更，并移除库存变更记录右侧的“#--”以及重复的小字体备注。
+- 用户希望销售数据统计中的销售总额和销售量数字展示在对应标题的正下方，以使界面更加规整美观，并且字体要加大，框大小一致且协调，卡片尺寸更大一些。
+- 用户希望下拉框位置稍低一些，并且在选择选项后自动关闭下拉框。
+- 用户希望操作类型（入库、出库）的字体大小保持一致协调。
+- 用户希望库存管理页面禁止整张页面上下滚动，右侧不允许出现滚轮。
+- 用户希望库存管理页面只允许库存水果列表部分可以上下滑动，其他地方均禁止滑动，并且右侧禁止显示滚轮。
+- 用户希望库存记录页面删除商品标题，在商品标题位置加上品牌和水果品种，并且符合库存修改记录的逻辑。
+- 用户希望销售记录页面删除商品标题，新增品牌和水果品种两个标题；操作记录页面需要增加品牌标题。
+- 用户希望高级筛选弹框右上角的关闭按钮背景是圆形而非椭圆形。
+- 用户希望界面中的横向滚动元素不显示滚动条。
+
+# 筛选功能增强
+- 用户希望销售记录的全部状态下拉显示全部状态、已付款、未付款、部分付款，库存记录的全部操作下拉显示全部操作、入库、出库。
+- 用户希望库存管理页面的筛选功能只保留水果品类和水果品种两个筛选条件，删除品牌筛选条件。
+- 用户希望库存管理页面的筛选功能支持'全部'选项以展示所有水果，并且重置功能需要相应调整。

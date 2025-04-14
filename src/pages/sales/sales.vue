@@ -10,7 +10,7 @@
 				</view>
 			</view>
 		</view>
-		
+
 		<!-- 滚动内容区域 -->
 		<scroll-view scroll-y class="sales-content-scroll">
 			<!-- 销售统计卡片 -->
@@ -40,13 +40,13 @@
 					</view>
 				</view>
 			</view>
-			
+
 			<!-- 快速销售区域 -->
 			<view class="sales-quick-card">
 				<view class="sales-card-header">
 					<text class="sales-card-title">快速销售</text>
 				</view>
-				
+
 				<!-- 搜索框 -->
 				<view class="sales-search-container">
 					<input v-model="searchText" type="text" placeholder="搜索水果名称..." class="sales-search-input" />
@@ -54,41 +54,47 @@
 						<uni-icons type="search" size="18" color="#9CA3AF"></uni-icons>
 					</view>
 				</view>
-				
+
 				<!-- 水果列表 -->
-				<view class="sales-fruits-list">
-					<view 
-						v-for="fruit in filteredFruits" 
-						:key="fruit.id"
-						class="sales-fruit-item"
-						@tap="showSaleModal(fruit)"
-					>
-						<view class="sales-fruit-image-container">
-							<image :src="fruit.image" :alt="fruit.name" class="sales-fruit-image"></image>
-						</view>
-						<view class="sales-fruit-info">
-							<view class="sales-fruit-content">
-								<view class="sales-fruit-details">
-									<text class="sales-fruit-name">{{fruit.name}}</text>
-									<text class="sales-fruit-spec">{{fruit.spec}}</text>
-								</view>
-								<view class="sales-fruit-price-info">
-									<text class="sales-fruit-price">¥{{fruit.minPrice}} - ¥{{fruit.maxPrice}}</text>
-									<text class="sales-fruit-stock">库存: {{fruit.stock}}箱</text>
+				<scroll-view scroll-y class="sales-fruits-scroll">
+					<view class="sales-fruits-list">
+						<view
+							v-for="fruit in filteredFruits"
+							:key="fruit.id"
+							class="sales-fruit-item"
+							@tap="showSaleModal(fruit)"
+						>
+							<view class="sales-fruit-image-container">
+								<image :src="fruit.image" :alt="fruit.name" class="sales-fruit-image"></image>
+							</view>
+							<view class="sales-fruit-info">
+								<view class="sales-fruit-content">
+									<view class="sales-fruit-details">
+										<text class="sales-fruit-name">{{fruit.name}}</text>
+										<text class="sales-fruit-spec">{{fruit.spec}}</text>
+									</view>
+									<view class="sales-fruit-price-info">
+										<text class="sales-fruit-price">¥{{fruit.minPrice}} - ¥{{fruit.maxPrice}}</text>
+										<text class="sales-fruit-stock">库存: {{fruit.stock}}箱</text>
+									</view>
 								</view>
 							</view>
 						</view>
+						<view v-if="filteredFruits.length === 0" class="sales-empty-state">
+							<text class="sales-empty-text">暂无水果数据</text>
+							<text class="sales-empty-subtext">请先在库存管理中添加水果</text>
+						</view>
 					</view>
-				</view>
+				</scroll-view>
 			</view>
-			
+
 			<!-- 最近销售记录 -->
 			<view class="sales-history-card">
 				<text class="sales-card-title">最近销售记录</text>
-				
+
 				<view class="sales-history-list">
-					<view 
-						v-for="(record, index) in salesRecords" 
+					<view
+						v-for="(record, index) in salesRecords"
 						:key="index"
 						:class="['sales-history-item', index < salesRecords.length - 1 ? 'sales-history-border' : '']"
 					>
@@ -113,10 +119,14 @@
 							</view>
 						</view>
 					</view>
+					<view v-if="salesRecords.length === 0" class="sales-empty-state">
+						<text class="sales-empty-text">暂无销售记录</text>
+						<text class="sales-empty-subtext">完成销售后将在此显示</text>
+					</view>
 				</view>
 			</view>
 		</scroll-view>
-		
+
 		<!-- 销售确认弹窗 -->
 		<uni-popup ref="salePopup" type="center">
 			<view class="sales-popup-container">
@@ -129,7 +139,7 @@
 				<view class="sales-popup-image-container">
 					<image :src="currentFruit.image" :alt="currentFruit.name" class="sales-popup-image"></image>
 				</view>
-				
+
 				<!-- 客户选择 -->
 				<view class="sales-popup-form-item">
 					<text class="sales-popup-label">选择客户</text>
@@ -138,16 +148,16 @@
 						<uni-icons type="right" size="16" color="#6B7280"></uni-icons>
 					</view>
 				</view>
-				
+
 				<view class="sales-popup-form-item">
 					<text class="sales-popup-label">销售价格（元/箱）</text>
 					<view class="sales-popup-price-input">
 						<text class="sales-popup-currency">¥</text>
-						<input 
-							type="digit" 
-							v-model="salePrice" 
-							class="sales-popup-input" 
-							step="0.1" 
+						<input
+							type="digit"
+							v-model="salePrice"
+							class="sales-popup-input"
+							step="0.1"
 							min="0"
 						/>
 					</view>
@@ -155,17 +165,17 @@
 						参考价格: ¥{{currentFruit.minPrice}} - ¥{{currentFruit.maxPrice}}/箱
 					</view>
 				</view>
-				
+
 				<view class="sales-popup-form-item">
 					<text class="sales-popup-label">销售数量</text>
 					<view class="sales-popup-quantity-wrapper">
 						<button class="sales-popup-quantity-btn" @tap="decrementQuantity">
 							<text class="iconfont icon-minus"></text>
 						</button>
-						<input 
-							type="number" 
-							v-model="saleQuantity" 
-							class="sales-popup-quantity-input" 
+						<input
+							type="number"
+							v-model="saleQuantity"
+							class="sales-popup-quantity-input"
 							@input="validateQuantity"
 						/>
 						<button class="sales-popup-quantity-btn" @tap="incrementQuantity">
@@ -174,14 +184,14 @@
 					</view>
 					<text class="sales-popup-stock">库存: {{currentFruit.stock}}箱</text>
 				</view>
-				
+
 				<view class="sales-popup-total">
 					<view class="sales-popup-total-content">
 						<text class="sales-popup-total-label">销售总价:</text>
 						<text class="sales-popup-total-value">¥{{totalPrice}}</text>
 					</view>
 				</view>
-				
+
 				<view class="sales-popup-actions">
 					<button class="sales-popup-confirm-btn" @tap="confirmSale">
 						确认销售
@@ -189,7 +199,7 @@
 				</view>
 			</view>
 		</uni-popup>
-		
+
 		<!-- 客户选择弹窗 -->
 		<uni-popup ref="customerSelectorPopup" type="bottom">
 			<view class="customer-selector-container">
@@ -199,20 +209,20 @@
 						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
 					</text>
 				</view>
-				
+
 				<view class="customer-selector-search">
 					<uni-icons type="search" size="18" color="#9CA3AF"></uni-icons>
-					<input 
-						v-model="customerSearchText" 
-						type="text" 
-						placeholder="搜索客户名称..." 
+					<input
+						v-model="customerSearchText"
+						type="text"
+						placeholder="搜索客户名称..."
 						class="customer-search-input"
 					/>
 				</view>
-				
+
 				<scroll-view scroll-y class="customer-selector-list">
-					<view 
-						v-for="customer in filteredCustomersList" 
+					<view
+						v-for="customer in filteredCustomersList"
 						:key="customer.id"
 						class="customer-selector-item"
 						@tap="selectCustomer(customer)"
@@ -223,7 +233,7 @@
 				</scroll-view>
 			</view>
 		</uni-popup>
-		
+
 		<!-- 统计详情弹窗 -->
 		<uni-popup ref="statisticsPopup" type="center">
 			<view class="sales-stats-popup">
@@ -233,7 +243,7 @@
 						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
 					</text>
 				</view>
-				
+
 				<view class="sales-stats-section">
 					<text class="sales-stats-section-title">今日销售趋势</text>
 					<!-- 此处在实际应用中应该使用图表组件 -->
@@ -241,12 +251,12 @@
 						<text class="sales-chart-text">图表数据展示区域</text>
 					</view>
 				</view>
-				
+
 				<view class="sales-stats-section">
 					<text class="sales-stats-section-title">销售排行榜</text>
 					<view class="sales-ranking-list">
-						<view 
-							v-for="(item, index) in salesRanking" 
+						<view
+							v-for="(item, index) in salesRanking"
 							:key="index"
 							class="sales-ranking-item"
 						>
@@ -256,13 +266,13 @@
 						</view>
 					</view>
 				</view>
-				
+
 				<button class="sales-popup-close-btn" @tap="closeStatisticsPopup">
 					关闭
 				</button>
 			</view>
 		</uni-popup>
-		
+
 		<!-- 底部TabBar -->
 		<custom-tab-bar></custom-tab-bar>
 	</view>
@@ -282,8 +292,37 @@ const salePrice = ref(0);
 const saleQuantity = ref(1);
 const salesRecords = ref([]);
 const currentDate = ref('');
-const totalSalesAmount = ref('2,586');
-const totalSalesQuantity = ref(56);
+// 销售统计数据
+const totalSalesAmount = computed(() => {
+	// 计算今日销售总额
+	const today = new Date();
+	const todayStr = `${today.getHours().toString().padStart(2, '0')}:${today.getMinutes().toString().padStart(2, '0')}`;
+
+	// 过滤出今日销售记录（简化处理，实际应用中应该比较日期）
+	const todaySales = salesRecords.value;
+
+	// 计算总额
+	const total = todaySales.reduce((sum, record) => {
+		return sum + parseFloat(record.total);
+	}, 0);
+
+	// 格式化为带千位分隔符的字符串
+	return total.toLocaleString('zh-CN');
+});
+
+const totalSalesQuantity = computed(() => {
+	// 计算今日销售总数量
+	const today = new Date();
+	const todayStr = `${today.getHours().toString().padStart(2, '0')}:${today.getMinutes().toString().padStart(2, '0')}`;
+
+	// 过滤出今日销售记录
+	const todaySales = salesRecords.value;
+
+	// 计算总数量
+	return todaySales.reduce((sum, record) => {
+		return sum + parseInt(record.quantity);
+	}, 0);
+});
 
 // 客户相关数据
 const customersList = ref([]);
@@ -293,10 +332,10 @@ const customerSearchText = ref('');
 // 过滤后的客户列表
 const filteredCustomersList = computed(() => {
 	if (!customerSearchText.value) return customersList.value;
-	
+
 	const query = customerSearchText.value.toLowerCase();
 	return customersList.value.filter(customer => {
-		return customer.name.toLowerCase().includes(query) || 
+		return customer.name.toLowerCase().includes(query) ||
 			customer.phone.includes(query);
 	});
 });
@@ -313,9 +352,9 @@ const salesRanking = ref([
 // 过滤后的水果数据
 const filteredFruits = computed(() => {
 	if (!searchText.value) return fruitData.value;
-	
-	return fruitData.value.filter(fruit => 
-		fruit.name.includes(searchText.value) || 
+
+	return fruitData.value.filter(fruit =>
+		fruit.name.includes(searchText.value) ||
 		fruit.spec.includes(searchText.value)
 	);
 });
@@ -376,13 +415,13 @@ function incrementQuantity() {
 function validateQuantity() {
 	// 转换为数字
 	let quantity = parseInt(saleQuantity.value);
-	
+
 	// 非数字或负数处理
 	if (isNaN(quantity) || quantity < 1) {
 		saleQuantity.value = 1;
 		return;
 	}
-	
+
 	// 超过库存处理
 	if (quantity > currentFruit.value.stock) {
 		uni.showToast({
@@ -418,7 +457,7 @@ function confirmSale() {
 		});
 		return;
 	}
-	
+
 	if (salePrice.value <= 0) {
 		uni.showToast({
 			title: '请输入有效价格',
@@ -426,7 +465,7 @@ function confirmSale() {
 		});
 		return;
 	}
-	
+
 	if (!selectedCustomer.value.id) {
 		uni.showToast({
 			title: '请选择客户',
@@ -434,13 +473,13 @@ function confirmSale() {
 		});
 		return;
 	}
-	
+
 	// 更新库存
 	const index = fruitData.value.findIndex(f => f.id === currentFruit.value.id);
 	if (index !== -1) {
 		fruitData.value[index].stock -= saleQuantity.value;
 	}
-	
+
 	// 添加销售记录
 	const now = new Date();
 	const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
@@ -456,23 +495,31 @@ function confirmSale() {
 			name: selectedCustomer.value.name
 		}
 	};
-	
+
 	salesRecords.value.unshift(newRecord);
-	
+
 	// 限制记录数量
 	if (salesRecords.value.length > 10) {
 		salesRecords.value = salesRecords.value.slice(0, 10);
 	}
-	
+
+	// 保存销售记录到本地存储
+	try {
+		const salesRecordsKey = 'salesRecords';
+		uni.setStorageSync(salesRecordsKey, JSON.stringify(salesRecords.value));
+	} catch (e) {
+		console.error('保存销售记录失败', e);
+	}
+
 	// 重置选择的客户
 	selectedCustomer.value = {};
-	
+
 	// 在实际应用中，这里应该调用API保存销售记录
 	uni.showToast({
 		title: '销售成功',
 		icon: 'success'
 	});
-	
+
 	closePopup();
 }
 
@@ -481,37 +528,70 @@ onMounted(() => {
 	// 设置当前日期
 	const now = new Date();
 	currentDate.value = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
-	
+
 	// 加载水果数据
 	loadFruitData();
-	
+
 	// 加载销售记录
 	loadSalesRecords();
-	
+
 	// 加载客户数据
 	loadCustomersData();
 });
 
 // 加载水果数据
 function loadFruitData() {
-	// 模拟从服务器获取数据
-	// 实际应用中，这里应该是API调用
-	fruitData.value = [
-		{ id: 1, name: "明牌阿克苏苹果", spec: "85#光果13斤箱装", stock: 35, minPrice: 50, maxPrice: 60, image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300" },
-		{ id: 2, name: "红富士苹果", spec: "80#12斤纸箱装", stock: 42, minPrice: 45, maxPrice: 55, image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab12?q=80&w=300" },
-		{ id: 3, name: "砀山梨", spec: "优级10斤装", stock: 28, minPrice: 30, maxPrice: 35, image: "https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300" },
-		{ id: 4, name: "新鲜橘子", spec: "5斤精品袋装", stock: 15, minPrice: 25, maxPrice: 30, image: "https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300" }
-	];
+	// 从库存管理中获取数据
+	try {
+		const inventoryKey = 'inventoryData';
+		const storedInventory = uni.getStorageSync(inventoryKey);
+
+		if (storedInventory) {
+			// 如果有库存数据，使用库存数据
+			const inventoryData = JSON.parse(storedInventory);
+
+			// 将库存数据转换为销售数据格式
+			fruitData.value = inventoryData.map(item => ({
+				id: item.id,
+				name: `${item.brand} ${item.variety}`,
+				spec: item.spec,
+				stock: item.stock,
+				minPrice: item.minPrice,
+				maxPrice: item.maxPrice,
+				image: item.image,
+				brand: item.brand,
+				category: item.category,
+				variety: item.variety
+			}));
+
+			console.log('从库存数据加载了销售数据');
+			return;
+		}
+	} catch (e) {
+		console.error('加载库存数据失败', e);
+	}
+
+	// 如果没有库存数据，显示空数组
+	fruitData.value = [];
+	console.log('没有找到库存数据，显示空列表');
 }
 
 // 加载销售记录
 function loadSalesRecords() {
-	// 模拟销售记录数据
-	salesRecords.value = [
-		{ name: "明牌阿克苏苹果", quantity: 2, price: "55.00", total: "110.00", time: "10:25", image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300" },
-		{ name: "红富士苹果", quantity: 5, price: "48.00", total: "240.00", time: "09:15", image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab12?q=80&w=300" },
-		{ name: "砀山梨", quantity: 3, price: "32.00", total: "96.00", time: "08:47", image: "https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300" }
-	];
+	// 尝试从本地存储加载销售记录
+	try {
+		const salesRecordsKey = 'salesRecords';
+		const storedRecords = uni.getStorageSync(salesRecordsKey);
+		if (storedRecords) {
+			salesRecords.value = JSON.parse(storedRecords);
+			return;
+		}
+	} catch (e) {
+		console.error('加载销售记录失败', e);
+	}
+
+	// 如果没有存储的销售记录，初始化为空数组
+	salesRecords.value = [];
 }
 
 // 加载客户数据
@@ -542,8 +622,8 @@ function loadCustomersData() {
 .sales-header {
 	background: linear-gradient(135deg, #0D9488, #0F766E);
 	padding: 40rpx 30rpx;
-	border-bottom-left-radius: 20rpx;
-	border-bottom-right-radius: 20rpx;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
 	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
@@ -724,12 +804,39 @@ function loadCustomersData() {
 }
 
 /* 水果列表样式 */
+.sales-fruits-scroll {
+	max-height: 600rpx; /* 默认显示4个水果项的高度 */
+	width: 100%;
+	box-sizing: border-box;
+}
+
 .sales-fruits-list {
 	display: flex;
 	flex-direction: column;
 	gap: 20rpx;
 	width: 100%;
 	box-sizing: border-box;
+}
+
+/* 空状态样式 */
+.sales-empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 60rpx 0;
+	width: 100%;
+}
+
+.sales-empty-text {
+	font-size: 32rpx;
+	color: #6B7280;
+	margin-bottom: 12rpx;
+}
+
+.sales-empty-subtext {
+	font-size: 24rpx;
+	color: #9CA3AF;
 }
 
 .sales-fruit-item {
@@ -1280,4 +1387,4 @@ function loadCustomersData() {
 	font-size: 24rpx;
 	color: #6B7280;
 }
-</style> 
+</style>

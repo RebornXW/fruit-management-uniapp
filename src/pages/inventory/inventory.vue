@@ -603,7 +603,7 @@ function confirmEditFruit() {
 			name: fruitName,
 			spec: editForm.value.spec || '', // 只保留规格型号，移除包装类型
 			stock: parseInt(editForm.value.stock) || 0,
-			image: editForm.value.image || 'https://via.placeholder.com/300',
+			image: editForm.value.image || '/static/default-fruit.png', // 使用本地默认图片
 			brand: editForm.value.brand,
 			category: editForm.value.category,
 			variety: editForm.value.variety,
