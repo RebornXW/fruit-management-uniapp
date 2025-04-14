@@ -546,6 +546,9 @@ function confirmOperation() {
 			operator
 		);
 
+		// 触发页面刷新事件，通知其他页面更新数据
+		uni.$emit('pageRefresh');
+
 		// 在实际应用中，这里应该调用API保存数据和操作记录
 		uni.showToast({
 			title: operationType.value === 'in' ? '入库成功' : '出库成功',
@@ -691,6 +694,9 @@ function confirmEditFruit() {
 
 	// 保存库存数据到本地存储
 	saveInventoryData();
+
+	// 触发页面刷新事件，通知其他页面更新数据
+	uni.$emit('pageRefresh');
 
 	// 在实际应用中，这里应该调用API保存数据
 	uni.showToast({
@@ -1014,6 +1020,9 @@ function confirmDeleteFruit() {
 
 		// 同步删除操作到今日报价页面
 		syncDeleteToPricePage(currentFruit.value.id);
+
+		// 触发页面刷新事件，通知其他页面更新数据
+		uni.$emit('pageRefresh');
 
 		// 在实际应用中，这里应该调用API删除数据
 		uni.showToast({

@@ -56,7 +56,7 @@
 				</view>
 
 				<!-- 水果列表 -->
-				<scroll-view scroll-y class="sales-fruits-scroll">
+				<scroll-view scroll-x class="sales-fruits-scroll" :show-scrollbar="false">
 					<view class="sales-fruits-list">
 						<view
 							v-for="fruit in filteredFruits"
@@ -503,6 +503,31 @@ function confirmSale() {
 	const index = fruitData.value.findIndex(f => f.id === currentFruit.value.id);
 	if (index !== -1) {
 		fruitData.value[index].stock -= saleQuantity.value;
+
+		// 同步更新库存管理中的数据
+		try {
+			const inventoryKey = 'inventoryData';
+			const storedInventory = uni.getStorageSync(inventoryKey);
+
+			if (storedInventory) {
+				const inventoryData = JSON.parse(storedInventory);
+				const inventoryIndex = inventoryData.findIndex(f => f.id === currentFruit.value.id);
+
+				if (inventoryIndex !== -1) {
+					// 更新库存管理中的库存
+					inventoryData[inventoryIndex].stock -= saleQuantity.value;
+
+					// 保存更新后的库存数据
+					uni.setStorageSync(inventoryKey, JSON.stringify(inventoryData));
+					console.log('已同步更新库存管理中的库存');
+
+					// 触发页面刷新事件，通知其他页面更新数据
+					uni.$emit('pageRefresh');
+				}
+			}
+		} catch (e) {
+			console.error('更新库存管理中的库存失败', e);
+		}
 	}
 
 	// 添加销售记录
@@ -566,6 +591,28 @@ onMounted(() => {
 
 	// 加载客户数据
 	loadCustomersData();
+
+	// 监听页面显示事件
+	uni.$on('onShow', () => {
+		console.log('销售页面显示');
+		// 重新加载数据
+		loadFruitData();
+		// 触发tabChange事件
+		uni.$emit('tabChange');
+	});
+
+	// 监听页面刷新事件
+	uni.$on('pageRefresh', () => {
+		console.log('销售页面收到刷新事件');
+		// 重新加载数据
+		loadFruitData();
+	});
+});
+
+// 页面卸载时移除事件监听
+uni.$on('beforeDestroy', () => {
+	uni.$off('pageRefresh');
+	uni.$off('onShow');
 });
 
 // 加载水果数据
@@ -835,16 +882,26 @@ function loadCustomersData() {
 
 /* 水果列表样式 */
 .sales-fruits-scroll {
-	max-height: 600rpx; /* 默认显示4个水果项的高度 */
 	width: 100%;
 	box-sizing: border-box;
+	white-space: nowrap;
+	padding: 10rpx 0;
+	/* 隐藏滑动条 */
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE and Edge */
+}
+
+/* 隐藏滑动条 - WebKit 浏览器 */
+.sales-fruits-scroll::-webkit-scrollbar {
+	display: none;
+	width: 0;
+	height: 0;
 }
 
 .sales-fruits-list {
-	display: flex;
-	flex-direction: column;
+	display: inline-flex;
 	gap: 20rpx;
-	width: 100%;
+	padding: 0 10rpx;
 	box-sizing: border-box;
 }
 
@@ -870,11 +927,15 @@ function loadCustomersData() {
 }
 
 .sales-fruit-item {
-	display: flex;
+	display: inline-flex;
+	flex-direction: column;
 	padding: 20rpx;
 	background-color: #F9FAFB;
 	border-radius: 16rpx;
 	transition: all 0.3s ease;
+	width: 220rpx;
+	white-space: normal;
+	vertical-align: top;
 }
 
 .sales-fruit-item:active {
@@ -883,13 +944,14 @@ function loadCustomersData() {
 }
 
 .sales-fruit-image-container {
-	width: 110rpx;
-	height: 110rpx;
+	width: 180rpx;
+	height: 180rpx;
 	border-radius: 12rpx;
 	overflow: hidden;
 	background-color: #F3F4F6;
 	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
 	flex-shrink: 0;
+	margin: 0 auto 10rpx;
 }
 
 .sales-fruit-image {
@@ -899,43 +961,42 @@ function loadCustomersData() {
 }
 
 .sales-fruit-info {
-	flex: 1;
-	margin-left: 20rpx;
+	width: 100%;
 	display: flex;
 	flex-direction: column;
-	justify-content: space-between;
-}
-
-.sales-fruit-content {
-	display: flex;
-	justify-content: space-between;
-	width: 100%;
+	align-items: center;
+	text-align: center;
 }
 
 .sales-fruit-name {
-	font-size: 28rpx;
+	font-size: 26rpx;
 	font-weight: bold;
 	color: #1F2937;
 	margin-bottom: 6rpx;
 	display: block;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	width: 100%;
 }
 
 .sales-fruit-spec {
 	font-size: 22rpx;
 	color: #6B7280;
 	display: block;
-}
-
-.sales-fruit-price-info {
-	text-align: right;
+	margin-bottom: 8rpx;
 }
 
 .sales-fruit-price {
-	font-size: 26rpx;
+	font-size: 24rpx;
 	color: #0D9488;
 	font-weight: bold;
 	display: block;
 	margin-bottom: 6rpx;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	width: 100%;
 }
 
 .sales-fruit-stock {
@@ -1311,12 +1372,14 @@ function loadCustomersData() {
 }
 
 .sales-popup-total {
-	margin: 30rpx 0 20rpx 0;
-	padding: 24rpx;
+	margin: 12rpx 0 20rpx 0;
 	background-color: #F9FAFB;
-	border-radius: 16rpx;
+	border-radius: 12rpx;
 	width: 100%;
 	box-sizing: border-box;
+	height: 80rpx;
+	display: flex;
+	align-items: center;
 }
 
 .sales-popup-payment-option {
@@ -1332,22 +1395,37 @@ function loadCustomersData() {
 }
 
 .sales-popup-payment-status {
-	font-size: 26rpx;
+	font-size: 24rpx;
 	font-weight: 500;
+	padding: 4rpx 12rpx;
+	border-radius: 6rpx;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 36rpx;
+	box-sizing: border-box;
 }
 
 .sales-popup-payment-option .status-paid {
 	color: #10B981;
+	background-color: rgba(16, 185, 129, 0.1);
+	border: 1rpx solid rgba(16, 185, 129, 0.2);
+	box-shadow: 0 1rpx 2rpx rgba(16, 185, 129, 0.05);
 }
 
 .sales-popup-payment-option .status-unpaid {
 	color: #EF4444;
+	background-color: rgba(239, 68, 68, 0.05);
+	border: 1rpx solid rgba(239, 68, 68, 0.1);
+	box-shadow: 0 1rpx 2rpx rgba(239, 68, 68, 0.05);
 }
 
 .sales-popup-total-content {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	width: 100%;
+	padding: 0 30rpx;
 }
 
 .sales-popup-total-label {

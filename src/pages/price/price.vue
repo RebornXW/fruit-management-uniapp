@@ -269,6 +269,9 @@ function confirmPriceAdjust() {
 			console.error('更新库存管理中的价格失败', e);
 		}
 
+		// 触发页面刷新事件，通知其他页面更新数据
+		uni.$emit('pageRefresh');
+
 		// 显示成功提示
 		uni.showToast({
 			title: '价格调整成功',
