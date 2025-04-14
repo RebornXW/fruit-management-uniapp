@@ -99,23 +99,35 @@
 						:class="['sales-history-item', index < salesRecords.length - 1 ? 'sales-history-border' : '']"
 					>
 						<view class="sales-history-content">
-							<view class="sales-history-left">
-								<view class="sales-history-image-container">
-									<image :src="record.image" :alt="record.name" class="sales-history-image"></image>
-								</view>
-								<view class="sales-history-details">
-									<text class="sales-history-name">{{record.name}}</text>
-									<view class="sales-history-info">
-										<text class="sales-history-quantity">{{record.quantity}}箱 × ¥{{record.price}}</text>
-										<text class="sales-history-customer" v-if="record.customer">
-											客户: {{record.customer.name}}
-										</text>
-									</view>
-								</view>
+							<!-- 左侧图片区域 -->
+							<view class="sales-history-image-container">
+								<image :src="record.image" :alt="record.name" class="sales-history-image"></image>
 							</view>
+
+							<!-- 左侧商品信息区域 -->
+							<view class="sales-history-left">
+								<!-- 商品名称 -->
+								<text class="sales-history-name">{{record.name}}</text>
+								<!-- 数量和单价 -->
+								<text class="sales-history-quantity">{{record.quantity}}件 × ¥{{record.price}}</text>
+							</view>
+
+							<!-- 中间信息区域 -->
+							<view class="sales-history-middle">
+								<!-- 上部：客户名称 -->
+								<text class="sales-history-customer-name" v-if="record.customer">{{record.customer.name}}</text>
+
+								<!-- 下部：日期 -->
+								<text class="sales-history-date">{{record.date}}</text>
+							</view>
+
+							<!-- 右侧区域 -->
 							<view class="sales-history-right">
+								<!-- 上部：总价 -->
 								<text class="sales-history-total">¥{{record.total}}</text>
-								<text class="sales-history-time">{{record.time}}</text>
+
+								<!-- 下部：付款状态 -->
+								<text :class="['sales-history-payment-status', record.paymentStatus === 'paid' ? 'status-paid' : 'status-unpaid']">{{record.paymentStatus === 'paid' ? '已付款' : '未付款'}}</text>
 							</view>
 						</view>
 					</view>
@@ -190,6 +202,12 @@
 						<text class="sales-popup-total-label">销售总价:</text>
 						<text class="sales-popup-total-value">¥{{totalPrice}}</text>
 					</view>
+				</view>
+
+				<view class="sales-popup-payment-option">
+					<text class="sales-popup-label">是否全款</text>
+					<switch :checked="isFullPayment" @change="togglePaymentStatus" color="#0D9488" class="sales-popup-switch" />
+					<text :class="['sales-popup-payment-status', isFullPayment ? 'status-paid' : 'status-unpaid']">{{ isFullPayment ? '已付款' : '未付款' }}</text>
 				</view>
 
 				<view class="sales-popup-actions">
@@ -292,6 +310,7 @@ const salePrice = ref(0);
 const saleQuantity = ref(1);
 const salesRecords = ref([]);
 const currentDate = ref('');
+const isFullPayment = ref(true); // 默认为全款
 // 销售统计数据
 const totalSalesAmount = computed(() => {
 	// 计算今日销售总额
@@ -374,7 +393,13 @@ function showSaleModal(fruit) {
 	currentFruit.value = fruit;
 	salePrice.value = fruit.minPrice;
 	saleQuantity.value = 1;
+	isFullPayment.value = true; // 重置为默认全款状态
 	salePopup.value.open();
+}
+
+// 切换付款状态
+function togglePaymentStatus(e) {
+	isFullPayment.value = e.detail.value;
 }
 
 // 显示统计详情弹窗
@@ -483,6 +508,7 @@ function confirmSale() {
 	// 添加销售记录
 	const now = new Date();
 	const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+	const date = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
 	const newRecord = {
 		name: currentFruit.value.name,
 		image: currentFruit.value.image,
@@ -490,10 +516,13 @@ function confirmSale() {
 		price: parseFloat(salePrice.value).toFixed(2),
 		total: parseFloat(totalPrice.value).toFixed(2),
 		time: time,
+		date: date,
 		customer: {
 			id: selectedCustomer.value.id,
 			name: selectedCustomer.value.name
-		}
+		},
+		paymentStatus: isFullPayment.value ? 'paid' : 'unpaid', // 付款状态
+		paidAmount: isFullPayment.value ? parseFloat(totalPrice.value) : 0 // 已付金额
 	};
 
 	salesRecords.value.unshift(newRecord);
@@ -690,11 +719,12 @@ function loadCustomersData() {
 	background-color: white;
 	border-radius: 24rpx;
 	margin: 24rpx;
-	padding: 30rpx 20rpx;
+	padding: 24rpx 20rpx;
 	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 	margin-bottom: 120rpx;
 	box-sizing: border-box;
 	width: calc(100% - 48rpx);
+	border: 1rpx solid #E5E7EB;
 }
 
 .sales-card-header {
@@ -920,35 +950,37 @@ function loadCustomersData() {
 }
 
 .sales-history-item {
-	padding-bottom: 24rpx;
+	padding: 12rpx 0;
+	transition: all 0.2s ease;
+}
+
+.sales-history-item:active {
+	background-color: #F9FAFB;
 }
 
 .sales-history-border {
-	border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
-	margin-bottom: 24rpx;
+	border-bottom: 1rpx solid #F3F4F6;
+	margin-bottom: 0;
 }
 
 .sales-history-content {
 	display: flex;
-	justify-content: space-between;
-	align-items: center;
+	align-items: stretch;
 	width: 100%;
-}
-
-.sales-history-left {
-	display: flex;
-	align-items: center;
-	flex: 1;
-	overflow: hidden;
+	gap: 12rpx;
+	position: relative;
+	height: 110rpx;
 }
 
 .sales-history-image-container {
-	width: 80rpx;
-	height: 80rpx;
+	width: 100rpx;
+	height: 100rpx;
 	border-radius: 12rpx;
 	overflow: hidden;
 	background-color: #F3F4F6;
 	flex-shrink: 0;
+	border: 1rpx solid #E5E7EB;
+	align-self: center;
 }
 
 .sales-history-image {
@@ -957,57 +989,161 @@ function loadCustomersData() {
 	object-fit: cover;
 }
 
-.sales-history-details {
-	margin-left: 16rpx;
-	flex: 1;
-	overflow: hidden;
-}
-
-.sales-history-name {
-	font-size: 26rpx;
-	font-weight: 500;
-	color: #1F2937;
-	margin-bottom: 4rpx;
-}
-
-.sales-history-info {
+.sales-history-left {
+	width: 240rpx;
 	display: flex;
 	flex-direction: column;
+	gap: 4rpx;
+	overflow: hidden;
+	justify-content: center;
 }
+
+.sales-history-middle {
+	width: 240rpx;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	gap: 4rpx;
+	padding-left: 6rpx;
+	justify-content: center;
+}
+
+.sales-history-info-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	margin-bottom: 8rpx;
+}
+
+.sales-history-date-row {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
+/* 已移除不再需要的样式 */
+
+.sales-history-name {
+	font-size: 28rpx;
+	font-weight: 600;
+	color: #1F2937;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 400rpx;
+	padding-top: 0rpx;
+}
+
+.sales-history-customer-row {
+	display: flex;
+	align-items: center;
+	gap: 8rpx;
+	justify-content: flex-end;
+}
+
+.sales-history-customer-label {
+	font-size: 22rpx;
+	color: #9CA3AF;
+}
+
+.sales-history-customer-name {
+	font-size: 24rpx;
+	color: #4B5563;
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 220rpx;
+	margin-bottom: 0;
+	padding-top: 0;
+}
+
+/* 已移除不再需要的样式 */
+
+/* 已移除不再需要的样式 */
 
 .sales-history-quantity {
 	font-size: 24rpx;
 	color: #6B7280;
+	margin-top: 0;
+	padding-bottom: 0;
 }
 
-.sales-history-customer {
-	font-size: 22rpx;
-	color: #0D9488;
-	background-color: rgba(13, 148, 136, 0.1);
-	padding: 2rpx 8rpx;
-	border-radius: 6rpx;
-	margin-top: 4rpx;
-	display: inline-block;
-}
+/* 客户标签样式已移至 .sales-history-customer-name */
 
 .sales-history-right {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-end;
+	gap: 4rpx;
+	min-width: 120rpx;
+	justify-content: flex-start;
 }
 
 .sales-history-total {
-	font-size: 28rpx;
+	font-size: 30rpx;
 	font-weight: bold;
 	color: #0D9488;
 	display: block;
+	letter-spacing: 0.5rpx;
 	margin-bottom: 4rpx;
+	padding-top: 12rpx;
+}
+
+.sales-history-date {
+	font-size: 22rpx;
+	color: #6B7280;
+	margin-top: 0;
+	padding-bottom: 0;
 }
 
 .sales-history-time {
 	font-size: 22rpx;
 	color: #9CA3AF;
-	display: block;
+	position: relative;
+	padding-left: 12rpx;
+}
+
+.sales-history-time::before {
+	content: '';
+	position: absolute;
+	left: 4rpx;
+	top: 50%;
+	width: 4rpx;
+	height: 4rpx;
+	border-radius: 50%;
+	background-color: #D1D5DB;
+	transform: translateY(-50%);
+}
+
+.sales-history-payment-status {
+	font-size: 22rpx;
+	padding: 0 12rpx;
+	border-radius: 6rpx;
+	font-weight: 500;
+	letter-spacing: 0.5rpx;
+	line-height: 1;
+	margin-top: 0rpx;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 36rpx;
+	box-sizing: border-box;
+}
+
+.status-paid {
+	color: #10B981;
+	background-color: rgba(16, 185, 129, 0.1);
+	border: 1rpx solid rgba(16, 185, 129, 0.2);
+	box-shadow: 0 1rpx 2rpx rgba(16, 185, 129, 0.05);
+}
+
+.status-unpaid {
+	color: #EF4444;
+	background-color: rgba(239, 68, 68, 0.05);
+	border: 1rpx solid rgba(239, 68, 68, 0.1);
+	box-shadow: 0 1rpx 2rpx rgba(239, 68, 68, 0.05);
 }
 
 /* 弹窗样式 */
@@ -1064,6 +1200,16 @@ function loadCustomersData() {
 	box-sizing: border-box;
 }
 
+/* 统一输入框样式 */
+.sales-popup-customer-selector,
+.sales-popup-price-input,
+.sales-popup-quantity-wrapper {
+	height: 80rpx;
+	border-radius: 12rpx;
+	margin: 12rpx 0;
+	box-sizing: border-box;
+}
+
 .sales-popup-label {
 	font-size: 26rpx;
 	font-weight: 500;
@@ -1091,7 +1237,7 @@ function loadCustomersData() {
 	width: 100%;
 	height: 80rpx;
 	padding: 0 20rpx 0 60rpx;
-	background-color: white;
+	background-color: #F9FAFB;
 	border: 1rpx solid #E5E7EB;
 	border-radius: 12rpx;
 	font-size: 30rpx;
@@ -1116,11 +1262,9 @@ function loadCustomersData() {
 .sales-popup-quantity-wrapper {
 	display: flex;
 	align-items: center;
-	border-radius: 16rpx;
 	background-color: #F9FAFB;
-	padding: 10rpx 20rpx;
-	margin: 15rpx 0;
-	box-shadow: inset 0 1rpx 3rpx rgba(0, 0, 0, 0.05);
+	padding: 0 10rpx;
+	border: 1rpx solid #E5E7EB;
 }
 
 .sales-popup-quantity-btn {
@@ -1167,12 +1311,37 @@ function loadCustomersData() {
 }
 
 .sales-popup-total {
-	margin: 30rpx 0;
+	margin: 30rpx 0 20rpx 0;
 	padding: 24rpx;
 	background-color: #F9FAFB;
 	border-radius: 16rpx;
 	width: 100%;
 	box-sizing: border-box;
+}
+
+.sales-popup-payment-option {
+	display: flex;
+	align-items: center;
+	padding: 20rpx 0;
+	border-bottom: 1rpx solid #E5E7EB;
+	margin-bottom: 20rpx;
+}
+
+.sales-popup-switch {
+	margin: 0 20rpx;
+}
+
+.sales-popup-payment-status {
+	font-size: 26rpx;
+	font-weight: 500;
+}
+
+.sales-popup-payment-option .status-paid {
+	color: #10B981;
+}
+
+.sales-popup-payment-option .status-unpaid {
+	color: #EF4444;
 }
 
 .sales-popup-total-content {
@@ -1296,7 +1465,7 @@ function loadCustomersData() {
 	background-color: #F3F4F6;
 	color: #4B5563;
 	font-size: 28rpx;
-	border-radius: 40rpx;
+	border-radius: 0;
 	margin-top: 20rpx;
 }
 
@@ -1305,10 +1474,9 @@ function loadCustomersData() {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	margin: 12rpx 0;
-	padding: 20rpx;
+	padding: 0 20rpx;
 	background-color: #F9FAFB;
-	border-radius: 12rpx;
+	border: 1rpx solid #E5E7EB;
 }
 
 .sales-popup-customer-name {
