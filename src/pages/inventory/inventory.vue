@@ -172,7 +172,7 @@
 		</scroll-view>
 
 		<!-- 入库/出库操作弹窗 -->
-		<uni-popup ref="inventoryPopup" type="bottom">
+		<uni-popup ref="inventoryPopup" type="bottom" :mask-click="true" :animation="true">
 			<view class="popup-container">
 				<view class="popup-header">
 					<text class="popup-title">{{operationType === 'in' ? '入库操作' : '出库操作'}}</text>
@@ -966,6 +966,14 @@ function syncDeleteToPricePage(_fruitId) {
 </script>
 
 <style>
+
+/* 全局页面样式，防止整体滑动 */
+page {
+	height: 100%;
+	overflow: hidden;
+	position: relative;
+}
+
 .inventory-container {
 	display: flex;
 	flex-direction: column;
@@ -1080,6 +1088,7 @@ function syncDeleteToPricePage(_fruitId) {
 .dashboard-container {
 	padding: 10rpx 14rpx 6rpx;
 	margin-bottom: 0;
+	overflow: hidden;
 }
 
 .stats-row {
@@ -1405,9 +1414,13 @@ function syncDeleteToPricePage(_fruitId) {
 	border-top-right-radius: 24rpx;
 	overflow: hidden;
 	padding-bottom: env(safe-area-inset-bottom);
-	max-height: 85vh;
+	max-height: 80vh;
 	display: flex;
 	flex-direction: column;
+	position: relative;
+	width: 100% !important; /* 确保宽度始终为100% */
+	left: 0 !important; /* 确保左边距为0 */
+	right: 0 !important; /* 确保右边距为0 */
 }
 
 .popup-header {
@@ -1432,9 +1445,12 @@ function syncDeleteToPricePage(_fruitId) {
 }
 
 .popup-content {
-	padding: 30rpx;
+	padding: 30rpx 30rpx 100rpx;
 	box-sizing: border-box;
-	width: 100%;
+	width: 100% !important;
+	overflow-y: auto;
+	max-height: 70vh;
+	margin: 0 auto;
 }
 
 .form-content {
@@ -1496,10 +1512,13 @@ function syncDeleteToPricePage(_fruitId) {
 	border-radius: 12rpx;
 	overflow: hidden;
 	height: 80rpx;
+	box-sizing: border-box;
+	align-items: center;
 }
 
 .quantity-btn {
 	width: 80rpx;
+	height: 80rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1507,6 +1526,9 @@ function syncDeleteToPricePage(_fruitId) {
 	font-size: 36rpx;
 	color: #4B5563;
 	line-height: 1;
+	padding: 0;
+	margin: 0;
+	border: none;
 }
 
 .quantity-input {
@@ -1514,6 +1536,11 @@ function syncDeleteToPricePage(_fruitId) {
 	text-align: center;
 	font-size: 32rpx;
 	font-weight: bold;
+	height: 80rpx;
+	line-height: 80rpx;
+	vertical-align: middle;
+	padding: 0;
+	margin: 0;
 }
 
 .in-text {
@@ -1553,9 +1580,13 @@ function syncDeleteToPricePage(_fruitId) {
 	justify-content: center;
 	font-size: 30rpx;
 	font-weight: 500;
-	margin-top: 24rpx;
+	margin-top: 30rpx;
+	margin-bottom: 30rpx;
 	color: white;
-	width: 100%;
+	width: 100% !important;
+	position: relative;
+	z-index: 10;
+	box-sizing: border-box;
 }
 
 .in-confirm {
