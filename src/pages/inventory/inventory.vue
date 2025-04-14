@@ -240,7 +240,7 @@
 							</picker>
 						</view>
 						<view class="form-item">
-							<text class="form-label">规格型号</text>
+							<text class="form-label">规格型号 <text class="required">*</text></text>
 							<input v-model="editForm.spec" placeholder="请输入规格型号" class="text-input" />
 						</view>
 						<view class="form-item">
@@ -395,6 +395,9 @@ const deletePopup = ref(null);
 
 // 显示入库/出库操作弹窗
 function showInventoryOperation(type, fruit) {
+	// 先关闭所有更多操作菜单
+	closeAllMoreActions();
+
 	operationType.value = type;
 	currentFruit.value = fruit;
 	operationQuantity.value = 1;
@@ -404,6 +407,9 @@ function showInventoryOperation(type, fruit) {
 
 // 显示编辑水果弹窗
 function showEditFruit(fruit) {
+	// 先关闭所有更多操作菜单
+	closeAllMoreActions();
+
 	isAddingFruit.value = false;
 	currentFruit.value = fruit;
 
@@ -436,6 +442,9 @@ function showEditFruit(fruit) {
 
 // 显示新增水果弹窗
 function showAddFruit() {
+	// 先关闭所有更多操作菜单
+	closeAllMoreActions();
+
 	isAddingFruit.value = true;
 	editForm.value = {
 		id: null,
@@ -458,6 +467,9 @@ function showAddFruit() {
 
 // 显示删除确认弹窗
 function confirmDelete(fruit) {
+	// 先关闭所有更多操作菜单
+	closeAllMoreActions();
+
 	currentFruit.value = fruit;
 	deletePopup.value.open();
 }
@@ -541,7 +553,7 @@ function deleteImage() {
 // 确认编辑/新增水果
 function confirmEditFruit() {
 	// 表单验证
-	if (!editForm.value.brand || !editForm.value.category || !editForm.value.variety) {
+	if (!editForm.value.brand || !editForm.value.category || !editForm.value.variety || !editForm.value.spec) {
 		uni.showToast({
 			title: '请填写必填项',
 			icon: 'none'
@@ -830,6 +842,9 @@ function updateVarietiesByCategory(category) {
 
 // 显示/隐藏筛选弹窗
 function toggleFilterPopup() {
+	// 先关闭所有更多操作菜单
+	closeAllMoreActions();
+
 	showFilter.value = !showFilter.value;
 }
 
