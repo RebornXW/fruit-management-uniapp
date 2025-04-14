@@ -311,6 +311,7 @@
 import { ref, computed, onMounted } from 'vue';
 import CustomTabBar from '@/components/CustomTabBar.vue';
 import operationRecordService from '@/services/operationRecordService.js';
+import inventoryRecordService from '@/services/inventoryRecordService.js';
 
 // 数据
 const searchText = ref('');
@@ -518,6 +519,23 @@ function confirmOperation() {
 				return;
 			}
 		}
+
+		// 保存库存数据到本地存储
+		saveInventoryData();
+
+		// 获取当前登录用户
+		const loginUser = uni.getStorageSync('loginUser');
+		const operator = loginUser ? loginUser.name : '系统管理员';
+
+		// 添加库存记录
+		const operationTypeText = operationType.value === 'in' ? '入库' : '出库';
+		inventoryRecordService.addInventoryRecord(
+			operationTypeText,
+			fruitData.value[index],
+			parseInt(operationQuantity.value),
+			operationRemark.value,
+			operator
+		);
 
 		// 在实际应用中，这里应该调用API保存数据和操作记录
 		uni.showToast({
@@ -790,14 +808,10 @@ function loadFruitData() {
 // 添加显示库存记录函数
 // 显示库存记录页面或弹窗
 function showAddRecord() {
-	uni.showToast({
-		title: '库存记录功能开发中',
-		icon: 'none'
+	// 跳转到库存记录页面
+	uni.navigateTo({
+		url: '/pages/records/inventory-records'
 	});
-	// 实际应用中，这里应该跳转到库存记录页面或打开相关弹窗
-	// uni.navigateTo({
-	//   url: '/pages/inventory/record/record'
-	// });
 }
 
 // 水果品类选择

@@ -9,7 +9,7 @@
 		detailTitle="操作详情"
 		cardNoPrefix="操作ID:"
 		cardNoField="recordId"
-		cardContentField="fruitName"
+		cardContentField="brand,fruitName"
 		cardTitleField="operationType"
 		cardStatusField="operationType"
 		:customGetStatusLabel="getOperationStatusLabel"
@@ -222,11 +222,12 @@ if (operationRecords.value.length === 0) {
 
 // 表格列配置
 const columns = [
-	{ title: '日期', field: 'date', width: '180rpx', type: 'date' },
-	{ title: '时间', field: 'time', width: '120rpx', type: 'text' },
-	{ title: '业务员', field: 'operator', width: '140rpx', type: 'text' },
+	{ title: '日期', field: 'date', width: '160rpx', type: 'date' },
+	{ title: '时间', field: 'time', width: '100rpx', type: 'text' },
+	{ title: '业务员', field: 'operator', width: '120rpx', type: 'text' },
+	{ title: '品牌', field: 'brand', width: '120rpx', type: 'text' },
+	{ title: '水果品种', field: 'fruitName', width: '160rpx', type: 'text' },
 	{ title: '操作类型', field: 'operationType', width: '140rpx', type: 'status' },
-	{ title: '水果品种', field: 'fruitName', width: '220rpx', type: 'text' },
 	{ title: '规格', field: 'spec', width: '140rpx', type: 'text' }
 ];
 

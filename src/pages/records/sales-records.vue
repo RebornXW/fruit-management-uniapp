@@ -8,6 +8,7 @@
 		:detailSections="detailSections"
 		detailTitle="销售详情"
 		:showPrintButton="true"
+		cardContentField="brand,productName"
 		:customGetStatusLabel="getSalesStatusLabel"
 	></record-viewer>
 </template>
@@ -28,6 +29,7 @@ onMounted(() => {
 		orderNo: record.orderNo,
 		salesPerson: record.salesPerson,
 		customerName: record.customerName,
+		brand: record.brand || '国产', // 添加品牌字段
 		productName: record.productName,
 		spec: record.spec,
 		unitPrice: record.unitPrice,
@@ -58,15 +60,16 @@ onMounted(() => {
 
 // 列表视图列配置
 const columns = [
-	{ title: '日期', field: 'date', type: 'date', width: '200rpx' },
-	{ title: '单号', field: 'orderNo', type: 'text', width: '220rpx' },
-	{ title: '客户', field: 'customerName', type: 'text', width: '200rpx' },
-	{ title: '业务员', field: 'salesPerson', type: 'text', width: '150rpx' },
-	{ title: '商品', field: 'productName', type: 'text', width: '240rpx' },
-	{ title: '规格', field: 'spec', type: 'text', width: '200rpx' },
-	{ title: '数量', field: 'quantity', unit: '箱', type: 'number', width: '120rpx' },
-	{ title: '单价', field: 'unitPrice', unit: '/箱', type: 'price', width: '140rpx' },
-	{ title: '金额', field: 'amount', type: 'price', width: '180rpx' },
+	{ title: '日期', field: 'date', type: 'date', width: '180rpx' },
+	{ title: '单号', field: 'orderNo', type: 'text', width: '200rpx' },
+	{ title: '客户', field: 'customerName', type: 'text', width: '180rpx' },
+	{ title: '业务员', field: 'salesPerson', type: 'text', width: '120rpx' },
+	{ title: '品牌', field: 'brand', type: 'text', width: '120rpx' },
+	{ title: '水果品种', field: 'productName', type: 'text', width: '160rpx' },
+	{ title: '规格', field: 'spec', type: 'text', width: '140rpx' },
+	{ title: '数量', field: 'quantity', unit: '箱', type: 'number', width: '100rpx' },
+	{ title: '单价', field: 'unitPrice', unit: '/箱', type: 'price', width: '120rpx' },
+	{ title: '金额', field: 'amount', type: 'price', width: '140rpx' },
 	{ title: '状态', field: 'status', type: 'status', width: '120rpx' }
 ];
 
@@ -102,7 +105,8 @@ const detailSections = [
 	{
 		title: '商品信息',
 		fields: [
-			{ label: '商品名称', field: 'productName', type: 'text' },
+			{ label: '品牌', field: 'brand', type: 'text' },
+			{ label: '水果品种', field: 'productName', type: 'text' },
 			{ label: '规格', field: 'spec', type: 'text' },
 			{ label: '数量', field: 'quantity', unit: '箱', type: 'number' },
 			{ label: '单价', field: 'unitPrice', unit: '/箱', type: 'price' },

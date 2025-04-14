@@ -162,7 +162,15 @@
 
 							<view class="card-product">
 								<view class="flex justify-between">
-									<text class="text-sm text-ellipsis">{{item[cardContentField]}}</text>
+									<text class="text-sm text-ellipsis">
+										<!-- 支持多字段内容显示 -->
+										<template v-if="cardContentField.includes(',')">
+											{{ cardContentField.split(',').map(field => item[field.trim()]).filter(Boolean).join(' ') }}
+										</template>
+										<template v-else>
+											{{item[cardContentField]}}
+										</template>
+									</text>
 									<text class="text-sm">{{item[cardQuantityField]}}{{cardQuantityUnit}}</text>
 								</view>
 								<view class="flex justify-between items-center mt-1">
@@ -279,7 +287,7 @@
 					<view class="flex justify-between items-center mb-4">
 						<text class="text-lg font-bold">高级筛选</text>
 						<view class="close-btn" @tap="closeAdvancedFilter">
-							<uni-icons type="closeempty" size="20" color="#9CA3AF"></uni-icons>
+						<uni-icons type="closeempty" size="20" color="#9CA3AF"></uni-icons>
 						</view>
 					</view>
 

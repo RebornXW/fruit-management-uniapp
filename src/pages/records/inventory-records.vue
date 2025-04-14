@@ -9,7 +9,7 @@
 		detailTitle="库存变更详情"
 		cardNoPrefix="库存ID:"
 		cardNoField="recordId"
-		cardContentField="productName"
+		cardContentField="brand,productName"
 		cardTitleField="operationType"
 		cardStatusField="operationType"
 		countLabel="总变更量"
@@ -21,11 +21,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import RecordViewer from '@/components/RecordViewer.vue';
+import inventoryRecordService from '@/services/inventoryRecordService.js';
 
-// 库存记录数据
-const inventoryRecords = ref([
+// 获取库存记录数据
+const inventoryRecords = inventoryRecordService.getInventoryRecords();
+
+/* 以下是模拟数据，仅在没有真实数据时使用
+const mockRecords = [
 	{
 		recordId: 'I20240501001',
 		operatorName: '张库管',
@@ -82,7 +86,8 @@ const inventoryRecords = ref([
 		source: '供应商C',
 		remark: '采购入库'
 	}
-]);
+];
+*/
 
 onMounted(() => {
 	console.log('库存记录页面已加载');
@@ -102,13 +107,14 @@ onMounted(() => {
 
 // 列表视图列配置
 const columns = [
-	{ title: '日期', field: 'date', type: 'date', width: '180rpx' },
-	{ title: '时间', field: 'time', type: 'text', width: '120rpx' },
-	{ title: '操作员', field: 'operatorName', type: 'text', width: '150rpx' },
-	{ title: '商品', field: 'productName', type: 'text', width: '240rpx' },
-	{ title: '规格', field: 'spec', type: 'text', width: '180rpx' },
+	{ title: '日期', field: 'date', type: 'date', width: '160rpx' },
+	{ title: '时间', field: 'time', type: 'text', width: '100rpx' },
+	{ title: '操作员', field: 'operatorName', type: 'text', width: '120rpx' },
+	{ title: '品牌', field: 'brand', type: 'text', width: '120rpx' },
+	{ title: '水果品种', field: 'productName', type: 'text', width: '160rpx' },
+	{ title: '规格', field: 'spec', type: 'text', width: '140rpx' },
 	{ title: '操作类型', field: 'operationType', type: 'status', width: '120rpx' },
-	{ title: '数量', field: 'quantity', unit: '件', type: 'number', width: '120rpx' }
+	{ title: '数量', field: 'quantity', unit: '箱', type: 'number', width: '100rpx' }
 ];
 
 // 状态配置
