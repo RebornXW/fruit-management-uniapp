@@ -1,5 +1,5 @@
 <template>
-	<view class="inventory-container" @tap="closeAllMoreActions">
+	<view class="inventory-container" @tap="handlePageClick">
 		<!-- 头部 -->
 		<view class="header-section">
 			<view class="header-content">
@@ -93,12 +93,6 @@
 					<text class="filter-close" @tap.stop="toggleFilterPopup">✕</text>
 				</view>
 				<view class="filter-content">
-					<view class="filter-item">
-						<text class="filter-label">品牌</text>
-						<picker @change="onBrandChange" :value="brandIndex" :range="brands" class="filter-picker">
-							<view class="picker-text">{{brands[brandIndex]}}</view>
-						</picker>
-					</view>
 					<view class="filter-item">
 						<text class="filter-label">水果品类</text>
 						<picker @change="onFilterCategoryChange" :value="filterCategoryIndex" :range="fruitCategories" class="filter-picker">
@@ -323,7 +317,7 @@ const operationRemark = ref('');
 const currentDate = ref('');
 const packageTypes = ['箱装', '框装'];
 const packageTypeIndex = ref(0);
-const fruitCategories = ['苹果', '梨', '枣', '其他'];
+const fruitCategories = ['全部', '苹果', '梨', '枣', '其他'];
 const categoryIndex = ref(0);
 const fruitVarieties = ref(['阿克苏冰糖心', '红富士', '奶油富士']);
 const varietyIndex = ref(0);
@@ -345,13 +339,10 @@ const todayOut = ref(8);
 
 // 筛选相关数据
 const showFilter = ref(false);
-const brands = ref(['全部', '明牌', '砀山', '新鲜']);
-const brandIndex = ref(0);
 const filterCategoryIndex = ref(0);
 const filterVarietyIndex = ref(0);
 const filteredVarieties = ref(['全部']);
 const appliedFilters = ref({
-	brand: '全部',
 	category: '全部',
 	variety: '全部'
 });
@@ -365,17 +356,35 @@ const totalStock = computed(() => {
 const filteredFruits = computed(() => {
 	let result = fruitData.value;
 
-	// 应用筛选条件
-	if (appliedFilters.value.brand !== '全部') {
-		result = result.filter(fruit => fruit.brand === appliedFilters.value.brand);
-	}
+	// 打印原始数据以便调试
+	console.log('原始水果数据:', result.map(f => ({ id: f.id, name: f.name, category: f.category, variety: f.variety })));
+	console.log('当前筛选条件:', appliedFilters.value);
 
+	// 应用筛选条件
 	if (appliedFilters.value.category !== '全部') {
-		result = result.filter(fruit => fruit.category === appliedFilters.value.category);
+		// 使用更宽松的匹配方式，允许部分匹配
+		result = result.filter(fruit => {
+			const match = fruit.category && (
+				fruit.category === appliedFilters.value.category ||
+				fruit.category.includes(appliedFilters.value.category) ||
+				appliedFilters.value.category.includes(fruit.category)
+			);
+			console.log(`水果 ID: ${fruit.id}, 名称: ${fruit.name}, 品类: ${fruit.category}, 筛选品类: ${appliedFilters.value.category}, 匹配结果: ${match}`);
+			return match;
+		});
 	}
 
 	if (appliedFilters.value.variety !== '全部') {
-		result = result.filter(fruit => fruit.variety === appliedFilters.value.variety);
+		// 使用更宽松的匹配方式，允许部分匹配
+		result = result.filter(fruit => {
+			const match = fruit.variety && (
+				fruit.variety === appliedFilters.value.variety ||
+				fruit.variety.includes(appliedFilters.value.variety) ||
+				appliedFilters.value.variety.includes(fruit.variety)
+			);
+			console.log(`水果 ID: ${fruit.id}, 名称: ${fruit.name}, 品种: ${fruit.variety}, 筛选品种: ${appliedFilters.value.variety}, 匹配结果: ${match}`);
+			return match;
+		});
 	}
 
 	// 应用搜索文本
@@ -735,6 +744,17 @@ function closeAllMoreActions() {
 	});
 }
 
+// 处理页面点击事件
+function handlePageClick() {
+	// 关闭所有更多操作菜单
+	closeAllMoreActions();
+
+	// 关闭筛选弹窗
+	if (showFilter.value) {
+		showFilter.value = false;
+	}
+}
+
 // 页面加载时获取数据
 onMounted(() => {
 	// 设置当前日期
@@ -794,12 +814,7 @@ function loadFruitData() {
 
 	// 如果本地没有数据，使用默认数据
 	// 实际应用中，这里应该是API调用
-	fruitData.value = [
-		{ id: 1, name: "阿克苏冰糖心苹果", spec: "85#特级果", stock: 100, image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300", showMoreActions: false, brand: "新疆", category: "苹果", variety: "阿克苏冰糖心", packageType: "纸箱", weight: "10kg/箱", minPrice: 180, maxPrice: 220 },
-		{ id: 2, name: "青苯乳山竹", spec: "特级果", stock: 50, image: "https://images.unsplash.com/photo-1621175831370-bedcedbe5261?q=80&w=300", showMoreActions: false, brand: "泰国", category: "其他", variety: "青苯乳山竹", packageType: "纸箱", weight: "9kg/箱", minPrice: 220, maxPrice: 260 },
-		{ id: 3, name: "红心火龙果", spec: "特级果", stock: 30, image: "https://images.unsplash.com/photo-1550092137-f842b9d0cbd7?q=80&w=300", showMoreActions: false, brand: "越南", category: "其他", variety: "红心火龙果", packageType: "纸箱", weight: "5kg/箱", minPrice: 150, maxPrice: 180 },
-		{ id: 4, name: "新鲜橘子", spec: "5斤精品袋装", stock: 15, image: "https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300", showMoreActions: false, brand: "新鲜", category: "其他", variety: "橘子", minPrice: 25, maxPrice: 30 }
-	];
+
 
 	// 保存到本地存储
 	saveInventoryData();
@@ -859,13 +874,16 @@ function toggleFilterPopup() {
 	// 先关闭所有更多操作菜单
 	closeAllMoreActions();
 
+	// 如果要显示筛选弹窗，确保品种列表与当前选择的品类一致
+	if (!showFilter.value) {
+		// 更新品种列表
+		updateFilteredVarieties(fruitCategories[filterCategoryIndex.value]);
+	}
+
 	showFilter.value = !showFilter.value;
 }
 
-// 品牌选择
-function onBrandChange(e) {
-	brandIndex.value = e.detail.value;
-}
+// 已移除品牌选择功能
 
 // 筛选品类选择
 function onFilterCategoryChange(e) {
@@ -881,40 +899,74 @@ function onFilterVarietyChange(e) {
 	filterVarietyIndex.value = e.detail.value;
 }
 
-// 根据品类更新筛选品种列表
+// 根据品类更新筛选品种列表 - 从当前数据中动态获取
 function updateFilteredVarieties(category) {
+	console.log('更新品种列表，当前选择的品类:', category);
+
 	if (category === '全部') {
+		// 如果选择全部，只显示全部选项
 		filteredVarieties.value = ['全部'];
+		console.log('选择全部品类，品种列表重置为全部');
 	} else {
-		switch(category) {
-			case '苹果':
-				filteredVarieties.value = ['全部', '阿克苏冰糖心', '红富士', '奶油富士'];
-				break;
-			case '梨':
-				filteredVarieties.value = ['全部', '红香酥', '库尔勒香梨', '秋月梨', '皇冠梨'];
-				break;
-			case '枣':
-				filteredVarieties.value = ['全部', '大枣', '小枣', '蜜枣'];
-				break;
-			case '其他':
-				filteredVarieties.value = ['全部', '自定义'];
-				break;
-			default:
-				filteredVarieties.value = ['全部'];
+		// 从当前数据中获取所选品类的所有不重复品种
+		const varieties = ['全部'];
+
+		// 打印当前水果数据以便调试
+		console.log('当前水果数据:', fruitData.value.map(f => ({ id: f.id, name: f.name, category: f.category, variety: f.variety })));
+
+		// 遍历水果数据，收集当前选中品类的所有不重复品种
+		// 使用更宽松的匹配方式
+		fruitData.value.forEach(fruit => {
+			const categoryMatch = fruit.category && (
+				fruit.category === category ||
+				fruit.category.includes(category) ||
+				category.includes(fruit.category)
+			);
+
+			if (categoryMatch && fruit.variety && !varieties.includes(fruit.variety)) {
+				console.log(`添加品种: ${fruit.variety}, 来自水果: ${fruit.name}`);
+				varieties.push(fruit.variety);
+			}
+		});
+
+		// 如果没有找到任何品种，添加一些默认选项
+		if (varieties.length === 1) { // 只有全部选项
+			console.log('没有找到品种，添加默认选项');
+			switch(category) {
+				case '苹果':
+					varieties.push('阿克苏冰糖心', '红富士', '奶油富士');
+					break;
+				case '梨':
+					varieties.push('红香酥', '库尔勒香梨', '秋月梨', '皇冠梨');
+					break;
+				case '枣':
+					varieties.push('大枣', '小枣', '蜜枣');
+					break;
+				case '其他':
+					varieties.push('自定义');
+					break;
+			}
 		}
+
+		filteredVarieties.value = varieties;
+		console.log('更新后的品种列表:', filteredVarieties.value);
 	}
 }
 
 // 重置筛选条件
 function resetFilters() {
-	brandIndex.value = 0;
+	// 重置为第一个选项，即“全部”
 	filterCategoryIndex.value = 0;
 	filterVarietyIndex.value = 0;
+
+	// 确保品种列表也重置为全部
+	filteredVarieties.value = ['全部'];
+
 	appliedFilters.value = {
-		brand: '全部',
 		category: '全部',
 		variety: '全部'
 	};
+
 	// 更新筛选后的水果列表
 	applyFilters();
 }
@@ -922,10 +974,10 @@ function resetFilters() {
 // 应用筛选条件
 function applyFilters() {
 	appliedFilters.value = {
-		brand: brands.value[brandIndex.value],
 		category: fruitCategories[filterCategoryIndex.value],
 		variety: filteredVarieties.value[filterVarietyIndex.value]
 	};
+
 	// 关闭筛选弹窗
 	showFilter.value = false;
 }
@@ -1694,7 +1746,7 @@ page {
 /* 筛选弹窗样式 */
 .filter-popup {
 	position: absolute;
-	top: 70rpx;
+	top: 90rpx; /* 将位置往下调整了一点 */
 	right: 20rpx;
 	background-color: white;
 	z-index: 110;
