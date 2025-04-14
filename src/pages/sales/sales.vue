@@ -143,9 +143,12 @@
 		<uni-popup ref="salePopup" type="center">
 			<view class="sales-popup-container">
 				<view class="sales-popup-header">
-					<text class="sales-popup-title">{{currentFruit.name}}</text>
+					<view class="sales-popup-title-container">
+						<text class="sales-popup-title">{{currentFruit.name}}</text>
+						<text class="sales-popup-spec">{{currentFruit.spec}}</text>
+					</view>
 					<text class="sales-popup-close" @tap="closePopup">
-						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
+						<uni-icons type="closeempty" size="20" color="#6B7280"></uni-icons>
 					</text>
 				</view>
 				<view class="sales-popup-image-container">
@@ -1229,10 +1232,22 @@ function loadCustomersData() {
 	margin-bottom: 30rpx;
 }
 
+.sales-popup-title-container {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
 .sales-popup-title {
 	font-size: 36rpx;
 	font-weight: bold;
 	color: #1F2937;
+}
+
+.sales-popup-spec {
+	font-size: 22rpx;
+	color: #6B7280;
+	font-weight: normal;
 }
 
 .sales-popup-close {
