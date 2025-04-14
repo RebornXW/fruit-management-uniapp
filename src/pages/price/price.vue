@@ -21,7 +21,7 @@
 
 		<!-- 分类标签 - 固定在头部下方 -->
 		<view class="price-category-container">
-			<scroll-view scroll-x class="price-category-scroll">
+			<scroll-view scroll-x class="price-category-scroll" :show-scrollbar="false" :enhanced="true" :bounces="true">
 				<view class="price-category-list">
 					<view
 						v-for="(category, index) in categories"
@@ -150,11 +150,32 @@ import CustomTabBar from '@/components/CustomTabBar.vue';
 const searchText = ref('');
 const currentCategory = ref('全部');
 const categories = ref([
-	{ label: '全部', value: '全部', icon: 'icon-apps' },
-	{ label: '苹果', value: '苹果', icon: 'icon-apple' },
-	{ label: '梨', value: '梨', icon: 'icon-fruit' },
-	{ label: '其他水果', value: '其他水果', icon: 'icon-basket' }
+	{ label: '全部', value: '全部', icon: 'icon-apps' }
 ]);
+
+// 定义水果品类数组
+const fruitCategories = ['苹果', '梨', '枣', '其他'];
+
+// 更新分类标签
+function updateCategories() {
+	// 直接使用预定义的水果品类数组
+	console.log('使用预定义的水果品类:', fruitCategories);
+
+	// 创建分类数组
+	const newCategories = [
+		{ label: '全部', value: '全部', icon: 'icon-apps' }
+	];
+
+	// 添加水果品类 - 简化逻辑，移除图标相关代码
+	fruitCategories.forEach(category => {
+		if (category) {
+			// 直接使用通用图标
+			newCategories.push({ label: category, value: category, icon: 'icon-fruit' });
+		}
+	});
+
+	categories.value = newCategories;
+}
 const fruitData = ref([]);
 const currentFruit = ref({});
 const minPrice = ref(10);
@@ -167,15 +188,13 @@ const filteredFruits = computed(() => {
 		// 按搜索文本过滤
 		const matchSearch = searchText.value === '' ||
 			fruit.name.includes(searchText.value) ||
-			fruit.spec.includes(searchText.value);
+			fruit.spec.includes(searchText.value) ||
+			(fruit.brand && fruit.brand.includes(searchText.value)) ||
+			(fruit.variety && fruit.variety.includes(searchText.value));
 
-		// 按分类过滤
+		// 按分类过滤 - 使用category字段
 		const matchCategory = currentCategory.value === '全部' ||
-			(currentCategory.value === '苹果' && fruit.name.includes('苹果')) ||
-			(currentCategory.value === '梨' && fruit.name.includes('梨')) ||
-			(currentCategory.value === '其他水果' &&
-				!fruit.name.includes('苹果') &&
-				!fruit.name.includes('梨'));
+			(fruit.category && fruit.category === currentCategory.value);
 
 		return matchSearch && matchCategory;
 	});
@@ -325,6 +344,8 @@ function loadFruitData() {
 			}));
 
 			console.log('从库存数据加载了报价数据');
+			// 更新分类标签
+			updateCategories();
 			return;
 		}
 	} catch (e) {
@@ -334,6 +355,8 @@ function loadFruitData() {
 	// 如果没有库存数据，使用空数组
 	fruitData.value = [];
 	console.log('没有库存数据，报价页面为空');
+	// 即使没有数据也要更新分类标签
+	updateCategories();
 }
 </script>
 
@@ -418,11 +441,27 @@ page {
 
 .price-category-scroll {
 	width: 100%;
+	white-space: nowrap; /* 防止换行 */
+	overflow-x: auto; /* 允许水平滚动 */
+	-webkit-overflow-scrolling: touch; /* 流畅滚动效果 */
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE and Edge */
+	scroll-behavior: smooth; /* 平滑滚动 */
+}
+
+/* 隐藏所有浏览器的滚动条 */
+.price-category-scroll::-webkit-scrollbar {
+	display: none; /* Chrome, Safari, Opera */
+	width: 0;
+	height: 0;
+	background: transparent;
 }
 
 .price-category-list {
 	display: flex;
 	padding: 0 24rpx;
+	flex-wrap: nowrap; /* 防止换行 */
+	width: max-content; /* 确保宽度能容纳所有项 */
 }
 
 .price-category-item {
@@ -438,6 +477,8 @@ page {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	min-width: 120rpx; /* 确保最小宽度 */
+	flex-shrink: 0; /* 防止压缩 */
 }
 
 .price-category-item:active {
