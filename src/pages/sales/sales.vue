@@ -1,4 +1,4 @@
-<template>
+﻿<template>
 	<view class="sales-container">
 		<!-- 标题栏 -->
 		<view class="sales-header">
@@ -25,18 +25,18 @@
 					<view class="sales-stats-item sales-amount-item">
 						<text class="sales-stats-label">销售总额</text>
 						<text class="sales-stats-value">¥{{totalSalesAmount}}</text>
-						<view class="sales-stats-trend">
-							<uni-icons type="top" size="12" color="#10B981" class="sales-trend-icon"></uni-icons>
-							<text class="sales-trend-text">10.5%</text>
-						</view>
 					</view>
 					<view class="sales-stats-item sales-quantity-item">
 						<text class="sales-stats-label">销售数量</text>
 						<text class="sales-stats-value">{{totalSalesQuantity}}箱</text>
-						<view class="sales-stats-trend">
-							<uni-icons type="top" size="12" color="#10B981" class="sales-trend-icon"></uni-icons>
-							<text class="sales-trend-text">8.2%</text>
-						</view>
+					</view>
+					<view class="sales-stats-item sales-customer-item">
+						<text class="sales-stats-label">客户数量</text>
+						<text class="sales-stats-value">{{totalCustomers}}</text>
+					</view>
+					<view class="sales-stats-item sales-unpaid-item">
+						<text class="sales-stats-label">未收款金额</text>
+						<text class="sales-stats-value">¥{{totalUnpaidAmount}}</text>
 					</view>
 				</view>
 			</view>
@@ -258,32 +258,96 @@
 		<!-- 统计详情弹窗 -->
 		<uni-popup ref="statisticsPopup" type="center">
 			<view class="sales-stats-popup">
-				<view class="sales-popup-header">
-					<text class="sales-popup-title">销售统计详情</text>
-					<text class="sales-popup-close" @tap="closeStatisticsPopup">
-						<uni-icons type="close" size="20" color="#6B7280"></uni-icons>
+				<view class="sales-stats-header">
+					<text class="sales-stats-title">销售统计详情</text>
+					<text class="sales-stats-close" @tap="closeStatisticsPopup">
+						<uni-icons type="closeempty" size="20" color="#6B7280"></uni-icons>
 					</text>
 				</view>
 
+				<!-- 1. 销售趋势图 -->
 				<view class="sales-stats-section">
-					<text class="sales-stats-section-title">今日销售趋势</text>
-					<!-- 此处在实际应用中应该使用图表组件 -->
-					<view class="sales-chart-placeholder">
-						<text class="sales-chart-text">图表数据展示区域</text>
+					<text class="sales-stats-section-title">销售趋势图</text>
+					<view class="sales-chart-container">
+						<view class="sales-chart-legend">
+							<view class="sales-chart-legend-item">
+								<view class="sales-chart-legend-color sales-amount-color"></view>
+								<text class="sales-chart-legend-text">销售额</text>
+							</view>
+						</view>
+						<view class="sales-chart">
+							<!-- 横坐标轴 -->
+							<view class="sales-chart-axis-x">
+								<text v-for="(day, index) in salesTrend.days" :key="index" class="sales-chart-label">{{day}}</text>
+							</view>
+							<!-- 图表主体 -->
+							<view class="sales-chart-body">
+								<!-- 销售额折线图 -->
+								<view class="sales-chart-line">
+									<view
+										v-for="(amount, index) in salesTrend.amounts"
+										:key="index"
+										class="sales-chart-point sales-amount-point"
+										:style="{bottom: amount + '%', left: (index * 16.66) + '%'}"
+									></view>
+									<!-- 连接线 -->
+									<view class="sales-chart-line-path"></view>
+								</view>
+							</view>
+						</view>
 					</view>
 				</view>
 
+				<!-- 3. 主要客户销售额排名 -->
 				<view class="sales-stats-section">
-					<text class="sales-stats-section-title">销售排行榜</text>
+					<text class="sales-stats-section-title">主要客户销售额排名</text>
+					<view class="sales-customer-ranking">
+						<view
+							v-for="(customer, index) in customerRanking"
+							:key="index"
+							class="sales-customer-item"
+						>
+							<view class="sales-customer-rank">
+								<text class="sales-customer-rank-number">{{index + 1}}</text>
+							</view>
+							<view class="sales-customer-info">
+								<text class="sales-customer-name">{{customer.name}}</text>
+								<view class="sales-customer-progress-container">
+									<view class="sales-customer-progress-bg">
+										<view
+											class="sales-customer-progress"
+											:style="{width: customer.percentage + '%'}"
+										></view>
+									</view>
+									<text class="sales-customer-amount">¥{{customer.amount}}</text>
+								</view>
+							</view>
+						</view>
+					</view>
+				</view>
+
+				<!-- 4. 热销水果排行榜 -->
+				<view class="sales-stats-section">
+					<text class="sales-stats-section-title">热销水果排行榜</text>
 					<view class="sales-ranking-list">
 						<view
-							v-for="(item, index) in salesRanking"
+							v-for="(item, index) in topSellingFruits.slice(0, 3)"
 							:key="index"
 							class="sales-ranking-item"
 						>
-							<text class="sales-ranking-badge">{{index + 1}}</text>
-							<text class="sales-ranking-name">{{item.name}}</text>
-							<text class="sales-ranking-amount">¥{{item.amount}}</text>
+							<text class="sales-ranking-badge" :class="'rank-' + (index + 1)">
+								{{index + 1}}
+							</text>
+							<view class="sales-ranking-content">
+								<view class="sales-ranking-fruit-info">
+									<text class="sales-ranking-name">{{item.name}}</text>
+									<text class="sales-ranking-spec">{{item.spec}}</text>
+								</view>
+								<view class="sales-ranking-data">
+									<text class="sales-ranking-amount">¥{{item.amount}}</text>
+									<text class="sales-ranking-quantity">{{item.quantity}}箱</text>
+								</view>
+							</view>
 						</view>
 					</view>
 				</view>
@@ -317,9 +381,6 @@ const isFullPayment = ref(true); // 默认为全款
 // 销售统计数据
 const totalSalesAmount = computed(() => {
 	// 计算今日销售总额
-	const today = new Date();
-	const todayStr = `${today.getHours().toString().padStart(2, '0')}:${today.getMinutes().toString().padStart(2, '0')}`;
-
 	// 过滤出今日销售记录（简化处理，实际应用中应该比较日期）
 	const todaySales = salesRecords.value;
 
@@ -334,9 +395,6 @@ const totalSalesAmount = computed(() => {
 
 const totalSalesQuantity = computed(() => {
 	// 计算今日销售总数量
-	const today = new Date();
-	const todayStr = `${today.getHours().toString().padStart(2, '0')}:${today.getMinutes().toString().padStart(2, '0')}`;
-
 	// 过滤出今日销售记录
 	const todaySales = salesRecords.value;
 
@@ -344,6 +402,37 @@ const totalSalesQuantity = computed(() => {
 	return todaySales.reduce((sum, record) => {
 		return sum + parseInt(record.quantity);
 	}, 0);
+});
+
+// 计算今日客户数量
+const totalCustomers = computed(() => {
+	// 过滤出今日销售记录
+	const todaySales = salesRecords.value;
+
+	// 使用Set来去除重复客户
+	const uniqueCustomers = new Set();
+	todaySales.forEach(record => {
+		if (record.customer && record.customer.id) {
+			uniqueCustomers.add(record.customer.id);
+		}
+	});
+
+	return uniqueCustomers.size;
+});
+
+// 计算今日未收款金额
+const totalUnpaidAmount = computed(() => {
+	// 过滤出今日未付款的销售记录
+	const todaySales = salesRecords.value;
+	const unpaidSales = todaySales.filter(record => record.paymentStatus === 'unpaid');
+
+	// 计算未付款总额
+	const total = unpaidSales.reduce((sum, record) => {
+		return sum + parseFloat(record.total);
+	}, 0);
+
+	// 格式化为带千位分隔符的字符串
+	return total.toLocaleString('zh-CN');
 });
 
 // 客户相关数据
@@ -362,13 +451,28 @@ const filteredCustomersList = computed(() => {
 	});
 });
 
-// 销售排行榜数据
-const salesRanking = ref([
-	{ name: '明牌阿克苏苹果', amount: 875 },
-	{ name: '红富士苹果', amount: 650 },
-	{ name: '砀山梨', amount: 420 },
-	{ name: '新鲜橘子', amount: 380 },
-	{ name: '富士山苹果', amount: 261 }
+// 1. 销售趋势图数据
+const salesTrend = ref({
+	days: ['5/10', '5/11', '5/12', '5/13', '5/14', '5/15', '5/16'],
+	amounts: [30, 45, 25, 60, 75, 65, 80] // 百分比高度
+});
+
+// 3. 主要客户销售额排名数据
+const customerRanking = ref([
+	{ name: '小王水果店', amount: 1250, percentage: 100 },
+	{ name: '大型超市A', amount: 980, percentage: 78 },
+	{ name: '社区生鲜店', amount: 820, percentage: 65 },
+	{ name: '水果批发商B', amount: 650, percentage: 52 },
+	{ name: '学校食堂', amount: 450, percentage: 36 }
+]);
+
+// 4. 热销水果排行榜数据
+const topSellingFruits = ref([
+	{ name: '明牌阿克苏苹果', spec: '5斤/箱', amount: 875, quantity: 35 },
+	{ name: '红富士苹果', spec: '10斤/箱', amount: 650, quantity: 26 },
+	{ name: '砀山梨', spec: '8斤/箱', amount: 420, quantity: 21 },
+	{ name: '新鲜橙子', spec: '10斤/箱', amount: 380, quantity: 19 },
+	{ name: '富士山苹果', spec: '5斤/箱', amount: 261, quantity: 12 }
 ]);
 
 // 过滤后的水果数据
@@ -799,14 +903,17 @@ function loadCustomersData() {
 
 /* 统计数据样式 */
 .sales-stats-grid {
-	display: flex;
-	gap: 20rpx;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16rpx;
+	margin-top: 20rpx;
 }
 
 .sales-stats-item {
-	flex: 1;
-	padding: 24rpx;
+	padding: 20rpx;
 	border-radius: 16rpx;
+	display: flex;
+	flex-direction: column;
 }
 
 .sales-amount-item {
@@ -817,6 +924,16 @@ function loadCustomersData() {
 .sales-quantity-item {
 	background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
 	border: 1rpx solid rgba(37, 99, 235, 0.1);
+}
+
+.sales-customer-item {
+	background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+	border: 1rpx solid rgba(22, 163, 74, 0.1);
+}
+
+.sales-unpaid-item {
+	background: linear-gradient(135deg, #FEF2F2, #FEE2E2);
+	border: 1rpx solid rgba(220, 38, 38, 0.1);
 }
 
 .sales-stats-label {
@@ -841,19 +958,18 @@ function loadCustomersData() {
 	color: #2563EB;
 }
 
-.sales-stats-trend {
-	display: flex;
-	align-items: center;
+.sales-customer-item .sales-stats-value {
+	color: #16A34A;
+}
+
+.sales-unpaid-item .sales-stats-value {
+	color: #DC2626;
 }
 
 .sales-trend-icon {
 	margin-right: 4rpx;
 }
 
-.sales-trend-text {
-	font-size: 22rpx;
-	color: #10B981;
-}
 
 /* 搜索框样式 */
 .sales-search-container {
@@ -1239,9 +1355,22 @@ function loadCustomersData() {
 }
 
 .sales-popup-title {
-	font-size: 36rpx;
+	font-size: 38rpx;
 	font-weight: bold;
 	color: #1F2937;
+	position: relative;
+	padding-bottom: 16rpx;
+}
+
+.sales-popup-title::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 60rpx;
+	height: 4rpx;
+	background-color: #0D9488;
+	border-radius: 2rpx;
 }
 
 .sales-popup-spec {
@@ -1478,52 +1607,340 @@ function loadCustomersData() {
 
 /* 统计弹窗样式 */
 .sales-stats-popup {
+	width: 650rpx;
 	background-color: white;
 	border-radius: 24rpx;
-	width: 84%;
+	overflow-y: auto;
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.15);
 	padding: 40rpx;
 	max-height: 80vh;
-	overflow-y: auto;
+	box-sizing: border-box;
+	margin: 0 auto;
+}
+
+.sales-stats-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 30rpx;
+	padding-bottom: 20rpx;
+	border-bottom: 1rpx solid #F3F4F6;
+}
+
+.sales-stats-title {
+	font-size: 38rpx;
+	font-weight: bold;
+	color: #1F2937;
+	position: relative;
+	padding-bottom: 16rpx;
+}
+
+.sales-stats-title::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 60rpx;
+	height: 4rpx;
+	background-color: #0D9488;
+	border-radius: 2rpx;
+}
+
+.sales-stats-close {
+	padding: 10rpx;
 }
 
 .sales-stats-section {
-	margin-bottom: 30rpx;
+	margin-bottom: 50rpx;
+	width: 100%;
 }
 
 .sales-stats-section-title {
-	font-size: 26rpx;
-	font-weight: 500;
-	color: #374151;
-	margin-bottom: 16rpx;
+	font-size: 32rpx;
+	font-weight: 600;
+	color: #1F2937;
+	margin-bottom: 24rpx;
 	display: block;
+	position: relative;
+	padding-left: 16rpx;
 }
 
-.sales-chart-placeholder {
-	height: 320rpx;
+.sales-stats-section-title::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 6rpx;
+	height: 24rpx;
+	background-color: #0D9488;
+	border-radius: 3rpx;
+}
+
+/* 1. 销售趋势图样式 */
+.sales-chart-container {
 	background-color: #F9FAFB;
 	border-radius: 16rpx;
+	padding: 30rpx;
+	width: 100%;
+	box-sizing: border-box;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	margin: 0 auto;
+	overflow: hidden;
+}
+
+.sales-chart-legend {
+	display: flex;
+	justify-content: flex-end;
+	gap: 20rpx;
+	margin-bottom: 10rpx;
+}
+
+.sales-chart-legend-item {
+	display: flex;
+	align-items: center;
+	gap: 8rpx;
+}
+
+.sales-chart-legend-color {
+	width: 16rpx;
+	height: 16rpx;
+	border-radius: 4rpx;
+}
+
+.sales-amount-color {
+	background-color: #0D9488;
+}
+
+.sales-quantity-color {
+	background-color: #3B82F6;
+}
+
+.sales-chart-legend-text {
+	font-size: 22rpx;
+	color: #6B7280;
+}
+
+.sales-chart {
+	height: 360rpx;
+	position: relative;
+	margin-top: 20rpx;
+	width: 100%;
+}
+
+.sales-chart-axis-x {
+	display: flex;
+	justify-content: space-between;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding-top: 10rpx;
+	border-top: 1rpx solid #E5E7EB;
+}
+
+.sales-chart-label {
+	font-size: 20rpx;
+	color: #9CA3AF;
+	text-align: center;
+	width: 14.28%; /* 100% / 7天 */
+}
+
+.sales-chart-body {
+	height: 320rpx;
+	position: relative;
+	width: 100%;
+}
+
+/* 已删除柱状图相关样式 */
+
+.sales-chart-line {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 100%;
+}
+
+.sales-chart-point {
+	position: absolute;
+	width: 12rpx;
+	height: 12rpx;
+	border-radius: 50%;
+	background-color: #0D9488;
+	border: 2rpx solid white;
+	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+	transform: translate(-50%, 50%);
+	z-index: 2;
+}
+
+.sales-amount-point {
+	background-color: #0D9488;
+}
+
+.sales-chart-point-value {
+	position: absolute;
+	top: -30rpx;
+	left: 50%;
+	transform: translateX(-50%);
+	font-size: 18rpx;
+	color: #0D9488;
+	white-space: nowrap;
+	background-color: rgba(255, 255, 255, 0.8);
+	padding: 2rpx 6rpx;
+	border-radius: 4rpx;
+}
+
+.sales-chart-line-path {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	pointer-events: none;
+	border-bottom: 2rpx dashed #0D9488;
+	transform: translateY(50%);
+}
+
+.sales-pie-container {
+	width: 240rpx;
+	height: 240rpx;
+	border-radius: 50%;
+	position: relative;
+	overflow: hidden;
+	background-color: #F3F4F6;
+}
+
+.sales-pie-segment {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+}
+
+.sales-pie-legend {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 16rpx 30rpx;
+	width: 100%;
+}
+
+.sales-pie-legend-item {
+	display: flex;
+	align-items: center;
+	gap: 8rpx;
+}
+
+.sales-pie-legend-color {
+	width: 16rpx;
+	height: 16rpx;
+	border-radius: 4rpx;
+}
+
+.sales-pie-legend-text {
+	font-size: 22rpx;
+	color: #4B5563;
+}
+
+/* 3. 主要客户销售额排名样式 */
+.sales-customer-ranking {
+	display: flex;
+	flex-direction: column;
+	gap: 20rpx;
+	width: 100%;
+}
+
+.sales-customer-item {
+	display: flex;
+	align-items: center;
+	gap: 24rpx;
+	padding: 24rpx;
+	background-color: #F9FAFB;
+	border-radius: 16rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	width: 100%;
+	box-sizing: border-box;
+	margin: 0 auto;
+}
+
+.sales-customer-rank {
+	width: 40rpx;
+	height: 40rpx;
+	border-radius: 20rpx;
+	background-color: #F3F4F6;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	flex-shrink: 0;
 }
 
-.sales-chart-text {
-	color: #6B7280;
-	font-size: 28rpx;
+.sales-customer-rank-number {
+	font-size: 22rpx;
+	font-weight: bold;
+	color: #4B5563;
 }
 
+.sales-customer-info {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.sales-customer-name {
+	font-size: 26rpx;
+	font-weight: 500;
+	color: #1F2937;
+}
+
+.sales-customer-progress-container {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
+.sales-customer-progress-bg {
+	flex: 1;
+	height: 12rpx;
+	background-color: #F3F4F6;
+	border-radius: 6rpx;
+	overflow: hidden;
+}
+
+.sales-customer-progress {
+	height: 100%;
+	background-color: #0D9488;
+	border-radius: 6rpx;
+}
+
+.sales-customer-amount {
+	font-size: 24rpx;
+	font-weight: 500;
+	color: #0D9488;
+	white-space: nowrap;
+}
+
+/* 4. 热销水果排行榜样式 */
 .sales-ranking-list {
 	display: flex;
 	flex-direction: column;
-	gap: 16rpx;
+	gap: 20rpx;
+	width: 100%;
 }
 
 .sales-ranking-item {
 	display: flex;
 	align-items: center;
-	padding: 16rpx;
+	padding: 24rpx;
 	background-color: #F9FAFB;
-	border-radius: 12rpx;
+	border-radius: 16rpx;
+	gap: 24rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	width: 100%;
+	box-sizing: border-box;
+	margin: 0 auto;
 }
 
 .sales-ranking-badge {
@@ -1536,20 +1953,61 @@ function loadCustomersData() {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	margin-right: 16rpx;
+	flex-shrink: 0;
+}
+
+.rank-1 {
+	background-color: #F59E0B;
+}
+
+.rank-2 {
+	background-color: #6B7280;
+}
+
+.rank-3 {
+	background-color: #B45309;
+}
+
+.sales-ranking-content {
+	flex: 1;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.sales-ranking-fruit-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4rpx;
 }
 
 .sales-ranking-name {
-	flex: 1;
 	font-size: 26rpx;
 	font-weight: 500;
 	color: #1F2937;
+}
+
+.sales-ranking-spec {
+	font-size: 22rpx;
+	color: #6B7280;
+}
+
+.sales-ranking-data {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 4rpx;
 }
 
 .sales-ranking-amount {
 	font-size: 28rpx;
 	font-weight: bold;
 	color: #0D9488;
+}
+
+.sales-ranking-quantity {
+	font-size: 22rpx;
+	color: #6B7280;
 }
 
 .sales-popup-close-btn {
