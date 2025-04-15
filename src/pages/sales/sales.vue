@@ -99,23 +99,23 @@
 						:class="['sales-history-item', index < salesRecords.length - 1 ? 'sales-history-border' : '']"
 					>
 						<view class="sales-history-content">
-							<!-- 左侧图片区域 -->
+							<!-- 左侧图标区域 -->
 							<view class="sales-history-image-container">
-								<image :src="record.image" :alt="record.name" class="sales-history-image"></image>
+								<uni-icons type="cart" size="24" color="#0D9488"></uni-icons>
 							</view>
 
 							<!-- 左侧商品信息区域 -->
 							<view class="sales-history-left">
 								<!-- 商品名称 -->
-								<text class="sales-history-name">{{record.name}}</text>
+								<text class="sales-history-name">{{record.productName}}</text>
 								<!-- 数量和单价 -->
-								<text class="sales-history-quantity">{{record.quantity}}件 × ¥{{record.price}}</text>
+								<text class="sales-history-quantity">{{record.quantity}}件 × ¥{{record.unitPrice}}</text>
 							</view>
 
 							<!-- 中间信息区域 -->
 							<view class="sales-history-middle">
 								<!-- 上部：客户名称 -->
-								<text class="sales-history-customer-name" v-if="record.customer">{{record.customer.name}}</text>
+								<text class="sales-history-customer-name">{{record.customerName}}</text>
 
 								<!-- 下部：日期 -->
 								<text class="sales-history-date">{{record.date}}</text>
@@ -124,10 +124,10 @@
 							<!-- 右侧区域 -->
 							<view class="sales-history-right">
 								<!-- 上部：总价 -->
-								<text class="sales-history-total">¥{{record.total}}</text>
+								<text class="sales-history-total">¥{{record.amount}}</text>
 
 								<!-- 下部：付款状态 -->
-								<text :class="['sales-history-payment-status', record.paymentStatus === 'paid' ? 'status-paid' : 'status-unpaid']">{{record.paymentStatus === 'paid' ? '已付款' : '未付款'}}</text>
+								<text :class="['sales-history-payment-status', record.status === '已付款' ? 'status-paid' : 'status-unpaid']">{{record.status}}</text>
 							</view>
 						</view>
 					</view>
@@ -378,6 +378,7 @@ import { ref, computed, onMounted } from 'vue';
 import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
 import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
 import CustomTabBar from '@/components/CustomTabBar.vue';
+import { addSalesRecord } from '@/services/salesRecordService.js';
 
 // 数据
 const searchText = ref('');
@@ -396,7 +397,7 @@ const totalSalesAmount = computed(() => {
 
 	// 计算总额
 	const total = todaySales.reduce((sum, record) => {
-		return sum + parseFloat(record.total);
+		return sum + parseFloat(record.amount || record.total || 0);
 	}, 0);
 
 	// 格式化为带千位分隔符的字符串
@@ -410,7 +411,7 @@ const totalSalesQuantity = computed(() => {
 
 	// 计算总数量
 	return todaySales.reduce((sum, record) => {
-		return sum + parseInt(record.quantity);
+		return sum + parseInt(record.quantity || 0);
 	}, 0);
 });
 
@@ -422,8 +423,10 @@ const totalCustomers = computed(() => {
 	// 使用Set来去除重复客户
 	const uniqueCustomers = new Set();
 	todaySales.forEach(record => {
-		if (record.customer && record.customer.id) {
-			uniqueCustomers.add(record.customer.id);
+		if (record.customerName) {
+			uniqueCustomers.add(record.customerName);
+		} else if (record.customer && record.customer.name) {
+			uniqueCustomers.add(record.customer.name);
 		}
 	});
 
@@ -434,11 +437,13 @@ const totalCustomers = computed(() => {
 const totalUnpaidAmount = computed(() => {
 	// 过滤出今日未付款的销售记录
 	const todaySales = salesRecords.value;
-	const unpaidSales = todaySales.filter(record => record.paymentStatus === 'unpaid');
+	const unpaidSales = todaySales.filter(record =>
+		record.status === '未付款' || record.paymentStatus === 'unpaid'
+	);
 
 	// 计算未付款总额
 	const total = unpaidSales.reduce((sum, record) => {
-		return sum + parseFloat(record.total);
+		return sum + parseFloat(record.amount || record.total || 0);
 	}, 0);
 
 	// 格式化为带千位分隔符的字符串
@@ -480,24 +485,36 @@ const customerRanking = computed(() => {
 	// 遍历所有销售记录
 	salesRecords.value.forEach(record => {
 		// 确保记录有客户信息
-		if (record.customer && record.customer.id && record.customer.name) {
-			const customerId = record.customer.id;
-			const customerName = record.customer.name;
-			const saleAmount = parseFloat(record.total);
+		let customerId, customerName;
 
-			// 如果客户已存在，累加销售额；否则创建新条目
-			if (customerSalesMap.has(customerId)) {
-				const currentAmount = customerSalesMap.get(customerId).amount;
-				customerSalesMap.set(customerId, {
-					name: customerName,
-					amount: currentAmount + saleAmount
-				});
-			} else {
-				customerSalesMap.set(customerId, {
-					name: customerName,
-					amount: saleAmount
-				});
-			}
+		// 首先检查新结构
+		if (record.customerName) {
+			customerId = record.customerName; // 使用客户名称作为唯一标识
+			customerName = record.customerName;
+		}
+		// 然后检查旧结构
+		else if (record.customer && record.customer.name) {
+			customerId = record.customer.id || record.customer.name;
+			customerName = record.customer.name;
+		} else {
+			return; // 跳过没有客户信息的记录
+		}
+
+		// 获取销售金额
+		const saleAmount = parseFloat(record.amount || record.total || 0);
+
+		// 如果客户已存在，累加销售额；否则创建新条目
+		if (customerSalesMap.has(customerId)) {
+			const currentAmount = customerSalesMap.get(customerId).amount;
+			customerSalesMap.set(customerId, {
+				name: customerName,
+				amount: currentAmount + saleAmount
+			});
+		} else {
+			customerSalesMap.set(customerId, {
+				name: customerName,
+				amount: saleAmount
+			});
 		}
 	});
 
@@ -537,29 +554,44 @@ const topSellingFruits = computed(() => {
 	// 遍历所有销售记录
 	salesRecords.value.forEach(record => {
 		// 确保记录有水果名称和数量
-		if (record.name && record.quantity && record.price && record.total) {
-			const fruitName = record.name;
-			const quantity = parseInt(record.quantity);
-			const amount = parseFloat(record.total);
-			const spec = record.spec || ''; // 规格可能不存在
+		let fruitName, quantity, amount, spec;
 
-			// 如果水果已存在，累加销售额和数量；否则创建新条目
-			if (fruitSalesMap.has(fruitName)) {
-				const currentData = fruitSalesMap.get(fruitName);
-				fruitSalesMap.set(fruitName, {
-					name: fruitName,
-					spec: spec || currentData.spec, // 保留原有规格或使用新规格
-					amount: currentData.amount + amount,
-					quantity: currentData.quantity + quantity
-				});
-			} else {
-				fruitSalesMap.set(fruitName, {
-					name: fruitName,
-					spec: spec,
-					amount: amount,
-					quantity: quantity
-				});
-			}
+		// 首先检查新结构
+		if (record.productName && record.quantity) {
+			fruitName = record.productName;
+			quantity = parseInt(record.quantity);
+			amount = parseFloat(record.amount || 0);
+			spec = record.spec || '';
+		}
+		// 然后检查旧结构
+		else if (record.name && record.quantity) {
+			fruitName = record.name;
+			quantity = parseInt(record.quantity);
+			amount = parseFloat(record.total || 0);
+			spec = record.spec || '';
+		} else {
+			return; // 跳过没有必要信息的记录
+		}
+
+		// 生成唯一标识符，包含品牌、品种、规格
+		const fruitKey = `${record.brand || ''}-${fruitName}-${spec}`;
+
+		// 如果水果已存在，累加销售额和数量；否则创建新条目
+		if (fruitSalesMap.has(fruitKey)) {
+			const currentData = fruitSalesMap.get(fruitKey);
+			fruitSalesMap.set(fruitKey, {
+				name: fruitName,
+				spec: spec,
+				amount: currentData.amount + amount,
+				quantity: currentData.quantity + quantity
+			});
+		} else {
+			fruitSalesMap.set(fruitKey, {
+				name: fruitName,
+				spec: spec,
+				amount: amount,
+				quantity: quantity
+			});
 		}
 	});
 
@@ -747,29 +779,44 @@ function confirmSale() {
 	const now = new Date();
 	const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 	const date = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+
+	// 创建符合服务层结构的记录
 	const newRecord = {
-		name: currentFruit.value.name,
-		image: currentFruit.value.image,
-		quantity: saleQuantity.value,
-		price: parseFloat(salePrice.value).toFixed(2),
-		total: parseFloat(totalPrice.value).toFixed(2),
-		time: time,
+		orderNo: `S${date.replace(/-/g, '')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
 		date: date,
-		spec: currentFruit.value.spec || '', // 添加规格信息
+		time: time,
+		salesPerson: '系统用户', // 可以根据实际情况设置为登录用户
+		customerName: selectedCustomer.value.name || '散客',
+		brand: currentFruit.value.brand || '',
+		fruitCategory: currentFruit.value.category || '',
+		productName: currentFruit.value.name,
+		spec: currentFruit.value.spec || '',
+		unitPrice: parseFloat(salePrice.value).toFixed(2),
+		quantity: saleQuantity.value,
+		amount: parseFloat(totalPrice.value).toFixed(2),
+		status: isFullPayment.value ? '已付款' : '未付款',
+		paymentMethod: isFullPayment.value ? '现金' : '',
+		paymentTime: isFullPayment.value ? `${date} ${time}` : '',
+		remark: '',
+		// 保存原始数据，便于其他功能使用
 		customer: {
 			id: selectedCustomer.value.id,
 			name: selectedCustomer.value.name
 		},
-		paymentStatus: isFullPayment.value ? 'paid' : 'unpaid', // 付款状态
-		paidAmount: isFullPayment.value ? parseFloat(totalPrice.value) : 0 // 已付金额
+		paidAmount: isFullPayment.value ? parseFloat(totalPrice.value) : 0,
+		variety: currentFruit.value.variety || ''
 	};
 
+	// 添加到本地销售记录
 	salesRecords.value.unshift(newRecord);
 
 	// 限制记录数量
 	if (salesRecords.value.length > 10) {
 		salesRecords.value = salesRecords.value.slice(0, 10);
 	}
+
+	// 同时添加到销售记录服务
+	addSalesRecord(newRecord);
 
 	// 保存销售记录到本地存储
 	try {

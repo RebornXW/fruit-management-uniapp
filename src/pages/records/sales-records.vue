@@ -16,35 +16,28 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import RecordViewer from '@/components/RecordViewer.vue';
-import { salesRecords as mockSalesRecords } from '@/pages/sales/mock-data.js';
+import { getSalesRecords } from '@/services/salesRecordService.js';
 
 // 格式化数据以符合列表需要的形式
 const salesRecords = ref([]);
 
 onMounted(() => {
 	console.log('销售记录页面已加载');
-	console.log('导入的模拟数据条数:', mockSalesRecords.length);
 
-	const formattedRecords = mockSalesRecords.map(record => ({
-		orderNo: record.orderNo,
-		salesPerson: record.salesPerson,
-		customerName: record.customerName,
-		brand: record.brand || '国产', // 添加品牌字段
-		productName: record.productName,
-		spec: record.spec,
-		unitPrice: record.unitPrice,
-		quantity: record.quantity,
-		amount: record.amount,
-		date: record.date,
-		time: '10:00', // 模拟时间
-		status: record.status,
-		paymentMethod: record.status === '已付款' ? '微信支付' : '',
-		paymentTime: record.status === '已付款' ? `${record.date} 10:30` : '',
-		remark: `订单号：${record.orderNo}的销售记录`
-	}));
+	// 从服务中获取销售记录
+	const records = getSalesRecords();
+	console.log('从服务中获取的销售记录数量:', records.length);
 
-	console.log('格式化后的数据条数:', formattedRecords.length);
-	salesRecords.value = formattedRecords;
+	// 如果没有记录，显示空数组
+	if (records.length === 0) {
+		salesRecords.value = [];
+		return;
+	}
+
+	// 如果有记录，直接使用
+	salesRecords.value = records;
+
+
 
 	// 检查页面栈情况
 	const pages = getCurrentPages();
@@ -61,10 +54,12 @@ onMounted(() => {
 // 列表视图列配置
 const columns = [
 	{ title: '日期', field: 'date', type: 'date', width: '180rpx' },
+	{ title: '时间', field: 'time', type: 'text', width: '100rpx' },
 	{ title: '单号', field: 'orderNo', type: 'text', width: '200rpx' },
 	{ title: '客户', field: 'customerName', type: 'text', width: '180rpx' },
 	{ title: '业务员', field: 'salesPerson', type: 'text', width: '120rpx' },
 	{ title: '品牌', field: 'brand', type: 'text', width: '120rpx' },
+	{ title: '水果品类', field: 'fruitCategory', type: 'text', width: '120rpx' },
 	{ title: '水果品种', field: 'productName', type: 'text', width: '160rpx' },
 	{ title: '规格', field: 'spec', type: 'text', width: '140rpx' },
 	{ title: '数量', field: 'quantity', unit: '箱', type: 'number', width: '100rpx' },
@@ -97,7 +92,8 @@ const detailSections = [
 	{
 		title: '基本信息',
 		fields: [
-			{ label: '交易日期', field: 'date', timeField: 'time', type: 'date' },
+			{ label: '交易日期', field: 'date', type: 'date' },
+				{ label: '交易时间', field: 'time', type: 'text' },
 			{ label: '业务员', field: 'salesPerson', type: 'text' },
 			{ label: '客户', field: 'customerName', type: 'text' }
 		]
@@ -106,6 +102,7 @@ const detailSections = [
 		title: '商品信息',
 		fields: [
 			{ label: '品牌', field: 'brand', type: 'text' },
+			{ label: '水果品类', field: 'fruitCategory', type: 'text' },
 			{ label: '水果品种', field: 'productName', type: 'text' },
 			{ label: '规格', field: 'spec', type: 'text' },
 			{ label: '数量', field: 'quantity', unit: '箱', type: 'number' },

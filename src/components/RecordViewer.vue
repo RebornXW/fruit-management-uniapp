@@ -121,6 +121,9 @@
 										<block v-else-if="column.type === 'date'">
 											<text class="block text-sm text-ellipsis">{{item[column.field]}}</text>
 										</block>
+										<block v-else-if="column.type === 'datetime'">
+											<text class="block text-sm text-ellipsis">{{item[column.field]}} {{item[column.timeField]}}</text>
+										</block>
 										<block v-else-if="column.type === 'number'">
 											<text class="block text-sm text-ellipsis">{{item[column.field]}}{{column.unit || ''}}</text>
 										</block>
@@ -148,7 +151,7 @@
 								<view class="flex items-center">
 									<text class="text-xs text-gray-400">{{cardNoPrefix}}{{item[cardNoField] || 'S' + item[cardDateField].replace(/-/g, '')}}</text>
 								</view>
-								<text class="text-xs text-gray-400">{{item[cardDateField]}}</text>
+								<text class="text-xs text-gray-400">{{item[cardDateField]}} {{item['time'] || ''}}</text>
 							</view>
 
 							<view class="card-customer flex justify-between items-center mt-2">
