@@ -30,7 +30,7 @@
 						<text class="sales-stats-label">销售数量</text>
 						<text class="sales-stats-value">{{totalSalesQuantity}}箱</text>
 					</view>
-					<view class="sales-stats-item sales-customer-item">
+					<view class="sales-stats-item sales-customer-count-item">
 						<text class="sales-stats-label">客户数量</text>
 						<text class="sales-stats-value">{{totalCustomers}}</text>
 					</view>
@@ -323,6 +323,11 @@
 								</view>
 							</view>
 						</view>
+						<!-- 空状态显示 -->
+						<view v-if="customerRanking.length === 0" class="sales-empty-state">
+							<text class="sales-empty-text">暂无客户销售数据</text>
+							<text class="sales-empty-subtext">完成销售后将在此显示</text>
+						</view>
 					</view>
 				</view>
 
@@ -331,7 +336,7 @@
 					<text class="sales-stats-section-title">热销水果排行榜</text>
 					<view class="sales-ranking-list">
 						<view
-							v-for="(item, index) in topSellingFruits.slice(0, 3)"
+							v-for="(item, index) in topSellingFruits"
 							:key="index"
 							class="sales-ranking-item"
 						>
@@ -348,6 +353,11 @@
 									<text class="sales-ranking-quantity">{{item.quantity}}箱</text>
 								</view>
 							</view>
+						</view>
+						<!-- 空状态显示 -->
+						<view v-if="topSellingFruits.length === 0" class="sales-empty-state">
+							<text class="sales-empty-text">暂无水果销售数据</text>
+							<text class="sales-empty-subtext">完成销售后将在此显示</text>
 						</view>
 					</view>
 				</view>
@@ -457,23 +467,119 @@ const salesTrend = ref({
 	amounts: [30, 45, 25, 60, 75, 65, 80] // 百分比高度
 });
 
-// 3. 主要客户销售额排名数据
-const customerRanking = ref([
-	{ name: '小王水果店', amount: 1250, percentage: 100 },
-	{ name: '大型超市A', amount: 980, percentage: 78 },
-	{ name: '社区生鲜店', amount: 820, percentage: 65 },
-	{ name: '水果批发商B', amount: 650, percentage: 52 },
-	{ name: '学校食堂', amount: 450, percentage: 36 }
-]);
+// 3. 主要客户销售额排名数据 - 使用计算属性根据实际销售记录计算
+const customerRanking = computed(() => {
+	// 如果没有销售记录，返回空数组
+	if (salesRecords.value.length === 0) {
+		return [];
+	}
 
-// 4. 热销水果排行榜数据
-const topSellingFruits = ref([
-	{ name: '明牌阿克苏苹果', spec: '5斤/箱', amount: 875, quantity: 35 },
-	{ name: '红富士苹果', spec: '10斤/箱', amount: 650, quantity: 26 },
-	{ name: '砀山梨', spec: '8斤/箱', amount: 420, quantity: 21 },
-	{ name: '新鲜橙子', spec: '10斤/箱', amount: 380, quantity: 19 },
-	{ name: '富士山苹果', spec: '5斤/箱', amount: 261, quantity: 12 }
-]);
+	// 创建一个Map来存储每个客户的销售总额
+	const customerSalesMap = new Map();
+
+	// 遍历所有销售记录
+	salesRecords.value.forEach(record => {
+		// 确保记录有客户信息
+		if (record.customer && record.customer.id && record.customer.name) {
+			const customerId = record.customer.id;
+			const customerName = record.customer.name;
+			const saleAmount = parseFloat(record.total);
+
+			// 如果客户已存在，累加销售额；否则创建新条目
+			if (customerSalesMap.has(customerId)) {
+				const currentAmount = customerSalesMap.get(customerId).amount;
+				customerSalesMap.set(customerId, {
+					name: customerName,
+					amount: currentAmount + saleAmount
+				});
+			} else {
+				customerSalesMap.set(customerId, {
+					name: customerName,
+					amount: saleAmount
+				});
+			}
+		}
+	});
+
+	// 如果没有有效的客户销售数据，返回空数组
+	if (customerSalesMap.size === 0) {
+		return [];
+	}
+
+	// 将Map转换为数组并按销售额降序排序
+	const sortedCustomers = Array.from(customerSalesMap.values())
+		.sort((a, b) => b.amount - a.amount);
+
+	// 只取前5名客户
+	const topCustomers = sortedCustomers.slice(0, 5);
+
+	// 计算百分比 - 以最高销售额为基准(100%)
+	const maxAmount = topCustomers.length > 0 ? topCustomers[0].amount : 0;
+
+	// 为每个客户添加百分比
+	return topCustomers.map(customer => ({
+		name: customer.name,
+		amount: Math.round(customer.amount), // 四舍五入到整数
+		percentage: maxAmount > 0 ? Math.round((customer.amount / maxAmount) * 100) : 0
+	}));
+});
+
+// 4. 热销水果排行榜数据 - 使用计算属性根据实际销售金额排序
+const topSellingFruits = computed(() => {
+	// 如果没有销售记录，返回空数组
+	if (salesRecords.value.length === 0) {
+		return [];
+	}
+
+	// 创建一个Map来存储每个水果的销售数据
+	const fruitSalesMap = new Map();
+
+	// 遍历所有销售记录
+	salesRecords.value.forEach(record => {
+		// 确保记录有水果名称和数量
+		if (record.name && record.quantity && record.price && record.total) {
+			const fruitName = record.name;
+			const quantity = parseInt(record.quantity);
+			const amount = parseFloat(record.total);
+			const spec = record.spec || ''; // 规格可能不存在
+
+			// 如果水果已存在，累加销售额和数量；否则创建新条目
+			if (fruitSalesMap.has(fruitName)) {
+				const currentData = fruitSalesMap.get(fruitName);
+				fruitSalesMap.set(fruitName, {
+					name: fruitName,
+					spec: spec || currentData.spec, // 保留原有规格或使用新规格
+					amount: currentData.amount + amount,
+					quantity: currentData.quantity + quantity
+				});
+			} else {
+				fruitSalesMap.set(fruitName, {
+					name: fruitName,
+					spec: spec,
+					amount: amount,
+					quantity: quantity
+				});
+			}
+		}
+	});
+
+	// 如果没有有效的水果销售数据，返回空数组
+	if (fruitSalesMap.size === 0) {
+		return [];
+	}
+
+	// 将Map转换为数组并按销售金额降序排序
+	const sortedFruits = Array.from(fruitSalesMap.values())
+		.sort((a, b) => b.amount - a.amount);
+
+	// 只取前3名水果
+	return sortedFruits.slice(0, 3).map(fruit => ({
+		name: fruit.name,
+		spec: fruit.spec,
+		amount: Math.round(fruit.amount),
+		quantity: fruit.quantity
+	}));
+});
 
 // 过滤后的水果数据
 const filteredFruits = computed(() => {
@@ -649,6 +755,7 @@ function confirmSale() {
 		total: parseFloat(totalPrice.value).toFixed(2),
 		time: time,
 		date: date,
+		spec: currentFruit.value.spec || '', // 添加规格信息
 		customer: {
 			id: selectedCustomer.value.id,
 			name: selectedCustomer.value.name
@@ -850,13 +957,16 @@ function loadCustomersData() {
 
 /* 卡片通用样式 */
 .sales-stats-card {
-	background-color: white;
+	background-color: rgba(255, 255, 255, 0.9);
 	border-radius: 24rpx;
 	margin: 24rpx;
-	padding: 30rpx 20rpx;
-	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+	padding: 24rpx 20rpx;
+	box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
 	box-sizing: border-box;
 	width: calc(100% - 48rpx);
+	border: 1rpx solid rgba(255, 255, 255, 0.3);
+	backdrop-filter: blur(5rpx);
+	-webkit-backdrop-filter: blur(5rpx);
 }
 
 .sales-quick-card {
@@ -885,20 +995,35 @@ function loadCustomersData() {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	margin-bottom: 24rpx;
+	margin-bottom: 16rpx;
+	position: relative;
 }
 
 .sales-card-title {
-	font-size: 30rpx;
+	font-size: 32rpx;
 	font-weight: bold;
 	color: #1F2937;
+	position: relative;
+	padding-left: 0;
+}
+
+.sales-card-title::before {
+	display: none;
 }
 
 .sales-view-more {
-	font-size: 24rpx;
+	font-size: 26rpx;
 	color: #0D9488;
 	display: flex;
 	align-items: center;
+	background-color: rgba(13, 148, 136, 0.08);
+	padding: 8rpx 16rpx;
+	border-radius: 30rpx;
+	transition: background-color 0.2s ease;
+}
+
+.sales-view-more:active {
+	background-color: rgba(13, 148, 136, 0.15);
 }
 
 /* 统计数据样式 */
@@ -906,34 +1031,70 @@ function loadCustomersData() {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 16rpx;
-	margin-top: 20rpx;
+	margin-top: 16rpx;
 }
 
 .sales-stats-item {
-	padding: 20rpx;
+	padding: 16rpx 20rpx;
 	border-radius: 16rpx;
 	display: flex;
 	flex-direction: column;
+	justify-content: center;
+	position: relative;
+	overflow: hidden;
+	height: 120rpx;
+	box-sizing: border-box;
+	backdrop-filter: blur(12rpx);
+	-webkit-backdrop-filter: blur(12rpx);
+	background: rgba(240, 242, 245, 0.6);
+	border: 1rpx solid rgba(210, 215, 220, 0.5);
+	box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.1);
+	transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.sales-stats-item:active {
+	transform: scale(0.98);
+	box-shadow: 0 5rpx 15rpx rgba(0, 0, 0, 0.1);
+}
+
+.sales-stats-item::before {
+	display: none;
+}
+
+.sales-stats-item::after {
+	display: none;
 }
 
 .sales-amount-item {
-	background: linear-gradient(135deg, #F0FDFA, #E6FFFA);
-	border: 1rpx solid rgba(13, 148, 136, 0.1);
+	color: #10B981;
+}
+
+.sales-amount-item::after {
+	background-color: #10B981;
 }
 
 .sales-quantity-item {
-	background: linear-gradient(135deg, #EFF6FF, #DBEAFE);
-	border: 1rpx solid rgba(37, 99, 235, 0.1);
+	color: #3B82F6;
 }
 
-.sales-customer-item {
-	background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
-	border: 1rpx solid rgba(22, 163, 74, 0.1);
+.sales-quantity-item::after {
+	background-color: #3B82F6;
+}
+
+.sales-customer-count-item {
+	color: #8B5CF6; /* 紫色，与绿色形成明显区分 */
+}
+
+.sales-customer-count-item::after {
+	background-color: #8B5CF6;
 }
 
 .sales-unpaid-item {
-	background: linear-gradient(135deg, #FEF2F2, #FEE2E2);
-	border: 1rpx solid rgba(220, 38, 38, 0.1);
+	color: #EF4444;
+}
+
+.sales-unpaid-item::after {
+	background-color: #EF4444;
 }
 
 .sales-stats-label {
@@ -941,30 +1102,23 @@ function loadCustomersData() {
 	color: #6B7280;
 	margin-bottom: 8rpx;
 	display: block;
+	font-weight: 500;
+	position: relative;
+	z-index: 2;
 }
 
 .sales-stats-value {
 	font-size: 36rpx;
 	font-weight: bold;
 	display: block;
-	margin-bottom: 8rpx;
+	margin-bottom: 4rpx;
+	letter-spacing: 0.5rpx;
+	position: relative;
+	z-index: 2;
+	color: currentColor;
 }
 
-.sales-amount-item .sales-stats-value {
-	color: #0D9488;
-}
-
-.sales-quantity-item .sales-stats-value {
-	color: #2563EB;
-}
-
-.sales-customer-item .sales-stats-value {
-	color: #16A34A;
-}
-
-.sales-unpaid-item .sales-stats-value {
-	color: #DC2626;
-}
+/* 各统计项的数值颜色使用 currentColor 继承父元素的颜色 */
 
 .sales-trend-icon {
 	margin-right: 4rpx;
@@ -1635,15 +1789,9 @@ function loadCustomersData() {
 	padding-bottom: 16rpx;
 }
 
+/* 删除标题下方的绿色线 */
 .sales-stats-title::after {
-	content: '';
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	width: 60rpx;
-	height: 4rpx;
-	background-color: #0D9488;
-	border-radius: 2rpx;
+	display: none;
 }
 
 .sales-stats-close {
@@ -1662,19 +1810,12 @@ function loadCustomersData() {
 	margin-bottom: 24rpx;
 	display: block;
 	position: relative;
-	padding-left: 16rpx;
+	padding-left: 0; /* 删除左边距 */
 }
 
+/* 删除标题左侧的绿色线 */
 .sales-stats-section-title::before {
-	content: '';
-	position: absolute;
-	left: 0;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 6rpx;
-	height: 24rpx;
-	background-color: #0D9488;
-	border-radius: 3rpx;
+	display: none;
 }
 
 /* 1. 销售趋势图样式 */
