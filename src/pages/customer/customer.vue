@@ -12,7 +12,7 @@
 				</view>
 			</view>
 		</view>
-		
+
 		<!-- 搜索框 - 替代原分类标签 -->
 		<view class="search-container">
 			<view class="search-box">
@@ -23,12 +23,12 @@
 				<text class="iconfont icon-add"></text>
 			</button>
 		</view>
-		
+
 		<!-- 客户展示区 -->
 		<scroll-view scroll-y class="customer-list-container">
 			<view class="customer-list">
-				<view 
-					v-for="customer in filteredCustomers" 
+				<view
+					v-for="customer in filteredCustomers"
 					:key="customer.id"
 					class="customer-card"
 					@tap="showCustomerDetail(customer)"
@@ -48,7 +48,7 @@
 				</view>
 			</view>
 		</scroll-view>
-		
+
 		<!-- 客户详情弹窗 -->
 		<uni-popup ref="customerPopup" type="bottom">
 			<view class="customer-popup-bg">
@@ -58,10 +58,10 @@
 						<custom-icon type="close" size="20" color="#9CA3AF"></custom-icon>
 					</view>
 				</view>
-				<scroll-view 
-					scroll-y 
-					class="popup-scroll-content" 
-					:scroll-top="scrollTop" 
+				<scroll-view
+					scroll-y
+					class="popup-scroll-content"
+					:scroll-top="scrollTop"
 					@scrolltolower="loadMoreRecords"
 					:refresher-enabled="true"
 					:refresher-triggered="isRefreshing"
@@ -78,12 +78,15 @@
 							<text class="info-label">联系方式</text>
 							<text class="info-value">{{currentCustomer.phone}}</text>
 						</view>
-						
+
 						<!-- 回款统计卡片 -->
 						<view class="info-card payment-stats">
 							<view class="stats-header">
 								<text class="stats-title">回款统计</text>
 								<view class="stats-actions">
+									<button class="payment-btn" @tap="addPayment" v-if="currentCustomerDebt > 0">
+										添加回款
+									</button>
 									<view class="stats-action-btn" @tap="showPaymentHistory">
 										<text class="action-text">回款记录</text>
 										<uni-icons type="right" size="14" color="#0D9488"></uni-icons>
@@ -111,24 +114,24 @@
 								<text class="progress-text">回款率: {{getPaymentPercentage(currentCustomer)}}%</text>
 							</view>
 						</view>
-						
+
 						<!-- 销售记录区域 -->
 						<view class="customer-sales-records">
 							<view class="records-header">
 								<text class="records-title">销售记录</text>
 								<text class="records-count" v-if="totalRecords > 0">共{{totalRecords}}单</text>
 							</view>
-							
+
 							<!-- 空状态 -->
 							<view class="empty-records" v-if="customerSalesRecords.length === 0 && !isLoading">
 								<image src="/static/images/empty.png" class="empty-image" mode="aspectFit"></image>
 								<text class="empty-text">暂无销售记录</text>
 							</view>
-							
+
 							<!-- 销售记录列表 - 正序排列，最新的在上面 -->
-							<scroll-view 
-								scroll-y 
-								class="records-scroll-view" 
+							<scroll-view
+								scroll-y
+								class="records-scroll-view"
 								:scroll-top="scrollTop"
 								@scrolltolower="loadMoreRecords"
 								:enhanced="true"
@@ -136,8 +139,8 @@
 								:bounces="false"
 							>
 								<view class="records-list">
-									<view 
-										v-for="(record, index) in customerSalesRecords" 
+									<view
+										v-for="(record, index) in customerSalesRecords"
 										:key="index"
 										class="record-item"
 									>
@@ -145,21 +148,32 @@
 											<view class="record-left">
 												<image :src="record.image" class="record-image" mode="aspectFill"></image>
 												<view class="record-info">
-													<text class="record-name">{{record.name}}</text>
-													<text class="record-quantity">{{record.quantity}}箱 × ¥{{record.price}}</text>
+													<text class="record-name">{{getFruitDisplayName(record)}}</text>
+													<text class="record-quantity">{{getQuantityDisplay(record)}}</text>
 												</view>
 											</view>
 											<view class="record-right">
-												<text class="record-total">¥{{record.total}}</text>
-												<text class="record-date">{{record.date}}</text>
-												<text class="record-status" :class="record.paid ? 'status-paid' : 'status-unpaid'">
-													{{record.paid ? '已回款' : '未回款'}}
-												</text>
+												<text class="record-total">¥{{getTotalDisplay(record)}}</text>
+												<text class="record-date">{{getDateDisplay(record)}}</text>
+												<view class="record-status-container">
+													<text class="record-status" :class="{
+														'status-paid': record.paid || record.status === '已回款' || record.paymentStatus === 'paid',
+														'status-partial': record.status === '部分回款' || record.paymentStatus === 'partial',
+														'status-unpaid': !record.paid && record.status !== '已回款' && record.status !== '部分回款' && record.paymentStatus !== 'paid' && record.paymentStatus !== 'partial'
+													}">
+														{{record.status || (record.paid ? '已回款' : '未回款')}}
+													</text>
+													<button
+														v-if="!record.paid && record.status !== '已回款' && record.paymentStatus !== 'paid'"
+														class="record-payment-btn"
+														@tap.stop="addSinglePayment(record)"
+													>收款</button>
+												</view>
 											</view>
 										</view>
 									</view>
 								</view>
-								
+
 								<!-- 加载状态 - 放在列表底部 -->
 								<view class="loading-status" v-if="customerSalesRecords.length > 0">
 									<view class="loading-more" v-if="isLoading && !hasMore">
@@ -172,20 +186,17 @@
 								</view>
 							</scroll-view>
 						</view>
-						
+
 						<view class="action-buttons">
 							<button class="action-button" @tap="contactCustomer">
 								联系客户
-							</button>
-							<button class="action-button payment-button" @tap="addPayment">
-								添加回款
 							</button>
 						</view>
 					</view>
 				</scroll-view>
 			</view>
 		</uni-popup>
-		
+
 		<!-- 新增客户弹窗 -->
 		<uni-popup ref="addCustomerPopup" type="bottom">
 			<view class="customer-popup-bg">
@@ -212,16 +223,29 @@
 				</view>
 			</view>
 		</uni-popup>
-		
+
+		<!-- 收款弹窗 -->
+		<payment-popup
+			ref="paymentPopupRef"
+			:customer="currentCustomer"
+			:total-debt-amount="currentCustomerDebt"
+			:unpaid-records="unpaidRecords"
+			@close="onPaymentPopupClose"
+			@confirm="onPaymentConfirm"
+		></payment-popup>
+
 		<!-- 底部TabBar -->
 		<custom-tab-bar></custom-tab-bar>
 	</view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import CustomTabBar from '@/components/CustomTabBar.vue';
 import CustomIcon from '@/components/CustomIcon.vue';
+import PaymentPopup from './PaymentPopup.vue';
+import { calculateCustomerDebt, getCustomerUnpaidRecords, processPayment } from '@/services/paymentService.js';
+import { getSalesRecords } from '@/services/salesRecordService.js';
 
 // 数据
 const searchText = ref('');
@@ -246,13 +270,18 @@ const newCustomer = ref({
 	remark: ''
 });
 
+// 收款相关数据
+const paymentPopupRef = ref(null);
+const currentCustomerDebt = ref(0);
+const unpaidRecords = ref([]);
+
 // 过滤后的客户数据
 const filteredCustomers = computed(() => {
 	if (!searchText.value) return customersData.value;
-	
+
 	const query = searchText.value.toLowerCase();
 	return customersData.value.filter(customer => {
-		return customer.name.toLowerCase().includes(query) || 
+		return customer.name.toLowerCase().includes(query) ||
 			customer.phone.includes(query);
 	});
 });
@@ -269,13 +298,19 @@ const customerPopup = ref(null);
 function showCustomerDetail(customer) {
 	// 先设置当前客户，避免弹窗打开时的闪烁
 	currentCustomer.value = customer;
-	
+
+	// 计算客户欠款总额
+	currentCustomerDebt.value = calculateCustomerDebt(customer.id);
+
+	// 获取客户的未付款记录
+	unpaidRecords.value = getCustomerUnpaidRecords(customer.id);
+
 	// 打开弹窗
 	customerPopup.value.open();
-	
+
 	// 重置分页和记录数据
 	resetRecordsData();
-	
+
 	// 加载该客户的销售记录
 	loadAllCustomerRecords(customer.id);
 }
@@ -292,178 +327,274 @@ function resetRecordsData() {
 // 加载所有客户记录到缓存
 function loadAllCustomerRecords(customerId) {
 	if (isLoading.value) return;
-	
+
 	isLoading.value = true;
-	
-	// 模拟从服务器获取所有数据
-	setTimeout(() => {
-		const baseRecords = [
-			{ 
-				name: "明牌阿克苏苹果", 
-				quantity: 2, 
-				price: "55.00", 
-				total: "110.00", 
-				date: "2023-06-15", 
-				image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300",
-				paid: true
-			},
-			{ 
-				name: "红富士苹果", 
-				quantity: 5, 
-				price: "48.00", 
-				total: "240.00", 
-				date: "2023-06-10", 
-				image: "https://images.unsplash.com/photo-1611080626919-7cf5a9dbab12?q=80&w=300",
-				paid: true
-			},
-			{ 
-				name: "砀山梨", 
-				quantity: 3, 
-				price: "32.00", 
-				total: "96.00", 
-				date: "2023-06-05", 
-				image: "https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300",
-				paid: false
-			},
-			{ 
-				name: "新鲜橘子", 
-				quantity: 4, 
-				price: "25.00", 
-				total: "100.00", 
-				date: "2023-06-03", 
-				image: "https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300",
-				paid: false
-			},
-			{ 
-				name: "蜜桃", 
-				quantity: 2, 
-				price: "60.00", 
-				total: "120.00", 
-				date: "2023-05-28", 
-				image: "https://images.unsplash.com/photo-1595743825637-cdafc8ad4908?q=80&w=300",
-				paid: true
-			},
-			{ 
-				name: "香蕉", 
-				quantity: 3, 
-				price: "22.00", 
-				total: "66.00", 
-				date: "2023-05-25", 
-				image: "https://images.unsplash.com/photo-1603833665858-e61d17a86224?q=80&w=300",
-				paid: false
-			},
-			{ 
-				name: "葡萄", 
-				quantity: 2, 
-				price: "35.00", 
-				total: "70.00", 
-				date: "2023-05-20", 
-				image: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?q=80&w=300",
-				paid: true
-			},
-			{ 
-				name: "芒果", 
-				quantity: 4, 
-				price: "28.00", 
-				total: "112.00", 
-				date: "2023-05-18", 
-				image: "https://images.unsplash.com/photo-1553279757-3e9b1b5d1b5a?q=80&w=300",
-				paid: false
-			},
-			{ 
-				name: "西瓜", 
-				quantity: 1, 
-				price: "45.00", 
-				total: "45.00", 
-				date: "2023-05-15", 
-				image: "https://images.unsplash.com/photo-1628358070889-cb6569b2c487?q=80&w=300",
-				paid: true
-			},
-			{ 
-				name: "橙子", 
-				quantity: 3, 
-				price: "18.00", 
-				total: "54.00", 
-				date: "2023-05-12", 
-				image: "https://images.unsplash.com/photo-1582979512210-99b6a53386f9?q=80&w=300",
-				paid: false
-			},
-			{ 
-				name: "草莓", 
-				quantity: 2, 
-				price: "40.00", 
-				total: "80.00", 
-				date: "2023-05-10", 
-				image: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?q=80&w=300",
-				paid: true
-			},
-			{ 
-				name: "蓝莓", 
-				quantity: 1, 
-				price: "50.00", 
-				total: "50.00", 
-				date: "2023-05-08", 
-				image: "https://images.unsplash.com/photo-1498557850523-fd3d894bde2a?q=80&w=300",
-				paid: false
-			}
-		];
-		
-		// 根据客户ID筛选记录
-		let filteredRecords = [];
-		if (customerId === 1) {
-			filteredRecords = baseRecords.slice(0, 8);
-		} else if (customerId === 2) {
-			filteredRecords = baseRecords.slice(0, 12);
-		} else if (customerId === 3) {
-			filteredRecords = baseRecords.slice(0, 6);
-		} else {
-			filteredRecords = baseRecords;
-		}
-		
-		// 按日期排序 - 确保最新的在前面
-		filteredRecords.sort((a, b) => {
-			return new Date(b.date) - new Date(a.date);
+
+	// 从 salesRecordService 获取所有销售记录
+	const allSalesRecords = getSalesRecords();
+	console.log('从 salesRecordService 获取的销售记录数量:', allSalesRecords.length);
+	console.log('销售记录数据结构示例:', allSalesRecords.length > 0 ? JSON.stringify(allSalesRecords[0], null, 2) : '没有记录');
+
+	// 如果没有销售记录，显示提示并返回
+	if (allSalesRecords.length === 0) {
+		uni.showToast({
+			title: '没有找到销售记录',
+			icon: 'none'
 		});
-		
-		// 存储所有记录
-		allRecords.value = filteredRecords;
-		
-		// 设置总记录数
-		totalRecords.value = filteredRecords.length;
-		
-		// 计算客户的总销售额和已回款金额
-		calculateCustomerPaymentStats(customerId, filteredRecords);
-		
-		// 初始加载最新的几条记录
-		loadLatestRecords();
-		
 		isLoading.value = false;
-	}, 100);
+		return;
+	}
+
+	// 过滤出该客户的销售记录
+	const customerRecords = allSalesRecords.filter(record => {
+		// 支持多种数据结构
+		return record.customerId === customerId ||
+			(record.customer && record.customer.id === customerId) ||
+			(record.customerName === getCustomerNameById(customerId));
+	});
+
+	console.log('该客户的销售记录数量:', customerRecords.length);
+
+	// 如果该客户没有销售记录，显示提示
+	if (customerRecords.length === 0) {
+		uni.showToast({
+			title: '该客户没有销售记录',
+			icon: 'none'
+		});
+		isLoading.value = false;
+		return;
+	}
+
+	// 按日期排序 - 确保最新的在前面
+	customerRecords.sort((a, b) => {
+		return new Date(b.date) - new Date(a.date);
+	});
+
+	// 更新每条记录的付款状态显示
+	const processedRecords = customerRecords.map(record => {
+		// 创建记录的副本，避免修改原始数据
+		const processedRecord = { ...record };
+
+		// 计算未付金额
+		let unpaidAmount = 0;
+		let totalAmount = 0;
+
+		// 获取总金额
+		if (processedRecord.amount !== undefined) {
+			totalAmount = parseFloat(processedRecord.amount);
+		} else if (processedRecord.total !== undefined) {
+			totalAmount = parseFloat(processedRecord.total);
+		}
+
+		// 获取已付金额
+		const paidAmount = parseFloat(processedRecord.paidAmount || 0);
+
+		// 计算未付金额
+		unpaidAmount = Math.max(0, totalAmount - paidAmount);
+
+		// 设置付款状态
+		if (unpaidAmount <= 0 || processedRecord.status === '已付款' || processedRecord.paymentStatus === 'paid') {
+			processedRecord.paid = true;
+			processedRecord.paymentStatus = 'paid';
+			processedRecord.status = '已回款';
+		} else if (paidAmount > 0) {
+			processedRecord.paid = false;
+			processedRecord.paymentStatus = 'partial';
+			processedRecord.status = '部分回款';
+		} else {
+			processedRecord.paid = false;
+			processedRecord.paymentStatus = 'unpaid';
+			processedRecord.status = '未回款';
+		}
+
+		// 确保记录有图片
+		if (!processedRecord.image) {
+			// 根据水果名称设置默认图片
+			processedRecord.image = getDefaultFruitImage(processedRecord.name || processedRecord.fruitName || '水果');
+		}
+
+		return processedRecord;
+	});
+
+	// 存储所有记录
+	allRecords.value = processedRecords;
+
+	// 设置总记录数
+	totalRecords.value = processedRecords.length;
+
+	// 计算客户的总销售额和已回款金额
+	calculateCustomerPaymentStats(customerId);
+
+	// 初始加载最新的几条记录
+	loadLatestRecords();
+
+	isLoading.value = false;
 }
 
 // 计算客户的回款统计
-function calculateCustomerPaymentStats(customerId, records) {
+function calculateCustomerPaymentStats(customerId) {
+	// 使用当前已加载的记录（来自 salesRecordService）
+	const records = allRecords.value;
+	console.log('计算客户回款统计 - 使用已加载的销售记录数量:', records.length);
+
 	// 计算总销售额
 	const totalSales = records.reduce((sum, record) => {
-		return sum + parseFloat(record.total);
+		// 支持多种数据结构
+		const amount = record.amount !== undefined ? parseFloat(record.amount) :
+						(record.total !== undefined ? parseFloat(record.total) : 0);
+		return sum + amount;
 	}, 0);
-	
+
 	// 计算已回款金额
 	const paidAmount = records.reduce((sum, record) => {
-		return sum + (record.paid ? parseFloat(record.total) : 0);
+		// 支持多种数据结构
+		if (record.paid === true) {
+			// 旧结构，已付款状态
+			return sum + (record.amount !== undefined ? parseFloat(record.amount) : parseFloat(record.total));
+		} else if (record.paidAmount !== undefined) {
+			// 新结构，有已付金额字段
+			return sum + parseFloat(record.paidAmount);
+		} else if (record.status === '已付款' || record.paymentStatus === 'paid') {
+			// 新结构，根据状态判断
+			return sum + (record.amount !== undefined ? parseFloat(record.amount) : parseFloat(record.total));
+		}
+		return sum;
 	}, 0);
-	
+
+	// 计算未付款金额
+	const unpaidAmount = Math.max(0, totalSales - paidAmount);
+
+	// 计算回款率
+	const paymentRate = totalSales > 0 ? Math.round((paidAmount / totalSales) * 100) : 0;
+
+	console.log(`客户回款统计计算结果:`, {
+		总销售额: totalSales,
+		已回款金额: paidAmount,
+		未付款金额: unpaidAmount,
+		回款率: paymentRate + '%'
+	});
+
 	// 更新当前客户的回款信息
 	currentCustomer.value = {
 		...currentCustomer.value,
 		totalSales,
-		paidAmount
+		paidAmount,
+		unpaidAmount,
+		paymentRate
 	};
+
+	// 更新欠款总额（用于其他组件）
+	currentCustomerDebt.value = unpaidAmount;
 }
 
 // 格式化金额
 function formatMoney(amount) {
 	return amount.toFixed(2);
+}
+
+// 根据客户ID获取客户名称
+function getCustomerNameById(customerId) {
+	const customer = customersData.value.find(c => c.id === customerId);
+	return customer ? customer.name : '';
+}
+
+// 获取水果的默认图片
+function getDefaultFruitImage(fruitName) {
+	// 默认水果图片映射
+	const fruitImages = {
+		'苹果': 'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300',
+		'香蕉': 'https://images.unsplash.com/photo-1603833665858-e61d17a86224?q=80&w=300',
+		'橙子': 'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?q=80&w=300',
+		'梨': 'https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300',
+		'葡萄': 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?q=80&w=300',
+		'西瓜': 'https://images.unsplash.com/photo-1628358070889-cb6569b2c487?q=80&w=300',
+		'草莓': 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?q=80&w=300',
+		'蓝莓': 'https://images.unsplash.com/photo-1498557850523-fd3d894bde2a?q=80&w=300',
+		'芒果': 'https://images.unsplash.com/photo-1553279757-3e9b1b5d1b5a?q=80&w=300',
+		'桃子': 'https://images.unsplash.com/photo-1595743825637-cdafc8ad4908?q=80&w=300'
+	};
+
+	// 尝试匹配水果名称
+	for (const [key, url] of Object.entries(fruitImages)) {
+		if (fruitName && fruitName.includes(key)) {
+			return url;
+		}
+	}
+
+	// 如果没有匹配，返回默认图片
+	return 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=300';
+}
+
+// 获取水果显示名称
+function getFruitDisplayName(record) {
+	// 尝试不同的字段名称
+	if (record.name) return record.name;
+	if (record.fruitName) return record.fruitName;
+	if (record.productName) return record.productName;
+	if (record.title) return record.title;
+
+	// 尝试组合字段
+	if (record.brand && record.variety) {
+		return `${record.brand}${record.variety}`;
+	}
+
+	// 如果没有名称，返回默认值
+	return '水果';
+}
+
+// 获取数量显示
+function getQuantityDisplay(record) {
+	// 如果有数量和价格
+	if (record.quantity && (record.price || record.unitPrice)) {
+		const price = record.price || record.unitPrice;
+		const unit = record.unit || '箱';
+		return `${record.quantity}${unit} × ¥${price}`;
+	}
+
+	// 如果只有数量
+	if (record.quantity) {
+		const unit = record.unit || '箱';
+		return `${record.quantity}${unit}`;
+	}
+
+	// 如果没有数量
+	return '';
+}
+
+// 获取总价显示
+function getTotalDisplay(record) {
+	// 尝试不同的字段名称
+	if (record.total) return formatMoney(parseFloat(record.total));
+	if (record.amount) return formatMoney(parseFloat(record.amount));
+	if (record.totalAmount) return formatMoney(parseFloat(record.totalAmount));
+
+	// 如果有数量和单价，计算总价
+	if (record.quantity && (record.price || record.unitPrice)) {
+		const price = parseFloat(record.price || record.unitPrice);
+		const quantity = parseFloat(record.quantity);
+		return formatMoney(price * quantity);
+	}
+
+	// 如果没有总价，返回默认值
+	return '0.00';
+}
+
+// 获取日期显示
+function getDateDisplay(record) {
+	// 如果有日期字段
+	if (record.date) return record.date;
+	if (record.createDate) return record.createDate;
+	if (record.createTime) return record.createTime;
+	if (record.saleDate) return record.saleDate;
+
+	// 如果有时间戳
+	if (record.timestamp) {
+		const date = new Date(record.timestamp);
+		return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+	}
+
+	// 如果没有日期，返回默认值
+	return '';
 }
 
 // 计算回款百分比
@@ -482,26 +613,71 @@ function showPaymentHistory() {
 
 // 添加回款
 function addPayment() {
-	uni.showToast({
-		title: '添加回款功能开发中',
-		icon: 'none'
-	});
+	// 打开收款弹窗
+	paymentPopupRef.value.open();
+}
+
+// 添加单条记录收款
+function addSinglePayment(record) {
+	// 设置当前选中的记录
+	const selectedRecords = [record.orderNo || record.id];
+
+	// 打开收款弹窗，并传入选中的记录
+	paymentPopupRef.value.openWithSelectedRecords(selectedRecords);
+}
+
+// 关闭收款弹窗
+function onPaymentPopupClose() {
+	// 什么也不需要做
+}
+
+// 确认收款
+async function onPaymentConfirm(paymentData) {
+	try {
+		// 处理收款
+		await processPayment(paymentData);
+
+		// 显示成功提示
+		uni.showToast({
+			title: '收款成功',
+			icon: 'success'
+		});
+
+		// 重新计算客户欠款总额
+		currentCustomerDebt.value = calculateCustomerDebt(currentCustomer.value.id);
+
+		// 重新获取客户的未付款记录
+		unpaidRecords.value = getCustomerUnpaidRecords(currentCustomer.value.id);
+
+		// 重新加载客户的销售记录
+		resetRecordsData();
+		loadAllCustomerRecords(currentCustomer.value.id);
+
+		// 更新客户列表中的欠款信息
+		updateCustomerDebtInfo(currentCustomer.value.id);
+	} catch (error) {
+		console.error('收款处理失败', error);
+		uni.showToast({
+			title: '收款失败',
+			icon: 'none'
+		});
+	}
 }
 
 // 加载最新的记录（默认顶部显示）
 function loadLatestRecords() {
 	const total = allRecords.value.length;
-	
+
 	// 如果记录总数小于等于页面大小，直接全部显示
 	if (total <= pageSize.value) {
 		customerSalesRecords.value = [...allRecords.value];
 		hasMore.value = false;
 		return;
 	}
-	
+
 	// 否则，取前pageSize条记录
 	customerSalesRecords.value = allRecords.value.slice(0, pageSize.value);
-	
+
 	// 设置分页状态
 	hasMore.value = pageSize.value < total;
 }
@@ -509,31 +685,31 @@ function loadLatestRecords() {
 // 向下滑动加载更多记录
 function loadMoreRecords() {
 	if (isLoading.value || !hasMore.value) return;
-	
+
 	isLoading.value = true;
-	
+
 	// 获取当前显示的最后一条记录在全部记录中的索引
 	const lastRecordIndex = allRecords.value.findIndex(
-		record => record.date === customerSalesRecords.value[customerSalesRecords.value.length - 1].date && 
+		record => record.date === customerSalesRecords.value[customerSalesRecords.value.length - 1].date &&
 		record.name === customerSalesRecords.value[customerSalesRecords.value.length - 1].name
 	);
-	
+
 	if (lastRecordIndex === -1 || lastRecordIndex >= allRecords.value.length - 1) {
 		hasMore.value = false;
 		isLoading.value = false;
 		return;
 	}
-	
+
 	// 计算加载更多的起始索引
 	const startIndex = lastRecordIndex + 1;
 	const endIndex = Math.min(startIndex + pageSize.value, allRecords.value.length);
 	const newRecords = allRecords.value.slice(startIndex, endIndex);
-	
+
 	// 模拟网络延迟
 	setTimeout(() => {
 		// 添加新记录到后面
 		customerSalesRecords.value = [...customerSalesRecords.value, ...newRecords];
-		
+
 		// 更新状态
 		hasMore.value = endIndex < allRecords.value.length;
 		isLoading.value = false;
@@ -543,7 +719,7 @@ function loadMoreRecords() {
 // 下拉刷新
 function onRefresh() {
 	isRefreshing.value = true;
-	
+
 	// 模拟刷新操作
 	setTimeout(() => {
 		// 重新加载数据
@@ -601,10 +777,10 @@ function confirmAddCustomer() {
 		});
 		return;
 	}
-	
+
 	// 生成新客户ID
 	const newId = customersData.value.length > 0 ? Math.max(...customersData.value.map(c => c.id)) + 1 : 1;
-	
+
 	// 创建新客户对象
 	const customer = {
 		id: newId,
@@ -615,13 +791,13 @@ function confirmAddCustomer() {
 		paidAmount: 0,
 		unpaidAmount: 0
 	};
-	
+
 	// 添加到客户列表
 	customersData.value.push(customer);
-	
+
 	// 关闭弹窗
 	closeAddCustomerPopup();
-	
+
 	// 显示成功提示
 	uni.showToast({
 		title: '添加成功',
@@ -634,49 +810,163 @@ onMounted(() => {
 	// 设置当前日期
 	const now = new Date();
 	currentDate.value = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
-	
+
 	// 加载客户数据
 	loadCustomersData();
 });
 
 // 加载客户数据
 function loadCustomersData() {
-	// 模拟从服务器获取数据
-	// 实际应用中，这里应该是API调用
+	// 尝试从本地存储加载客户数据
+	try {
+		const storedCustomers = uni.getStorageSync('customers');
+		if (storedCustomers) {
+			customersData.value = JSON.parse(storedCustomers);
+			console.log('从本地存储加载了客户数据:', customersData.value.length);
+			// 更新所有客户的欠款信息
+			updateAllCustomersDebtInfo();
+			return;
+		}
+	} catch (e) {
+		console.error('加载客户数据失败', e);
+	}
+
+	// 如果没有存储的客户数据，初始化默认客户
 	customersData.value = [
-		{ 
-			id: 1, 
-			name: "李明", 
-			phone: "13812345678", 
-			totalSales: 1100,
-			paidAmount: 800,
-			unpaidAmount: 300
-		},
-		{ 
-			id: 2, 
-			name: "张三水果店", 
-			phone: "15912345678", 
-			totalSales: 2400,
-			paidAmount: 2400,
+		{
+			id: 1,
+			name: "李明",
+			phone: "13812345678",
+			totalSales: 0,
+			paidAmount: 0,
 			unpaidAmount: 0
 		},
-		{ 
-			id: 3, 
-			name: "王五超市", 
-			phone: "17712345678", 
-			totalSales: 1600,
-			paidAmount: 1200,
-			unpaidAmount: 400
+		{
+			id: 2,
+			name: "张三水果店",
+			phone: "15912345678",
+			totalSales: 0,
+			paidAmount: 0,
+			unpaidAmount: 0
 		},
-		{ 
-			id: 4, 
-			name: "赵六水果配送", 
-			phone: "18612345678", 
-			totalSales: 3000,
-			paidAmount: 2500,
-			unpaidAmount: 500
+		{
+			id: 3,
+			name: "王五超市",
+			phone: "17712345678",
+			totalSales: 0,
+			paidAmount: 0,
+			unpaidAmount: 0
+		},
+		{
+			id: 4,
+			name: "赵六水果配送",
+			phone: "18612345678",
+			totalSales: 0,
+			paidAmount: 0,
+			unpaidAmount: 0
 		}
 	];
+
+	// 保存客户数据到本地存储
+	saveCustomersData();
+
+	// 更新所有客户的欠款信息
+	updateAllCustomersDebtInfo();
+}
+
+// 保存客户数据到本地存储
+function saveCustomersData() {
+	try {
+		uni.setStorageSync('customers', JSON.stringify(customersData.value));
+		console.log('客户数据已保存到本地存储');
+	} catch (e) {
+		console.error('保存客户数据失败', e);
+	}
+}
+
+// 更新所有客户的欠款信息
+function updateAllCustomersDebtInfo() {
+	customersData.value.forEach(customer => {
+		updateCustomerDebtInfo(customer.id);
+	});
+}
+
+// 更新客户的欠款信息
+function updateCustomerDebtInfo(customerId) {
+	// 查找客户
+	const customerIndex = customersData.value.findIndex(c => c.id === customerId);
+	if (customerIndex === -1) {
+		console.error('未找到客户ID:', customerId);
+		return;
+	}
+
+	// 从 salesRecordService 获取所有销售记录
+	const allSalesRecords = getSalesRecords();
+	console.log('更新客户欠款信息 - 从 salesRecordService 获取的销售记录数量:', allSalesRecords.length);
+
+	// 过滤出该客户的销售记录
+	const customerRecords = allSalesRecords.filter(record => {
+		return record.customerId === customerId ||
+			(record.customer && record.customer.id === customerId) ||
+			(record.customerName === customersData.value[customerIndex].name);
+	});
+
+	console.log('更新客户欠款信息 - 该客户的销售记录数量:', customerRecords.length);
+
+	// 计算总销售额
+	const totalSales = customerRecords.reduce((sum, record) => {
+		// 支持多种数据结构
+		const amount = record.amount !== undefined ? parseFloat(record.amount) :
+						(record.total !== undefined ? parseFloat(record.total) : 0);
+		return sum + amount;
+	}, 0);
+
+	// 计算已回款金额
+	const paidAmount = customerRecords.reduce((sum, record) => {
+		// 支持多种数据结构
+		if (record.paid === true) {
+			// 旧结构，已付款状态
+			return sum + (record.amount !== undefined ? parseFloat(record.amount) : parseFloat(record.total));
+		} else if (record.paidAmount !== undefined) {
+			// 新结构，有已付金额字段
+			return sum + parseFloat(record.paidAmount);
+		} else if (record.status === '已付款' || record.paymentStatus === 'paid') {
+			// 新结构，根据状态判断
+			return sum + (record.amount !== undefined ? parseFloat(record.amount) : parseFloat(record.total));
+		}
+		return sum;
+	}, 0);
+
+	// 计算未付款金额
+	const unpaidAmount = Math.max(0, totalSales - paidAmount);
+
+	// 计算回款率
+	const paymentRate = totalSales > 0 ? Math.round((paidAmount / totalSales) * 100) : 0;
+
+	console.log(`客户 ${customersData.value[customerIndex].name} 的数据更新:`, {
+		总销售额: totalSales,
+		已回款金额: paidAmount,
+		未付款金额: unpaidAmount,
+		回款率: paymentRate + '%'
+	});
+
+	// 更新客户信息
+	customersData.value[customerIndex].totalSales = totalSales;
+	customersData.value[customerIndex].paidAmount = paidAmount;
+	customersData.value[customerIndex].unpaidAmount = unpaidAmount;
+	customersData.value[customerIndex].paymentRate = paymentRate;
+
+	// 保存更新后的客户数据
+	saveCustomersData();
+
+	// 如果当前客户就是这个客户，也更新当前客户的信息
+	if (currentCustomer.value && currentCustomer.value.id === customerId) {
+		currentCustomer.value.totalSales = totalSales;
+		currentCustomer.value.paidAmount = paidAmount;
+		currentCustomer.value.unpaidAmount = unpaidAmount;
+		currentCustomer.value.paymentRate = paymentRate;
+		currentCustomerDebt.value = unpaidAmount;
+	}
 }
 </script>
 
@@ -1214,11 +1504,17 @@ function loadCustomersData() {
 }
 
 /* 销售记录状态样式 */
+.record-status-container {
+	display: flex;
+	align-items: center;
+	margin-top: 4rpx;
+	gap: 10rpx;
+}
+
 .record-status {
 	font-size: 22rpx;
 	padding: 2rpx 8rpx;
 	border-radius: 8rpx;
-	margin-top: 4rpx;
 }
 
 .status-paid {
@@ -1226,9 +1522,26 @@ function loadCustomersData() {
 	color: #059669;
 }
 
+.status-partial {
+	background-color: #FEF3C7;
+	color: #D97706;
+}
+
 .status-unpaid {
 	background-color: #FEE2E2;
 	color: #DC2626;
+}
+
+.record-payment-btn {
+	font-size: 20rpx;
+	padding: 2rpx 10rpx;
+	background-color: #0D9488;
+	color: #FFFFFF;
+	border-radius: 8rpx;
+	line-height: 1.2;
+	height: auto;
+	margin: 0;
+	display: none; /* 隐藏收款按钮 */
 }
 
 /* 操作按钮样式 */
@@ -1236,6 +1549,20 @@ function loadCustomersData() {
 	display: flex;
 	justify-content: space-between;
 	margin-top: 24rpx;
+}
+
+/* 回款按钮样式 */
+.payment-btn {
+	font-size: 24rpx;
+	padding: 4rpx 16rpx;
+	background-color: #0D9488;
+	color: #FFFFFF;
+	border-radius: 8rpx;
+	line-height: 1.5;
+	height: auto;
+	margin: 0;
+	margin-right: 16rpx;
+	box-shadow: 0 2rpx 4rpx rgba(13, 148, 136, 0.2);
 }
 
 .action-button {
@@ -1394,4 +1721,5 @@ function loadCustomersData() {
 	color: #EF4444;
 	margin-left: 4rpx;
 }
-</style> 
+</style>
+

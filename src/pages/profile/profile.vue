@@ -159,7 +159,7 @@
 						<view class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto">
 							<uni-icons type="wallet" size="24" color="#4F46E5"></uni-icons>
 						</view>
-						<text class="text-sm mt-2 block text-center text-indigo-600">对账专用</text>
+						<text class="text-sm mt-2 block text-center text-indigo-600">还没想好</text>
 					</view>
 				</view>
 			</view>
@@ -923,8 +923,8 @@ function showFunction(type) {
 			break;
 		case 'reconciliation':
 			currentFunction.value = {
-				title: '对账专用',
-				content: '这里将提供对账专用功能，帮助你进行对账操作。'
+				title: '还没想好',
+				content: 'XW还在苦思冥想中这里该放什么功能中。'
 			};
 			break;
 	}
