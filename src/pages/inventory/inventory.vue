@@ -219,23 +219,27 @@
 					<view class="form-content">
 						<view class="form-item">
 							<text class="form-label">品牌 <text class="required">*</text></text>
-							<input v-model="editForm.brand" placeholder="请输入品牌" class="text-input" />
+							<input v-model="editForm.brand" placeholder="请输入品牌" class="text-input" :disabled="!isAddingFruit" />
+							<text v-if="!isAddingFruit" class="form-tip">品牌不可修改</text>
 						</view>
 						<view class="form-item">
 							<text class="form-label">水果品类 <text class="required">*</text></text>
-							<picker @change="onCategoryChange" :value="categoryIndex" :range="fruitCategories" class="picker">
-								<view class="picker-text">{{fruitCategories[categoryIndex]}}</view>
+							<picker @change="onCategoryChange" :value="categoryIndex" :range="fruitCategories" class="picker" :disabled="!isAddingFruit">
+								<view class="picker-text" :class="{'disabled-picker': !isAddingFruit}">{{fruitCategories[categoryIndex]}}</view>
 							</picker>
+							<text v-if="!isAddingFruit" class="form-tip">水果品类不可修改</text>
 						</view>
 						<view class="form-item">
 							<text class="form-label">水果品种 <text class="required">*</text></text>
-							<picker @change="onVarietyChange" :value="varietyIndex" :range="fruitVarieties" class="picker">
-								<view class="picker-text">{{fruitVarieties[varietyIndex]}}</view>
+							<picker @change="onVarietyChange" :value="varietyIndex" :range="fruitVarieties" class="picker" :disabled="!isAddingFruit">
+								<view class="picker-text" :class="{'disabled-picker': !isAddingFruit}">{{fruitVarieties[varietyIndex]}}</view>
 							</picker>
+							<text v-if="!isAddingFruit" class="form-tip">水果品种不可修改</text>
 						</view>
 						<view class="form-item">
 							<text class="form-label">规格型号 <text class="required">*</text></text>
-							<input v-model="editForm.spec" placeholder="请输入规格型号" class="text-input" />
+							<input v-model="editForm.spec" placeholder="请输入规格型号" class="text-input" :disabled="!isAddingFruit" />
+							<text v-if="!isAddingFruit" class="form-tip">规格型号不可修改</text>
 						</view>
 						<view class="form-item">
 							<text class="form-label">包装类型</text>
@@ -577,7 +581,15 @@ function chooseImage() {
 
 // 删除图片
 function deleteImage() {
+	// 将图片设置为空，保存时会根据水果品类自动选择默认图片
 	editForm.value.image = '';
+
+	// 显示提示
+	uni.showToast({
+		title: '已删除图片，保存后将使用默认图片',
+		icon: 'none',
+		duration: 2000
+	});
 }
 
 // 确认编辑/新增水果
@@ -601,12 +613,19 @@ function confirmEditFruit() {
 	if (isAddingFruit.value) {
 		// 新增水果
 		const newId = fruitData.value.length > 0 ? Math.max(...fruitData.value.map(f => f.id)) + 1 : 1;
+
+		// 根据水果品类选择默认图片
+		let defaultImage = '/static/default-fruit.png';
+		if (!editForm.value.image) {
+			defaultImage = getDefaultImageByCategory(editForm.value.category);
+		}
+
 		const newFruit = {
 			id: newId,
 			name: fruitName,
 			spec: editForm.value.spec || '', // 只保留规格型号，移除包装类型
 			stock: parseInt(editForm.value.stock) || 0,
-			image: editForm.value.image || '/static/default-fruit.png', // 使用本地默认图片
+			image: editForm.value.image || defaultImage, // 使用根据品类选择的默认图片
 			brand: editForm.value.brand,
 			category: editForm.value.category,
 			variety: editForm.value.variety,
@@ -656,13 +675,29 @@ function confirmEditFruit() {
 				image: originalFruit.image
 			};
 
+			// 更新水果数据 - 保持SKU关键属性不变
+			// 使用原始数据中的品牌、品类、品种和规格
+			const brand = originalFruit.brand;
+			const category = originalFruit.category;
+			const variety = originalFruit.variety;
+			const spec = originalFruit.spec;
+
+			// 构建水果名称（使用原始品牌和品种）
+			const updatedFruitName = `${brand} ${variety}`;
+
+			// 如果用户删除了图片，根据水果品类选择默认图片
+			let defaultImage = '/static/default-fruit.png';
+			if (!editForm.value.image) {
+				defaultImage = getDefaultImageByCategory(category);
+			}
+
 			// 更新水果数据
-			fruitData.value[index].name = fruitName;
-			fruitData.value[index].spec = editForm.value.spec || ''; // 只保留规格型号，移除包装类型
-			fruitData.value[index].image = editForm.value.image || fruitData.value[index].image;
-			fruitData.value[index].brand = editForm.value.brand;
-			fruitData.value[index].category = editForm.value.category;
-			fruitData.value[index].variety = editForm.value.variety;
+			fruitData.value[index].name = updatedFruitName;
+			fruitData.value[index].spec = spec; // 保持原始规格型号
+			fruitData.value[index].image = editForm.value.image || defaultImage; // 使用根据品类选择的默认图片
+			fruitData.value[index].brand = brand; // 保持原始品牌
+			fruitData.value[index].category = category; // 保持原始品类
+			fruitData.value[index].variety = variety; // 保持原始品种
 			fruitData.value[index].weight = editForm.value.weight || '';
 			fruitData.value[index].packageType = packageTypes[packageTypeIndex.value];
 			fruitData.value[index].minPrice = minPrice;
@@ -826,17 +861,27 @@ function loadFruitData() {
 	saveInventoryData();
 }
 
-// 添加显示库存记录函数
-// 显示库存记录页面或弹窗
+// 添加盘库功能函数
 function showAddRecord() {
-	// 跳转到库存记录页面
-	uni.navigateTo({
-		url: '/pages/records/inventory-records'
+	// 显示提示框，告知用户盘库功能正在开发中
+	uni.showToast({
+		title: '盘库功能正在开发中...',
+		icon: 'none',
+		duration: 2000
 	});
 }
 
 // 水果品类选择
 function onCategoryChange(e) {
+	// 如果是编辑模式，不允许更改
+	if (!isAddingFruit.value) {
+		uni.showToast({
+			title: '编辑模式下不能更改品类',
+			icon: 'none'
+		});
+		return;
+	}
+
 	categoryIndex.value = e.detail.value;
 	// 根据选择的品类更新品种列表
 	updateVarietiesByCategory(fruitCategories[categoryIndex.value]);
@@ -850,6 +895,15 @@ function onCategoryChange(e) {
 
 // 水果品种选择
 function onVarietyChange(e) {
+	// 如果是编辑模式，不允许更改
+	if (!isAddingFruit.value) {
+		uni.showToast({
+			title: '编辑模式下不能更改品种',
+			icon: 'none'
+		});
+		return;
+	}
+
 	varietyIndex.value = e.detail.value;
 	// 更新表单中的品种
 	editForm.value.variety = fruitVarieties.value[varietyIndex.value];
@@ -1038,6 +1092,32 @@ function syncDeleteToPricePage(_fruitId) {
 	// 不需要额外的同步操作，因为今日报价页面直接使用库存数据
 	console.log('库存数据已更新，今日报价页面将自动同步');
 }
+
+// 根据水果品类获取默认图片
+function getDefaultImageByCategory(category) {
+	let defaultImage = '/static/default-fruit.png';
+
+	switch(category) {
+		case '苹果':
+			defaultImage = '/static/fruit/apple.png';
+			break;
+		case '梨':
+			defaultImage = '/static/fruit/pear.png';
+			break;
+		case '枣':
+			defaultImage = '/static/fruit/grape.png';
+			break;
+		case '其他':
+			defaultImage = '/static/fruit/strawberry.png';
+			break;
+		default:
+			defaultImage = '/static/fruit/strawberry.png';
+	}
+
+	return defaultImage;
+}
+
+
 </script>
 
 <style>
@@ -1884,5 +1964,23 @@ page {
 	display: flex;
 	align-items: center;
 	margin-bottom: 12rpx;
+}
+
+/* 禁用状态的样式 */
+.disabled-picker {
+	color: #9CA3AF;
+	background-color: #F3F4F6;
+}
+
+.text-input:disabled {
+	background-color: #F3F4F6;
+	color: #9CA3AF;
+}
+
+.form-tip {
+	font-size: 22rpx;
+	color: #9CA3AF;
+	margin-top: 6rpx;
+	padding-left: 4rpx;
 }
 </style>
