@@ -176,7 +176,7 @@
 
 								<!-- 加载状态 - 放在列表底部 -->
 								<view class="loading-status" v-if="customerSalesRecords.length > 0">
-									<view class="loading-more" v-if="isLoading && !hasMore">
+									<view class="loading-more" v-if="isLoading">
 										<uni-icons type="spinner-cycle" size="16" color="#0D9488"></uni-icons>
 										<text class="loading-text">加载中...</text>
 									</view>
@@ -246,6 +246,7 @@ import CustomIcon from '@/components/CustomIcon.vue';
 import PaymentPopup from './PaymentPopup.vue';
 import { calculateCustomerDebt, getCustomerUnpaidRecords, processPayment } from '@/services/paymentService.js';
 import { getSalesRecords } from '@/services/salesRecordService.js';
+import { customersData as customerServiceData, loadCustomersData as loadCustomersFromService, saveCustomersData as saveCustomersToService, updateCustomerDebtInfo, updateAllCustomersDebtInfo } from '@/services/customerService.js';
 
 // 数据
 const searchText = ref('');
@@ -302,7 +303,7 @@ function showCustomerDetail(customer) {
 	// 计算客户欠款总额
 	currentCustomerDebt.value = calculateCustomerDebt(customer.id);
 
-	// 获取客户的未付款记录
+	// 获取客户的待付款记录（包含未回款和部分回款）
 	unpaidRecords.value = getCustomerUnpaidRecords(customer.id);
 
 	// 打开弹窗
@@ -619,6 +620,29 @@ function addPayment() {
 
 // 添加单条记录收款
 function addSinglePayment(record) {
+	// 计算该记录的未付金额
+	let unpaidAmount = 0;
+	if (record.unpaidAmount !== undefined) {
+		unpaidAmount = parseFloat(record.unpaidAmount);
+	} else if (record.amount !== undefined && record.paidAmount !== undefined) {
+		unpaidAmount = parseFloat(record.amount) - parseFloat(record.paidAmount);
+	} else if (record.total !== undefined && record.paidAmount !== undefined) {
+		unpaidAmount = parseFloat(record.total) - parseFloat(record.paidAmount);
+	} else if (record.amount !== undefined) {
+		unpaidAmount = parseFloat(record.amount);
+	} else if (record.total !== undefined) {
+		unpaidAmount = parseFloat(record.total);
+	}
+
+	// 如果没有未付金额，显示提示并返回
+	if (unpaidAmount <= 0) {
+		uni.showToast({
+			title: '该记录已经付清',
+			icon: 'none'
+		});
+		return;
+	}
+
 	// 设置当前选中的记录
 	const selectedRecords = [record.orderNo || record.id];
 
@@ -646,14 +670,14 @@ async function onPaymentConfirm(paymentData) {
 		// 重新计算客户欠款总额
 		currentCustomerDebt.value = calculateCustomerDebt(currentCustomer.value.id);
 
-		// 重新获取客户的未付款记录
+		// 重新获取客户的待付款记录
 		unpaidRecords.value = getCustomerUnpaidRecords(currentCustomer.value.id);
 
 		// 重新加载客户的销售记录
 		resetRecordsData();
 		loadAllCustomerRecords(currentCustomer.value.id);
 
-		// 更新客户列表中的欠款信息
+		// 使用 customerService 中的函数更新客户列表中的欠款信息
 		updateCustomerDebtInfo(currentCustomer.value.id);
 	} catch (error) {
 		console.error('收款处理失败', error);
@@ -667,19 +691,26 @@ async function onPaymentConfirm(paymentData) {
 // 加载最新的记录（默认顶部显示）
 function loadLatestRecords() {
 	const total = allRecords.value.length;
+	console.log('开始加载最新记录，总记录数:', total);
+
+	// 记录总数作为全局变量，便于其他函数使用
+	totalRecords.value = total;
 
 	// 如果记录总数小于等于页面大小，直接全部显示
 	if (total <= pageSize.value) {
 		customerSalesRecords.value = [...allRecords.value];
 		hasMore.value = false;
+		console.log('记录总数小于等于页面大小，全部显示');
 		return;
 	}
 
 	// 否则，取前pageSize条记录
 	customerSalesRecords.value = allRecords.value.slice(0, pageSize.value);
+	console.log(`加载前 ${pageSize.value} 条记录，当前显示的记录数量:`, customerSalesRecords.value.length);
 
 	// 设置分页状态
-	hasMore.value = pageSize.value < total;
+	hasMore.value = customerSalesRecords.value.length < total;
+	console.log('是否还有更多记录:', hasMore.value);
 }
 
 // 向下滑动加载更多记录
@@ -688,20 +719,17 @@ function loadMoreRecords() {
 
 	isLoading.value = true;
 
-	// 获取当前显示的最后一条记录在全部记录中的索引
-	const lastRecordIndex = allRecords.value.findIndex(
-		record => record.date === customerSalesRecords.value[customerSalesRecords.value.length - 1].date &&
-		record.name === customerSalesRecords.value[customerSalesRecords.value.length - 1].name
-	);
-
-	if (lastRecordIndex === -1 || lastRecordIndex >= allRecords.value.length - 1) {
+	// 直接使用当前显示的记录数量作为起始索引
+	// 检查是否已经加载完所有记录
+	if (customerSalesRecords.value.length >= allRecords.value.length) {
+		console.log('已经加载完所有记录');
 		hasMore.value = false;
 		isLoading.value = false;
 		return;
 	}
 
 	// 计算加载更多的起始索引
-	const startIndex = lastRecordIndex + 1;
+	const startIndex = customerSalesRecords.value.length;
 	const endIndex = Math.min(startIndex + pageSize.value, allRecords.value.length);
 	const newRecords = allRecords.value.slice(startIndex, endIndex);
 
@@ -711,8 +739,13 @@ function loadMoreRecords() {
 		customerSalesRecords.value = [...customerSalesRecords.value, ...newRecords];
 
 		// 更新状态
-		hasMore.value = endIndex < allRecords.value.length;
+		hasMore.value = customerSalesRecords.value.length < allRecords.value.length;
 		isLoading.value = false;
+
+		// 打印日志信息便于调试
+		console.log('当前显示的记录数量:', customerSalesRecords.value.length);
+		console.log('总记录数量:', allRecords.value.length);
+		console.log('是否还有更多记录:', hasMore.value);
 	}, 100);
 }
 
@@ -817,58 +850,9 @@ onMounted(() => {
 
 // 加载客户数据
 function loadCustomersData() {
-	// 尝试从本地存储加载客户数据
-	try {
-		const storedCustomers = uni.getStorageSync('customers');
-		if (storedCustomers) {
-			customersData.value = JSON.parse(storedCustomers);
-			console.log('从本地存储加载了客户数据:', customersData.value.length);
-			// 更新所有客户的欠款信息
-			updateAllCustomersDebtInfo();
-			return;
-		}
-	} catch (e) {
-		console.error('加载客户数据失败', e);
-	}
-
-	// 如果没有存储的客户数据，初始化默认客户
-	customersData.value = [
-		{
-			id: 1,
-			name: "李明",
-			phone: "13812345678",
-			totalSales: 0,
-			paidAmount: 0,
-			unpaidAmount: 0
-		},
-		{
-			id: 2,
-			name: "张三水果店",
-			phone: "15912345678",
-			totalSales: 0,
-			paidAmount: 0,
-			unpaidAmount: 0
-		},
-		{
-			id: 3,
-			name: "王五超市",
-			phone: "17712345678",
-			totalSales: 0,
-			paidAmount: 0,
-			unpaidAmount: 0
-		},
-		{
-			id: 4,
-			name: "赵六水果配送",
-			phone: "18612345678",
-			totalSales: 0,
-			paidAmount: 0,
-			unpaidAmount: 0
-		}
-	];
-
-	// 保存客户数据到本地存储
-	saveCustomersData();
+	// 使用 customerService 中的函数加载客户数据
+	const customers = loadCustomersFromService();
+	customersData.value = customers;
 
 	// 更新所有客户的欠款信息
 	updateAllCustomersDebtInfo();
@@ -876,98 +860,15 @@ function loadCustomersData() {
 
 // 保存客户数据到本地存储
 function saveCustomersData() {
-	try {
-		uni.setStorageSync('customers', JSON.stringify(customersData.value));
-		console.log('客户数据已保存到本地存储');
-	} catch (e) {
-		console.error('保存客户数据失败', e);
-	}
+	// 使用 customerService 中的函数保存客户数据
+	saveCustomersToService();
 }
 
-// 更新所有客户的欠款信息
-function updateAllCustomersDebtInfo() {
-	customersData.value.forEach(customer => {
-		updateCustomerDebtInfo(customer.id);
-	});
-}
 
-// 更新客户的欠款信息
-function updateCustomerDebtInfo(customerId) {
-	// 查找客户
-	const customerIndex = customersData.value.findIndex(c => c.id === customerId);
-	if (customerIndex === -1) {
-		console.error('未找到客户ID:', customerId);
-		return;
-	}
 
-	// 从 salesRecordService 获取所有销售记录
-	const allSalesRecords = getSalesRecords();
-	console.log('更新客户欠款信息 - 从 salesRecordService 获取的销售记录数量:', allSalesRecords.length);
+// 注意: 原来的 updateCustomerDebtInfo 函数已经被移动到 customerService.js 中
+// 注意: 原来的 updateCustomerDebtInfo 函数已经被移动到 customerService.js 中
 
-	// 过滤出该客户的销售记录
-	const customerRecords = allSalesRecords.filter(record => {
-		return record.customerId === customerId ||
-			(record.customer && record.customer.id === customerId) ||
-			(record.customerName === customersData.value[customerIndex].name);
-	});
-
-	console.log('更新客户欠款信息 - 该客户的销售记录数量:', customerRecords.length);
-
-	// 计算总销售额
-	const totalSales = customerRecords.reduce((sum, record) => {
-		// 支持多种数据结构
-		const amount = record.amount !== undefined ? parseFloat(record.amount) :
-						(record.total !== undefined ? parseFloat(record.total) : 0);
-		return sum + amount;
-	}, 0);
-
-	// 计算已回款金额
-	const paidAmount = customerRecords.reduce((sum, record) => {
-		// 支持多种数据结构
-		if (record.paid === true) {
-			// 旧结构，已付款状态
-			return sum + (record.amount !== undefined ? parseFloat(record.amount) : parseFloat(record.total));
-		} else if (record.paidAmount !== undefined) {
-			// 新结构，有已付金额字段
-			return sum + parseFloat(record.paidAmount);
-		} else if (record.status === '已付款' || record.paymentStatus === 'paid') {
-			// 新结构，根据状态判断
-			return sum + (record.amount !== undefined ? parseFloat(record.amount) : parseFloat(record.total));
-		}
-		return sum;
-	}, 0);
-
-	// 计算未付款金额
-	const unpaidAmount = Math.max(0, totalSales - paidAmount);
-
-	// 计算回款率
-	const paymentRate = totalSales > 0 ? Math.round((paidAmount / totalSales) * 100) : 0;
-
-	console.log(`客户 ${customersData.value[customerIndex].name} 的数据更新:`, {
-		总销售额: totalSales,
-		已回款金额: paidAmount,
-		未付款金额: unpaidAmount,
-		回款率: paymentRate + '%'
-	});
-
-	// 更新客户信息
-	customersData.value[customerIndex].totalSales = totalSales;
-	customersData.value[customerIndex].paidAmount = paidAmount;
-	customersData.value[customerIndex].unpaidAmount = unpaidAmount;
-	customersData.value[customerIndex].paymentRate = paymentRate;
-
-	// 保存更新后的客户数据
-	saveCustomersData();
-
-	// 如果当前客户就是这个客户，也更新当前客户的信息
-	if (currentCustomer.value && currentCustomer.value.id === customerId) {
-		currentCustomer.value.totalSales = totalSales;
-		currentCustomer.value.paidAmount = paidAmount;
-		currentCustomer.value.unpaidAmount = unpaidAmount;
-		currentCustomer.value.paymentRate = paymentRate;
-		currentCustomerDebt.value = unpaidAmount;
-	}
-}
 </script>
 
 <style>
@@ -1365,9 +1266,11 @@ function updateCustomerDebtInfo(customerId) {
 
 /* 加载状态样式 */
 .loading-status {
-	padding: 12rpx 0;
+	padding: 30rpx 0;
 	display: flex;
 	justify-content: center;
+	width: 100%;
+	margin-bottom: 30rpx;
 }
 
 .loading-more {
@@ -1382,12 +1285,19 @@ function updateCustomerDebtInfo(customerId) {
 }
 
 .no-more {
-	padding: 12rpx 0;
+	padding: 30rpx 0;
+	width: 100%;
+	text-align: center;
+	margin-bottom: 30rpx;
 }
 
 .no-more-text {
 	font-size: 24rpx;
-	color: #9CA3AF;
+	color: #6B7280;
+	padding: 10rpx 30rpx;
+	background-color: #F3F4F6;
+	border-radius: 30rpx;
+	display: inline-block;
 }
 
 /* 空状态样式 */

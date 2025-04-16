@@ -14,14 +14,14 @@
                 <text class="payment-customer-debt">欠款总额: ¥{{formatMoney(totalDebtAmount)}}</text>
             </view>
 
-            <!-- 未付款记录列表 -->
+            <!-- 待付款记录列表 -->
             <scroll-view
                 scroll-y
                 class="unpaid-records-list"
                 v-if="unpaidRecords.length > 0"
             >
                 <view class="unpaid-records-header">
-                    <text class="unpaid-records-title">未付款记录</text>
+                    <text class="unpaid-records-title">待付款记录</text>
                     <text class="unpaid-records-select-all" @tap="toggleSelectAll">
                         {{ isAllSelected ? '取消全选' : '全选' }}
                     </text>
@@ -163,9 +163,15 @@ function openWithSelectedRecords(recordIds) {
         recordIds.forEach(recordId => {
             const record = props.unpaidRecords.find(r => (r.orderNo === recordId || r.id === recordId));
             if (record) {
-                selectedTotal += getRecordUnpaidAmount(record);
+                const unpaidAmount = getRecordUnpaidAmount(record);
+                console.log(`记录 ${recordId} 的未付金额: ${unpaidAmount}`);
+                selectedTotal += unpaidAmount;
+            } else {
+                console.log(`未找到记录ID: ${recordId}`);
             }
         });
+
+        console.log(`选中记录的未付金额总和: ${selectedTotal}`);
 
         // 设置付款金额为选中记录的未付金额总和
         paymentAmount.value = formatMoney(selectedTotal);
@@ -213,19 +219,29 @@ function toggleSelectAll() {
 
 // 获取记录的未付金额
 function getRecordUnpaidAmount(record) {
+    // 如果有明确的未付金额字段
     if (record.unpaidAmount !== undefined) {
-        return parseFloat(record.unpaidAmount);
+        return parseFloat(record.unpaidAmount) || 0;
     }
 
+    // 如果有金额和已付金额，计算差额
     if (record.amount !== undefined && record.paidAmount !== undefined) {
-        return parseFloat(record.amount) - parseFloat(record.paidAmount);
+        return Math.max(0, parseFloat(record.amount) - parseFloat(record.paidAmount));
     }
 
+    // 如果有总额和已付金额，计算差额
     if (record.total !== undefined && record.paidAmount !== undefined) {
-        return parseFloat(record.total) - parseFloat(record.paidAmount);
+        return Math.max(0, parseFloat(record.total) - parseFloat(record.paidAmount));
     }
 
-    return parseFloat(record.amount || record.total || 0);
+    // 如果只有金额或总额，且状态为未付款或未回款
+    if ((record.status === '未付款' || record.status === '未回款' || record.paymentStatus === 'unpaid') &&
+        (record.amount !== undefined || record.total !== undefined)) {
+        return parseFloat(record.amount || record.total);
+    }
+
+    // 如果没有明确的金额信息，返回0
+    return 0;
 }
 
 // 确认收款
@@ -336,7 +352,7 @@ defineExpose({
     display: block;
 }
 
-/* 未付款记录列表样式 */
+/* 待付款记录列表样式 */
 .unpaid-records-list {
     max-height: 300rpx;
     margin-bottom: 20rpx;

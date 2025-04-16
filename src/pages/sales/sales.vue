@@ -379,6 +379,7 @@ import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
 import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
 import CustomTabBar from '@/components/CustomTabBar.vue';
 import { addSalesRecord } from '@/services/salesRecordService.js';
+import { updateCustomerDebtInfo } from '@/services/customerService.js';
 
 // 数据
 const searchText = ref('');
@@ -826,8 +827,14 @@ function confirmSale() {
 		console.error('保存销售记录失败', e);
 	}
 
+	// 保存客户ID以更新欠款信息
+	const customerId = selectedCustomer.value.id;
+
 	// 重置选择的客户
 	selectedCustomer.value = {};
+
+	// 更新客户欠款信息
+	updateCustomerDebtInfo(customerId);
 
 	// 在实际应用中，这里应该调用API保存销售记录
 	uni.showToast({
