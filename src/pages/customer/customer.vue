@@ -501,29 +501,23 @@ function getCustomerNameById(customerId) {
 
 // 获取水果的默认图片
 function getDefaultFruitImage(fruitName) {
-	// 默认水果图片映射
-	const fruitImages = {
-		'苹果': 'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300',
-		'香蕉': 'https://images.unsplash.com/photo-1603833665858-e61d17a86224?q=80&w=300',
-		'橙子': 'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?q=80&w=300',
-		'梨': 'https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300',
-		'葡萄': 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?q=80&w=300',
-		'西瓜': 'https://images.unsplash.com/photo-1628358070889-cb6569b2c487?q=80&w=300',
-		'草莓': 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?q=80&w=300',
-		'蓝莓': 'https://images.unsplash.com/photo-1498557850523-fd3d894bde2a?q=80&w=300',
-		'芒果': 'https://images.unsplash.com/photo-1553279757-3e9b1b5d1b5a?q=80&w=300',
-		'桃子': 'https://images.unsplash.com/photo-1595743825637-cdafc8ad4908?q=80&w=300'
-	};
-
-	// 尝试匹配水果名称
-	for (const [key, url] of Object.entries(fruitImages)) {
-		if (fruitName && fruitName.includes(key)) {
-			return url;
-		}
+	// 使用本地图片作为默认水果图片
+	if (!fruitName) {
+		// 如果没有水果名称，返回默认图片
+		return '/static/fruit/strawberry.png';
 	}
 
-	// 如果没有匹配，返回默认图片
-	return 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=300';
+	// 根据水果名称匹配图片
+	if (fruitName.includes('苹果')) {
+		return '/static/fruit/apple.png';
+	} else if (fruitName.includes('梨')) {
+		return '/static/fruit/pear.png';
+	} else if (fruitName.includes('枣')) {
+		return '/static/fruit/grape.png';
+	} else {
+		// 如果没有匹配，返回默认图片
+		return '/static/fruit/strawberry.png';
+	}
 }
 
 // 获取水果显示名称
