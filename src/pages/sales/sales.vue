@@ -26,17 +26,17 @@
 						<text class="sales-stats-label">销售总额</text>
 						<text class="sales-stats-value">¥{{totalSalesAmount}}</text>
 					</view>
-					<view class="sales-stats-item sales-quantity-item">
-						<text class="sales-stats-label">销售数量</text>
-						<text class="sales-stats-value">{{totalSalesQuantity}}箱</text>
+					<view class="sales-stats-item sales-unpaid-item">
+						<text class="sales-stats-label">未收款金额</text>
+						<text class="sales-stats-value">¥{{totalUnpaidAmount}}</text>
 					</view>
 					<view class="sales-stats-item sales-customer-count-item">
 						<text class="sales-stats-label">客户数量</text>
 						<text class="sales-stats-value">{{totalCustomers}}</text>
 					</view>
-					<view class="sales-stats-item sales-unpaid-item">
-						<text class="sales-stats-label">未收款金额</text>
-						<text class="sales-stats-value">¥{{totalUnpaidAmount}}</text>
+					<view class="sales-stats-item sales-quantity-item">
+						<text class="sales-stats-label">销售数量</text>
+						<text class="sales-stats-value">{{totalSalesQuantity}}箱</text>
 					</view>
 				</view>
 			</view>
@@ -379,7 +379,7 @@ import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
 import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
 import CustomTabBar from '@/components/CustomTabBar.vue';
 import { addSalesRecord } from '@/services/salesRecordService.js';
-import { updateCustomerDebtInfo } from '@/services/customerService.js';
+import { updateCustomerDebtInfo, getCustomers } from '@/services/customerService.js';
 
 // 数据
 const searchText = ref('');
@@ -705,6 +705,11 @@ function validateQuantity() {
 
 // 显示客户选择器
 function showCustomerSelector() {
+	// 打开弹窗前重新加载客户数据，确保显示最新的客户列表
+	loadCustomersData();
+	// 清空搜索框
+	customerSearchText.value = '';
+	// 打开弹窗
 	customerSelectorPopup.value.open();
 }
 
@@ -865,6 +870,8 @@ onMounted(() => {
 		console.log('销售页面显示');
 		// 重新加载数据
 		loadFruitData();
+		// 重新加载客户数据
+		loadCustomersData();
 		// 触发tabChange事件
 		uni.$emit('tabChange');
 	});
@@ -874,6 +881,8 @@ onMounted(() => {
 		console.log('销售页面收到刷新事件');
 		// 重新加载数据
 		loadFruitData();
+		// 重新加载客户数据
+		loadCustomersData();
 	});
 });
 
@@ -940,14 +949,14 @@ function loadSalesRecords() {
 
 // 加载客户数据
 function loadCustomersData() {
-	// 模拟从服务器获取数据
-	// 实际应用中，这里应该是API调用
-	customersList.value = [
-		{ id: 1, name: "李明", type: "零售客户", phone: "13812345678", orders: 5 },
-		{ id: 2, name: "张三水果店", type: "批发客户", phone: "15912345678", orders: 12 },
-		{ id: 3, name: "王五超市", type: "批发客户", phone: "17712345678", orders: 8 },
-		{ id: 4, name: "赵六水果配送", type: "合作商", phone: "18612345678", orders: 15 }
-	];
+	// 从客户服务获取最新的客户数据
+	customersList.value = getCustomers();
+	console.log('从客户服务加载了客户数据:', customersList.value.length);
+
+	// 如果没有客户数据，显示提示
+	if (customersList.value.length === 0) {
+		console.log('没有找到客户数据');
+	}
 }
 </script>
 

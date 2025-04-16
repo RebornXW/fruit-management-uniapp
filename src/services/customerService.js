@@ -17,45 +17,12 @@ function loadCustomersData() {
         console.error('加载客户数据失败', e);
     }
 
-    // 如果没有存储的客户数据，初始化默认客户
-    customersData.value = [
-        {
-            id: 1,
-            name: "李明",
-            phone: "13812345678",
-            totalSales: 0,
-            paidAmount: 0,
-            unpaidAmount: 0
-        },
-        {
-            id: 2,
-            name: "张三水果店",
-            phone: "15912345678",
-            totalSales: 0,
-            paidAmount: 0,
-            unpaidAmount: 0
-        },
-        {
-            id: 3,
-            name: "王五超市",
-            phone: "17712345678",
-            totalSales: 0,
-            paidAmount: 0,
-            unpaidAmount: 0
-        },
-        {
-            id: 4,
-            name: "赵六水果配送",
-            phone: "18612345678",
-            totalSales: 0,
-            paidAmount: 0,
-            unpaidAmount: 0
-        }
-    ];
+    // 如果没有存储的客户数据，初始化为空数组
+    customersData.value = [];
 
     // 保存客户数据到本地存储
     saveCustomersData();
-    
+
     return customersData.value;
 }
 
@@ -75,7 +42,7 @@ function updateAllCustomersDebtInfo() {
     if (customersData.value.length === 0) {
         loadCustomersData();
     }
-    
+
     customersData.value.forEach(customer => {
         updateCustomerDebtInfo(customer.id);
     });
@@ -87,7 +54,7 @@ function updateCustomerDebtInfo(customerId) {
     if (customersData.value.length === 0) {
         loadCustomersData();
     }
-    
+
     // 查找客户
     const customerIndex = customersData.value.findIndex(c => c.id === customerId);
     if (customerIndex === -1) {
@@ -126,7 +93,7 @@ function updateCustomerDebtInfo(customerId) {
     const totalSales = customerRecords.reduce((sum, record) => {
         // 支持多种数据结构
         let amount = 0;
-        
+
         if (record.amount !== undefined) {
             amount = parseFloat(record.amount) || 0;
         } else if (record.total !== undefined) {
@@ -139,7 +106,7 @@ function updateCustomerDebtInfo(customerId) {
             const quantity = parseFloat(record.quantity) || 0;
             amount = price * quantity;
         }
-        
+
         return sum + amount;
     }, 0);
 
@@ -147,11 +114,11 @@ function updateCustomerDebtInfo(customerId) {
     const paidAmount = customerRecords.reduce((sum, record) => {
         // 支持多种数据结构
         let paid = 0;
-        
+
         // 如果有已付金额字段
         if (record.paidAmount !== undefined) {
             paid = parseFloat(record.paidAmount) || 0;
-        } 
+        }
         // 如果有付款状态字段
         else if (record.paid === true || record.status === '已付款' || record.status === '已回款' || record.paymentStatus === 'paid') {
             // 如果是已付款状态，使用总金额
@@ -173,7 +140,7 @@ function updateCustomerDebtInfo(customerId) {
             // 使用已付金额，如果没有，默认为0
             paid = parseFloat(record.paidAmount) || 0;
         }
-        
+
         return sum + paid;
     }, 0);
 

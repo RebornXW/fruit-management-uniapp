@@ -17,7 +17,7 @@
 		<view class="search-container">
 			<view class="search-box">
 				<uni-icons type="search" size="18" color="#9CA3AF"></uni-icons>
-				<input v-model="searchText" type="text" placeholder="搜索客户名称或联系方式..." class="search-input" @input="filterCustomers" />
+				<input v-model="searchText" type="text" placeholder="搜索客户名称、联系方式或地址..." class="search-input" @input="filterCustomers" />
 			</view>
 			<button class="add-customer-btn" @tap="showAddCustomerPopup">
 				<text class="iconfont icon-add"></text>
@@ -77,6 +77,10 @@
 						<view class="info-card">
 							<text class="info-label">联系方式</text>
 							<text class="info-value">{{currentCustomer.phone}}</text>
+						</view>
+						<view class="info-card" v-if="currentCustomer.address">
+							<text class="info-label">地址</text>
+							<text class="info-value">{{currentCustomer.address}}</text>
 						</view>
 
 						<!-- 回款统计卡片 -->
@@ -216,6 +220,10 @@
 						<input v-model="newCustomer.phone" type="text" placeholder="请输入联系方式" class="form-input" />
 					</view>
 					<view class="form-item">
+						<text class="form-label">地址</text>
+						<input v-model="newCustomer.address" type="text" placeholder="请输入地址" class="form-input" />
+					</view>
+					<view class="form-item">
 						<text class="form-label">备注</text>
 						<textarea v-model="newCustomer.remark" placeholder="请输入备注信息" class="form-textarea"></textarea>
 					</view>
@@ -268,6 +276,7 @@ const addCustomerPopup = ref(null);
 const newCustomer = ref({
 	name: '',
 	phone: '',
+	address: '',
 	remark: ''
 });
 
@@ -283,7 +292,8 @@ const filteredCustomers = computed(() => {
 	const query = searchText.value.toLowerCase();
 	return customersData.value.filter(customer => {
 		return customer.name.toLowerCase().includes(query) ||
-			customer.phone.includes(query);
+			customer.phone.includes(query) ||
+			(customer.address && customer.address.toLowerCase().includes(query));
 	});
 });
 
@@ -783,6 +793,7 @@ function showAddCustomerPopup() {
 	newCustomer.value = {
 		name: '',
 		phone: '',
+		address: '',
 		remark: ''
 	};
 	// 打开弹窗
@@ -813,6 +824,7 @@ function confirmAddCustomer() {
 		id: newId,
 		name: newCustomer.value.name,
 		phone: newCustomer.value.phone,
+		address: newCustomer.value.address || '',
 		remark: newCustomer.value.remark || '',
 		totalSales: 0,
 		paidAmount: 0,
@@ -822,6 +834,9 @@ function confirmAddCustomer() {
 	// 添加到客户列表
 	customersData.value.push(customer);
 
+	// 保存客户数据到本地存储
+	saveCustomersData();
+
 	// 关闭弹窗
 	closeAddCustomerPopup();
 
@@ -830,6 +845,9 @@ function confirmAddCustomer() {
 		title: '添加成功',
 		icon: 'success'
 	});
+
+	// 触发页面刷新事件，通知其他页面更新客户数据
+	uni.$emit('pageRefresh');
 }
 
 // 页面加载时获取数据
