@@ -34,9 +34,9 @@
 			</view>
 		</view>
 
-		<!-- 销售数据统计卡片 - 简化版 -->
+		<!-- 销售数据统计卡片 - 优化版 -->
 		<view class="px-4 -mt-8 mb-4">
-			<view class="bg-white rounded-2xl shadow-lg p-5">
+			<view class="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
 				<view class="flex justify-between items-center mb-4">
 					<view class="flex items-center">
 						<view class="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center mr-3 shadow-sm">
@@ -45,7 +45,7 @@
 						<text class="font-bold text-gray-800 text-base">销售数据统计</text>
 					</view>
 					<view class="flex items-center">
-						<view class="text-sm bg-teal-50 rounded-full px-3 py-1 shadow-sm">
+						<view class="text-sm bg-teal-50 rounded-full px-3 py-1 shadow-sm border border-teal-100">
 							<picker @change="onReportTypeChange" :value="reportTypeIndex" :range="reportTypes">
 								<view class="flex items-center">
 									<text class="text-teal-600 font-medium">{{reportTypes[reportTypeIndex]}}</text>
@@ -56,13 +56,13 @@
 					</view>
 				</view>
 
-				<!-- 简化的数据卡片区域 -->
-				<view class="flex justify-between items-stretch gap-4">
+				<!-- 优化的数据卡片区域 -->
+				<view class="sales-stats-grid">
 					<!-- 销售总额卡片 -->
-					<view class="flex-1 bg-gradient-to-br from-teal-500 to-teal-700 rounded-xl p-4 shadow-sm">
+					<view class="sales-stat-card bg-gradient-to-br from-teal-500 to-teal-700 rounded-xl p-4 shadow-sm border border-teal-600">
 						<view class="flex items-center justify-between mb-2">
 							<text class="text-xs text-white font-medium">销售总额</text>
-							<view class="flex items-center bg-teal-400 bg-opacity-30 rounded-full px-2 py-0.5" v-if="getCurrentData().amountTrend !== 0">
+							<view class="flex items-center bg-teal-400 bg-opacity-30 rounded-full px-2 py-0.5 border border-white border-opacity-20" v-if="getCurrentData().amountTrend !== 0">
 								<uni-icons :type="getCurrentData().amountTrend > 0 ? 'top' : 'bottom'" size="12" color="#ffffff"></uni-icons>
 								<text class="text-xs text-white ml-1">{{Math.abs(getCurrentData().amountTrend)}}%</text>
 							</view>
@@ -71,11 +71,11 @@
 					</view>
 
 					<!-- 销售量卡片 -->
-					<view class="flex-1 bg-gradient-to-br from-cyan-50 to-teal-50 border border-teal-100 rounded-xl p-4 shadow-sm">
+					<view class="sales-stat-card bg-gradient-to-br from-cyan-50 to-teal-50 border border-teal-100 rounded-xl p-4 shadow-sm">
 						<view class="flex items-center justify-between mb-2">
 							<text class="text-xs text-teal-700 font-medium">销售量</text>
 							<view class="flex items-center" v-if="getCurrentData().volumeTrend !== 0">
-								<view class="flex items-center rounded-full px-2 py-0.5" :class="getCurrentData().volumeTrend > 0 ? 'bg-green-100' : 'bg-red-100'">
+								<view class="flex items-center rounded-full px-2 py-0.5 border" :class="getCurrentData().volumeTrend > 0 ? 'bg-green-100 border-green-200' : 'bg-red-100 border-red-200'">
 									<uni-icons :type="getCurrentData().volumeTrend > 0 ? 'top' : 'bottom'" size="12" :color="getCurrentData().volumeTrend > 0 ? '#10B981' : '#EF4444'"></uni-icons>
 									<text class="text-xs ml-1" :class="getCurrentData().volumeTrend > 0 ? 'text-green-600' : 'text-red-600'">{{Math.abs(getCurrentData().volumeTrend)}}%</text>
 								</view>
@@ -89,31 +89,31 @@
 
 		<!-- 功能项 - 优化布局 -->
 		<view class="px-4 mb-4">
-			<view class="bg-white rounded-xl overflow-hidden shadow-sm">
-				<view class="grid-menu">
-					<view class="p-4" @tap="navigateTo('/pages/records/sales-records')">
-						<view class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
-							<uni-icons type="list" size="26" color="#059669"></uni-icons>
+			<view class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
+				<view class="function-menu">
+					<view class="function-item" @tap="navigateTo('/pages/records/sales-records')">
+						<view class="function-icon bg-emerald-100">
+							<uni-icons type="list" size="24" color="#059669"></uni-icons>
 						</view>
-						<text class="text-sm mt-2 block text-center font-medium text-emerald-600">销售记录</text>
+						<text class="function-text text-emerald-600">销售记录</text>
 					</view>
-					<view class="p-4" @tap="navigateTo('/pages/records/inventory-records')">
-						<view class="w-14 h-14 bg-sky-100 text-sky-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
-							<uni-icons type="shop" size="26" color="#0284C7"></uni-icons>
+					<view class="function-item" @tap="navigateTo('/pages/records/inventory-records')">
+						<view class="function-icon bg-sky-100">
+							<uni-icons type="shop" size="24" color="#0284C7"></uni-icons>
 						</view>
-						<text class="text-sm mt-2 block text-center font-medium text-sky-600">库存记录</text>
+						<text class="function-text text-sky-600">库存记录</text>
 					</view>
-					<view class="p-4" @tap="navigateTo('/pages/records/operation-records')">
-						<view class="w-14 h-14 bg-violet-100 text-violet-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
-							<uni-icons type="bars" size="26" color="#7C3AED"></uni-icons>
+					<view class="function-item" @tap="navigateTo('/pages/records/operation-records')">
+						<view class="function-icon bg-violet-100">
+							<uni-icons type="bars" size="24" color="#7C3AED"></uni-icons>
 						</view>
-						<text class="text-sm mt-2 block text-center font-medium text-violet-600">操作记录</text>
+						<text class="function-text text-violet-600">操作记录</text>
 					</view>
-					<view class="p-4" @tap="showFunction('reconciliation')">
-						<view class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
-							<uni-icons type="wallet" size="26" color="#4F46E5"></uni-icons>
+					<view class="function-item" @tap="showFunction('reconciliation')">
+						<view class="function-icon bg-indigo-100">
+							<uni-icons type="wallet" size="24" color="#4F46E5"></uni-icons>
 						</view>
-						<text class="text-sm mt-2 block text-center font-medium text-indigo-600">财务管理</text>
+						<text class="function-text text-indigo-600">财务管理</text>
 					</view>
 				</view>
 			</view>
@@ -123,7 +123,7 @@
 		<view class="px-4 mb-20">
 			<view class="flex items-center mb-3">
 				<view class="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg flex items-center justify-center mr-2 shadow-sm">
-					<uni-icons type="bars" size="16" color="#FFFFFF"></uni-icons>
+					<uni-icons type="chart-pie" size="16" color="#FFFFFF"></uni-icons>
 				</view>
 				<text class="text-base font-bold">业务数据摘要</text>
 			</view>
@@ -139,19 +139,23 @@
 						</view>
 						<view class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-medium">本月</view>
 					</view>
-					<view class="grid grid-cols-2 gap-4 mt-3">
-						<view class="data-item bg-blue-50 p-3 rounded-xl">
-							<text class="text-xs text-blue-600 font-medium">活跃客户</text>
-							<view class="flex items-center mt-1">
-								<text class="text-xl font-bold text-blue-700">{{dashboardData.activeCustomers || 12}}</text>
-								<text class="text-xs text-blue-500 ml-1">位</text>
+					<view class="flex justify-between items-center mt-3">
+						<view class="data-item-inline bg-blue-50 rounded-xl flex-1 mr-2 p-3">
+							<view class="flex items-center justify-between">
+								<text class="text-xs text-blue-600 font-medium">活跃客户</text>
+								<view class="flex items-center">
+									<text class="text-xl font-bold text-blue-700">{{dashboardData.activeCustomers || 12}}</text>
+									<text class="text-xs text-blue-500 ml-1">位</text>
+								</view>
 							</view>
 						</view>
-						<view class="data-item bg-indigo-50 p-3 rounded-xl">
-							<text class="text-xs text-indigo-600 font-medium">新增客户</text>
-							<view class="flex items-center mt-1">
-								<text class="text-xl font-bold text-indigo-700">{{dashboardData.newCustomers || 3}}</text>
-								<text class="text-xs text-indigo-500 ml-1">位</text>
+						<view class="data-item-inline bg-indigo-50 rounded-xl flex-1 ml-2 p-3">
+							<view class="flex items-center justify-between">
+								<text class="text-xs text-indigo-600 font-medium">新增客户</text>
+								<view class="flex items-center">
+									<text class="text-xl font-bold text-indigo-700">{{dashboardData.newCustomers || 3}}</text>
+									<text class="text-xs text-indigo-500 ml-1">位</text>
+								</view>
 							</view>
 						</view>
 					</view>
@@ -168,19 +172,23 @@
 						</view>
 						<view class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded-full font-medium">实时</view>
 					</view>
-					<view class="grid grid-cols-2 gap-4 mt-3">
-						<view class="data-item bg-amber-50 p-3 rounded-xl">
-							<text class="text-xs text-amber-600 font-medium">在售水果</text>
-							<view class="flex items-center mt-1">
-								<text class="text-xl font-bold text-amber-700">{{dashboardData.activeFruits || 15}}</text>
-								<text class="text-xs text-amber-500 ml-1">种</text>
+					<view class="flex justify-between items-center mt-3">
+						<view class="data-item-inline bg-amber-50 rounded-xl flex-1 mr-2 p-3">
+							<view class="flex items-center justify-between">
+								<text class="text-xs text-amber-600 font-medium">在售水果</text>
+								<view class="flex items-center">
+									<text class="text-xl font-bold text-amber-700">{{dashboardData.activeFruits || 15}}</text>
+									<text class="text-xs text-amber-500 ml-1">种</text>
+								</view>
 							</view>
 						</view>
-						<view class="data-item bg-orange-50 p-3 rounded-xl">
-							<text class="text-xs text-orange-600 font-medium">库存预警</text>
-							<view class="flex items-center mt-1">
-								<text class="text-xl font-bold text-orange-600">{{dashboardData.lowStockCount || 2}}</text>
-								<text class="text-xs text-orange-500 ml-1">种</text>
+						<view class="data-item-inline bg-orange-50 rounded-xl flex-1 ml-2 p-3">
+							<view class="flex items-center justify-between">
+								<text class="text-xs text-orange-600 font-medium">库存预警</text>
+								<view class="flex items-center">
+									<text class="text-xl font-bold text-orange-600">{{dashboardData.lowStockCount || 2}}</text>
+									<text class="text-xs text-orange-500 ml-1">种</text>
+								</view>
 							</view>
 						</view>
 					</view>
@@ -1559,6 +1567,80 @@ function closePopup() {
 	border-radius: 16rpx;
 	padding: 16rpx;
 	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	border: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+/* 功能菜单样式 - 优化版 */
+.function-menu {
+	display: flex;
+	justify-content: space-around;
+	padding: 24rpx 16rpx;
+	border: 1px solid #E5E7EB;
+	border-radius: 12rpx;
+}
+
+.function-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 20rpx;
+	width: 22%;
+	border-radius: 16rpx;
+	transition: all 0.2s ease;
+}
+
+.function-item:active {
+	background-color: #F9FAFB;
+	transform: scale(0.98);
+}
+
+.function-icon {
+	width: 100rpx;
+	height: 100rpx;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 16rpx;
+	box-shadow: 0 4rpx 6rpx rgba(0, 0, 0, 0.05);
+}
+
+.function-text {
+	font-size: 28rpx;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+/* 销售数据统计卡片样式 */
+.sales-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16rpx;
+}
+
+.sales-stat-card {
+	border-radius: 16rpx;
+	padding: 20rpx;
+	box-shadow: 0 4rpx 6rpx rgba(0, 0, 0, 0.05);
+	transition: all 0.2s ease;
+}
+
+.sales-stat-card:active {
+	transform: scale(0.98);
+}
+
+/* 数据摘要卡片样式优化 */
+.data-item {
+	background-color: #F9FAFB;
+	border-radius: 12rpx;
+	padding: 16rpx;
+	border: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.data-item-inline {
+	background-color: #F9FAFB;
+	border-radius: 12rpx;
+	border: 1rpx solid rgba(0, 0, 0, 0.05);
 }
 
 .card-divider {

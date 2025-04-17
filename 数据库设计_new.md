@@ -14,7 +14,6 @@
 | created_at | DATETIME | 创建时间 | 非空 |
 | updated_at | DATETIME | 更新时间 | 非空 |
 | status | TINYINT | 状态(1:启用 0:禁用) | 非空, 默认1 |
-| deleted | TINYINT | 软删除(1:已删 0:正常) | 默认0 |
 
 ## 2. 水果表 (fruits)
 | 字段名 | 类型 | 描述 | 约束 |
@@ -42,11 +41,9 @@
 | name | VARCHAR(100) | 客户名称 | 非空 |
 | phone | VARCHAR(20) | 联系电话 | |
 | address | VARCHAR(255) | 地址 | |
-
 | total_sales | DECIMAL(12,2) | 总销售额 | 默认0 |
 | paid_amount | DECIMAL(12,2) | 已付款金额 | 默认0 |
 | unpaid_amount | DECIMAL(12,2) | 未付款金额 | 默认0 |
-
 | remark | TEXT | 备注 | |
 | created_at | DATETIME | 创建时间 | 非空 |
 | updated_at | DATETIME | 更新时间 | 非空 |
@@ -61,8 +58,7 @@
 | user_id | INT | 销售员ID | 外键(users.id) |
 | customer_id | INT | 客户ID | 外键(customers.id) |
 | fruit_id | INT | 水果ID | 外键(fruits.id), 非空 |
-| sale_date | DATE | 销售日期 | 非空 |
-| sale_time | TIME | 销售时间 | 非空 |
+| sale_datetime | DATETIME | 销售时间 | 非空 |
 | unit_price | DECIMAL(10,2) | 单价 | 非空 |
 | quantity | INT | 数量(箱) | 非空 |
 | amount | DECIMAL(12,2) | 金额 | 非空 |
@@ -74,23 +70,31 @@
 | updated_at | DATETIME | 更新时间 | 非空 |
 | deleted | TINYINT | 软删除(1:已删 0:正常) | 默认0 |
 
-## 5. 回款记录表 (payment_records)
+## 5. 付款记录表 (payment_records)
 | 字段名 | 类型 | 描述 | 约束 |
 |--------|------|------|------|
-| id | INT | 回款记录ID | 主键, 自增 |
-| payment_id | VARCHAR(50) | 回款编号 | 非空, 唯一 |
+| id | INT | 付款记录ID | 主键, 自增 |
+| payment_id | VARCHAR(50) | 付款编号 | 非空, 唯一 |
 | customer_id | INT | 客户ID | 外键(customers.id), 非空 |
-| sales_record_id | INT | 销售记录ID | 外键(sales_records.id) |
-| amount | DECIMAL(12,2) | 回款金额 | 非空 |
-| payment_method | VARCHAR(20) | 回款方式(现金/微信/支付宝/其他) | 非空 |
-| payment_date | DATE | 回款日期 | 非空 |
-| payment_time | TIME | 回款时间 | 非空 |
+| amount | DECIMAL(12,2) | 付款金额 | 非空 |
+| payment_method | VARCHAR(20) | 付款方式(现金/微信/支付宝/其他) | 非空 |
+| payment_datetime | DATETIME | 付款时间 | 非空 |
 | operator_id | INT | 操作员ID | 外键(users.id), 非空 |
 | remark | TEXT | 备注 | |
 | created_at | DATETIME | 创建时间 | 非空 |
 | updated_at | DATETIME | 更新时间 | 非空 |
 
-## 6. 库存记录表 (inventory_records)
+## 6. 付款销售关系表 (payment_sales_relation)
+| 字段名 | 类型 | 描述 | 约束 |
+|--------|------|------|------|
+| id | INT | 关系ID | 主键, 自增 |
+| payment_id | INT | 付款记录ID | 外键(payment_records.id), 非空 |
+| sales_id | INT | 销售记录ID | 外键(sales_records.id), 非空 |
+| amount | DECIMAL(12,2) | 分配到该销售记录的付款金额 | 非空 |
+| created_at | DATETIME | 创建时间 | 非空 |
+| updated_at | DATETIME | 更新时间 | 非空 |
+
+## 7. 库存记录表 (inventory_records)
 | 字段名 | 类型 | 描述 | 约束 |
 |--------|------|------|------|
 | id | INT | 记录ID | 主键, 自增 |
@@ -99,14 +103,13 @@
 | operation_type | VARCHAR(20) | 操作类型(入库、出库、盘库) | 非空 |
 | quantity | INT | 数量(正数为入库/增加,负数为出库/减少) | 非空 |
 | operator_id | INT | 操作员ID | 外键(users.id), 非空 |
-| operation_date | DATE | 操作日期 | 非空 |
-| operation_time | TIME | 操作时间 | 非空 |
-| source | VARCHAR(100) | 来源/去向 (建议细化或关联单据) | |
+| operation_datetime | DATETIME | 操作时间 | 非空 |
+| source | VARCHAR(100) | 来源/去向 | |
 | remark | TEXT | 备注 | |
 | created_at | DATETIME | 创建时间 | 非空 |
 | updated_at | DATETIME | 更新时间 | 非空 |
 
-## 7. 操作记录表 (operation_records)
+## 8. 操作记录表 (operation_records)
 | 字段名 | 类型 | 描述 | 约束 |
 |--------|------|------|------|
 | id | INT | 记录ID | 主键, 自增 |
@@ -117,44 +120,43 @@
 | before_data | TEXT | 操作前数据(JSON) | |
 | after_data | TEXT | 操作后数据(JSON) | |
 | operator_id | INT | 操作员ID | 外键(users.id), 非空 |
-| operation_date | DATE | 操作日期 | 非空 |
-| operation_time | TIME | 操作时间 | 非空 |
+| operation_datetime | DATETIME | 操作时间 | 非空 |
 | remark | TEXT | 备注 | |
 | deleted | TINYINT | 软删除(1:已删 0:正常) | 默认0 |
 | created_at | DATETIME | 创建时间 | 非空 |
 | updated_at | DATETIME | 更新时间 | 非空 |
 
-## 8. 日记表 (diary_logs)
+## 9. 系统日志表 (system_logs)
 | 字段名 | 类型 | 描述 | 约束 |
 |--------|------|------|------|
-| id | INT | 日记ID | 主键, 自增 |
-| user_id | INT | 用户ID | 外键(users.id), 非空 |
-| log_date | DATE | 日记日期 | 非空 |
-| log_time | TIME | 日记时间 | 非空 |
-| content | TEXT | 日记内容 | 非空 |
+| id | INT | 日志ID | 主键, 自增 |
+| log_type | VARCHAR(50) | 日志类型(登录/登出/操作/错误/警告) | 非空 |
+| module | VARCHAR(50) | 模块(用户/水果/客户/销售/库存/财务) | 非空 |
+| action | VARCHAR(50) | 动作(创建/更新/删除/查询/导出) | 非空 |
+| user_id | INT | 用户ID | 外键(users.id) |
+| ip_address | VARCHAR(50) | IP地址 | |
+| user_agent | VARCHAR(255) | 用户代理 | |
+| request_url | VARCHAR(255) | 请求URL | |
+| request_method | VARCHAR(10) | 请求方法(GET/POST/PUT/DELETE) | |
+| request_params | TEXT | 请求参数(JSON) | |
+| response_code | INT | 响应状态码 | |
+| response_data | TEXT | 响应数据(JSON) | |
+| execution_time | INT | 执行时间(毫秒) | |
+| log_datetime | DATETIME | 日志时间 | 非空 |
+| created_at | DATETIME | 创建时间 | 非空 |
+
+## 10. 销售统计表 (sales_statistics)
+| 字段名 | 类型 | 描述 | 约束 |
+|--------|------|------|------|
+| id | INT | 统计ID | 主键, 自增 |
+| statistic_type | VARCHAR(20) | 统计类型(日/周/月/年) | 非空 |
+| statistic_date | DATE | 统计日期 | 非空 |
+| fruit_id | INT | 水果ID | 外键(fruits.id) |
+| customer_id | INT | 客户ID | 外键(customers.id) |
+| sales_count | INT | 销售笔数 | 非空, 默认0 |
+| sales_quantity | INT | 销售数量 | 非空, 默认0 |
+| sales_amount | DECIMAL(12,2) | 销售金额 | 非空, 默认0 |
+| paid_amount | DECIMAL(12,2) | 已付款金额 | 非空, 默认0 |
+| unpaid_amount | DECIMAL(12,2) | 未付款金额 | 非空, 默认0 |
 | created_at | DATETIME | 创建时间 | 非空 |
 | updated_at | DATETIME | 更新时间 | 非空 |
-
-<!-- 软删除字段评估:
-1. **用户表(users)**: 不需要软删除，用户账号应该通过status字段禁用而非删除，以保留历史操作记录的关联。
-2. **水果表(fruits)**: 需要软删除，以便保留历史销售记录的关联，同时允许从界面上移除不再销售的水果。
-3. **客户表(customers)**: 需要软删除，以便保留历史销售和付款记录的关联。
-4. **销售记录表(sales_records)**: 需要软删除，以便在需要时隐藏记录但保留数据完整性。
-5. **回款记录表(payment_records)**: 不需要软删除，财务记录应该保持完整，不应被删除。
-6. **库存记录表(inventory_records)**: 不需要软删除，库存变动记录应该保持完整，不应被删除。
-7. **操作记录表(operation_records)**: 已有软删除字段，保留。
-8. **日记表(diary_logs)**: 不需要软删除，个人日记可以直接删除。
-9. **供应商表(suppliers)**: 需要软删除，以便保留历史采购记录的关联。
--->
-
-<!-- 数据库设计变更说明:
-1. 新增供应商表(suppliers)，用于管理供应商信息。
-2. 将水果表中的supplier字段改为supplier_id外键，关联到供应商表。
-3. 删除销售订单表(sales_orders)和销售订单明细表(sales_order_items)，改用销售记录表(sales_records)直接记录销售信息。
-4. 根据业务需求为相关表添加软删除字段。
-5. 调整表的编号顺序以保持连贯性。
--->
-
-
-
-
