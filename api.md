@@ -213,6 +213,7 @@
     "name": "管理员",
     "phone": "13800138000",
     "role": "admin",
+    "stall_name": "总部",
     "avatar": "https://example.com/avatar.jpg",
     "last_login": "2023-06-01T10:30:00Z",
     "created_at": "2023-01-01T00:00:00Z",
@@ -232,6 +233,7 @@
 {
   "name": "新名称",
   "phone": "13900139000",
+  "stall_name": "新档口",
   "avatar": "https://example.com/new-avatar.jpg"
 }
 ```
@@ -248,6 +250,7 @@
     "name": "新名称",
     "phone": "13900139000",
     "role": "admin",
+    "stall_name": "新档口",
     "avatar": "https://example.com/new-avatar.jpg",
     "last_login": "2023-06-01T10:30:00Z",
     "created_at": "2023-01-01T00:00:00Z",
@@ -288,7 +291,7 @@
 - **URL**: `/users`
 - **方法**: GET
 - **描述**: 获取系统用户列表
-- **请求参数**: 
+- **请求参数**:
   - `page`: 页码
   - `limit`: 每页记录数
   - `keyword`: 搜索关键词（可选）
@@ -312,6 +315,7 @@
         "name": "管理员",
         "phone": "13800138000",
         "role": "admin",
+        "stall_name": "总部",
         "avatar": "https://example.com/avatar.jpg",
         "last_login": "2023-06-01T10:30:00Z",
         "created_at": "2023-01-01T00:00:00Z",
@@ -337,6 +341,7 @@
   "name": "员工1",
   "phone": "13800138001",
   "role": "staff",
+  "stall_name": "水果档口A01",
   "avatar": "https://example.com/avatar1.jpg",
   "status": 1
 }
@@ -354,6 +359,7 @@
     "name": "员工1",
     "phone": "13800138001",
     "role": "staff",
+    "stall_name": "水果档口A01",
     "avatar": "https://example.com/avatar1.jpg",
     "created_at": "2023-06-10T14:30:00Z",
     "status": 1
@@ -373,6 +379,7 @@
   "name": "员工1更新",
   "phone": "13900139001",
   "role": "manager",
+  "stall_name": "水果档口B02",
   "avatar": "https://example.com/avatar1-new.jpg",
   "status": 1
 }
@@ -390,6 +397,7 @@
     "name": "员工1更新",
     "phone": "13900139001",
     "role": "manager",
+    "stall_name": "水果档口B02",
     "avatar": "https://example.com/avatar1-new.jpg",
     "last_login": "2023-06-01T10:30:00Z",
     "created_at": "2023-06-10T14:30:00Z",
@@ -445,7 +453,7 @@
 - **URL**: `/fruits`
 - **方法**: GET
 - **描述**: 获取水果列表
-- **请求参数**: 
+- **请求参数**:
   - `page`: 页码
   - `limit`: 每页记录数
   - `keyword`: 搜索关键词（可选）
@@ -467,8 +475,8 @@
         "id": 1,
         "brand": "品牌A",
         "name": "苹果",
-        "category": "核果类",
-        "variety": "红富士",
+        "category_id": 1,
+        "variety_id": 1,
         "spec": "10kg/箱",
         "package_type": "箱装",
         "weight": 10.0,
@@ -501,8 +509,8 @@
     "id": 1,
     "brand": "品牌A",
     "name": "苹果",
-    "category": "核果类",
-    "variety": "红富士",
+    "category_id": 1,
+    "variety_id": 1,
     "spec": "10kg/箱",
     "package_type": "箱装",
     "weight": 10.0,
@@ -529,8 +537,8 @@
 {
   "brand": "品牌B",
   "name": "香蕉",
-  "category": "热带水果",
-  "variety": "小米蕉",
+  "category_id": 3,
+  "variety_id": 6,
   "spec": "15kg/箱",
   "package_type": "箱装",
   "weight": 15.0,
@@ -551,8 +559,8 @@
     "id": 2,
     "brand": "品牌B",
     "name": "香蕉",
-    "category": "热带水果",
-    "variety": "小米蕉",
+    "category_id": 3,
+    "variety_id": 6,
     "spec": "15kg/箱",
     "package_type": "箱装",
     "weight": 15.0,
@@ -577,8 +585,8 @@
 {
   "brand": "品牌B更新",
   "name": "香蕉",
-  "category": "热带水果",
-  "variety": "小米蕉",
+  "category_id": 3,
+  "variety_id": 6,
   "spec": "15kg/箱",
   "package_type": "箱装",
   "weight": 15.0,
@@ -599,8 +607,8 @@
     "id": 2,
     "brand": "品牌B更新",
     "name": "香蕉",
-    "category": "热带水果",
-    "variety": "小米蕉",
+    "category_id": 3,
+    "variety_id": 6,
     "spec": "15kg/箱",
     "package_type": "箱装",
     "weight": 15.0,
@@ -656,11 +664,11 @@
 }
 ```
 
-### 3.7 获取水果类别列表
+### 3.7 获取水果分类列表
 
 - **URL**: `/fruits/categories`
 - **方法**: GET
-- **描述**: 获取系统中所有水果类别
+- **描述**: 获取系统中所有水果分类
 - **请求参数**: 无
 - **响应示例**:
 
@@ -669,12 +677,263 @@
   "code": 200,
   "message": "获取成功",
   "data": [
-    "核果类",
-    "热带水果",
-    "柑橘类",
-    "浆果类"
-    // 更多类别...
+    {
+      "id": 1,
+      "name": "苹果",
+      "created_at": "2023-01-01T00:00:00Z",
+      "updated_at": "2023-01-01T00:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "橙子",
+      "created_at": "2023-01-01T00:00:00Z",
+      "updated_at": "2023-01-01T00:00:00Z"
+    },
+    {
+      "id": 3,
+      "name": "香蕉",
+      "created_at": "2023-01-01T00:00:00Z",
+      "updated_at": "2023-01-01T00:00:00Z"
+    }
+    // 更多分类...
   ]
+}
+```
+
+### 3.8 获取单个水果分类
+
+- **URL**: `/fruits/categories/{id}`
+- **方法**: GET
+- **描述**: 获取单个水果分类详情
+- **请求参数**:
+  - `id`: 分类ID
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "id": 1,
+    "name": "苹果",
+    "created_at": "2023-01-01T00:00:00Z",
+    "updated_at": "2023-01-01T00:00:00Z"
+  }
+}
+```
+
+### 3.9 新增水果分类
+
+- **URL**: `/fruits/categories`
+- **方法**: POST
+- **描述**: 新增水果分类
+- **请求参数**:
+
+```json
+{
+  "name": "桃子"
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "创建成功",
+  "data": {
+    "id": 4,
+    "name": "桃子",
+    "created_at": "2025-04-19T15:45:30Z",
+    "updated_at": "2025-04-19T15:45:30Z"
+  }
+}
+```
+
+### 3.10 更新水果分类
+
+- **URL**: `/fruits/categories/{id}`
+- **方法**: PUT
+- **描述**: 更新水果分类
+- **请求参数**:
+  - `id`: 分类ID
+
+```json
+{
+  "name": "水蕉"
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "更新成功",
+  "data": {
+    "id": 3,
+    "name": "水蕉",
+    "created_at": "2023-01-01T00:00:00Z",
+    "updated_at": "2025-04-19T15:45:30Z"
+  }
+}
+```
+
+### 3.11 删除水果分类
+
+- **URL**: `/fruits/categories/{id}`
+- **方法**: DELETE
+- **描述**: 删除水果分类
+- **请求参数**:
+  - `id`: 分类ID
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "删除成功",
+  "data": null
+}
+```
+
+### 3.12 获取水果品种列表
+
+- **URL**: `/fruits/varieties`
+- **方法**: GET
+- **描述**: 获取水果品种列表
+- **请求参数**:
+  - `category_id`: 分类ID（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": [
+    {
+      "id": 1,
+      "category_id": 1,
+      "name": "红富士",
+      "created_at": "2023-01-01T00:00:00Z",
+      "updated_at": "2023-01-01T00:00:00Z"
+    },
+    {
+      "id": 2,
+      "category_id": 1,
+      "name": "嘎啦",
+      "created_at": "2023-01-01T00:00:00Z",
+      "updated_at": "2023-01-01T00:00:00Z"
+    },
+    {
+      "id": 3,
+      "category_id": 1,
+      "name": "金帅",
+      "created_at": "2023-01-01T00:00:00Z",
+      "updated_at": "2023-01-01T00:00:00Z"
+    }
+    // 更多品种...
+  ]
+}
+```
+
+### 3.13 获取单个水果品种
+
+- **URL**: `/fruits/varieties/{id}`
+- **方法**: GET
+- **描述**: 获取单个水果品种详情
+- **请求参数**:
+  - `id`: 品种ID
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "id": 1,
+    "category_id": 1,
+    "name": "红富士",
+    "created_at": "2023-01-01T00:00:00Z",
+    "updated_at": "2023-01-01T00:00:00Z"
+  }
+}
+```
+
+### 3.14 新增水果品种
+
+- **URL**: `/fruits/varieties`
+- **方法**: POST
+- **描述**: 新增水果品种
+- **请求参数**:
+
+```json
+{
+  "category_id": 1,
+  "name": "青苹果"
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "创建成功",
+  "data": {
+    "id": 4,
+    "category_id": 1,
+    "name": "青苹果",
+    "created_at": "2025-04-19T15:45:30Z",
+    "updated_at": "2025-04-19T15:45:30Z"
+  }
+}
+```
+
+### 3.15 更新水果品种
+
+- **URL**: `/fruits/varieties/{id}`
+- **方法**: PUT
+- **描述**: 更新水果品种
+- **请求参数**:
+  - `id`: 品种ID
+
+```json
+{
+  "category_id": 1,
+  "name": "红苹果"
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "更新成功",
+  "data": {
+    "id": 4,
+    "category_id": 1,
+    "name": "红苹果",
+    "created_at": "2025-04-19T15:45:30Z",
+    "updated_at": "2025-04-19T15:46:15Z"
+  }
+}
+```
+
+### 3.16 删除水果品种
+
+- **URL**: `/fruits/varieties/{id}`
+- **方法**: DELETE
+- **描述**: 删除水果品种
+- **请求参数**:
+  - `id`: 品种ID
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "删除成功",
+  "data": null
 }
 ```
 
@@ -685,7 +944,7 @@
 - **URL**: `/customers`
 - **方法**: GET
 - **描述**: 获取客户列表
-- **请求参数**: 
+- **请求参数**:
   - `page`: 页码
   - `limit`: 每页记录数
   - `keyword`: 搜索关键词（可选）
@@ -752,4 +1011,1658 @@
         "sale_date": "2023-06-01",
         "fruit_name": "红富士苹果",
         "quantity": 10,
-        "amount": 500.00
+        "amount": 500.00,
+        "payment_status": 1
+      },
+      {
+        "id": 95,
+        "record_id": "S20230520005",
+        "sale_date": "2023-05-20",
+        "fruit_name": "香蕉",
+        "quantity": 5,
+        "amount": 200.00,
+        "payment_status": 1
+      }
+      // 更多销售记录...
+    ],
+    "recent_payments": [
+      {
+        "id": 56,
+        "payment_id": "P20230601002",
+        "payment_date": "2023-06-01",
+        "amount": 500.00,
+        "payment_method": "微信支付"
+      },
+      {
+        "id": 42,
+        "payment_id": "P20230520001",
+        "payment_date": "2023-05-20",
+        "amount": 200.00,
+        "payment_method": "现金"
+      }
+      // 更多付款记录...
+    ]
+  }
+}
+```
+
+### 4.3 创建客户
+
+- **URL**: `/customers`
+- **方法**: POST
+- **描述**: 创建新客户
+- **请求参数**:
+
+```json
+{
+  "name": "客户B",
+  "phone": "13900139001",
+  "address": "上海市浦东新区xxx路",
+  "remark": "新客户",
+  "status": 1
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "创建成功",
+  "data": {
+    "id": 2,
+    "name": "客户B",
+    "phone": "13900139001",
+    "address": "上海市浦东新区xxx路",
+    "total_sales": 0.00,
+    "paid_amount": 0.00,
+    "unpaid_amount": 0.00,
+    "remark": "新客户",
+    "created_at": "2023-06-10T14:30:00Z",
+    "updated_at": "2023-06-10T14:30:00Z",
+    "status": 1
+  }
+}
+```
+
+### 4.4 更新客户
+
+- **URL**: `/customers/{id}`
+- **方法**: PUT
+- **描述**: 更新指定客户信息
+- **请求参数**:
+
+```json
+{
+  "name": "客户B更新",
+  "phone": "13900139002",
+  "address": "上海市浦东新区yyy路",
+  "remark": "重要客户",
+  "status": 1
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "更新成功",
+  "data": {
+    "id": 2,
+    "name": "客户B更新",
+    "phone": "13900139002",
+    "address": "上海市浦东新区yyy路",
+    "total_sales": 0.00,
+    "paid_amount": 0.00,
+    "unpaid_amount": 0.00,
+    "remark": "重要客户",
+    "created_at": "2023-06-10T14:30:00Z",
+    "updated_at": "2023-06-15T09:20:00Z",
+    "status": 1
+  }
+}
+```
+
+### 4.5 删除客户
+
+- **URL**: `/customers/{id}`
+- **方法**: DELETE
+- **描述**: 删除指定客户（软删除）
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "删除成功",
+  "data": null
+}
+```
+
+### 4.6 获取客户销售记录
+
+- **URL**: `/customers/{id}/sales`
+- **方法**: GET
+- **描述**: 获取指定客户的销售记录
+- **请求参数**:
+  - `page`: 页码
+  - `limit`: 每页记录数
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+  - `payment_status`: 付款状态（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total": 50,
+    "pages": 3,
+    "current": 1,
+    "limit": 20,
+    "items": [
+      {
+        "id": 101,
+        "record_id": "S20230601001",
+        "sale_date": "2023-06-01",
+        "fruit_name": "红富士苹果",
+        "quantity": 10,
+        "unit_price": 50.00,
+        "amount": 500.00,
+        "payment_status": 1,
+        "created_at": "2023-06-01T10:30:00Z",
+        "updated_at": "2023-06-01T10:30:00Z"
+      },
+      {
+        "id": 95,
+        "record_id": "S20230520005",
+        "sale_date": "2023-05-20",
+        "fruit_name": "香蕉",
+        "quantity": 5,
+        "unit_price": 40.00,
+        "amount": 200.00,
+        "payment_status": 1,
+        "created_at": "2023-05-20T14:20:00Z",
+        "updated_at": "2023-05-20T14:20:00Z"
+      }
+      // 更多销售记录...
+    ]
+  }
+}
+```
+
+### 4.7 获取客户付款记录
+
+- **URL**: `/customers/{id}/payments`
+- **方法**: GET
+- **描述**: 获取指定客户的付款记录
+- **请求参数**:
+  - `page`: 页码
+  - `limit`: 每页记录数
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+  - `payment_method`: 付款方式（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total": 30,
+    "pages": 2,
+    "current": 1,
+    "limit": 20,
+    "items": [
+      {
+        "id": 56,
+        "payment_id": "P20230601002",
+        "payment_date": "2023-06-01",
+        "amount": 500.00,
+        "payment_method": "微信支付",
+        "remark": "6月1日货款",
+        "created_at": "2023-06-01T11:00:00Z",
+        "updated_at": "2023-06-01T11:00:00Z"
+      },
+      {
+        "id": 42,
+        "payment_id": "P20230520001",
+        "payment_date": "2023-05-20",
+        "amount": 200.00,
+        "payment_method": "现金",
+        "remark": "5月20日货款",
+        "created_at": "2023-05-20T15:00:00Z",
+        "updated_at": "2023-05-20T15:00:00Z"
+      }
+      // 更多付款记录...
+    ]
+  }
+}
+```
+
+## 5. 销售管理
+
+### 5.1 获取销售记录列表
+
+- **URL**: `/sales`
+- **方法**: GET
+- **描述**: 获取销售记录列表
+- **请求参数**:
+  - `page`: 页码
+  - `limit`: 每页记录数
+  - `keyword`: 搜索关键词（可选）
+  - `customer_id`: 客户ID筛选（可选）
+  - `fruit_id`: 水果ID筛选（可选）
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+  - `payment_status`: 付款状态筛选（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total": 200,
+    "pages": 10,
+    "current": 1,
+    "limit": 20,
+    "items": [
+      {
+        "id": 101,
+        "record_id": "S20230601001",
+        "customer_id": 1,
+        "customer_name": "客户A",
+        "sale_date": "2023-06-01",
+        "fruit_id": 1,
+        "fruit_name": "红富士苹果",
+        "quantity": 10,
+        "unit_price": 50.00,
+        "amount": 500.00,
+        "payment_status": 1,
+        "remark": "",
+        "created_at": "2023-06-01T10:30:00Z",
+        "updated_at": "2023-06-01T10:30:00Z"
+      },
+      {
+        "id": 100,
+        "record_id": "S20230531005",
+        "customer_id": 2,
+        "customer_name": "客户B",
+        "sale_date": "2023-05-31",
+        "fruit_id": 2,
+        "fruit_name": "香蕉",
+        "quantity": 8,
+        "unit_price": 40.00,
+        "amount": 320.00,
+        "payment_status": 0,
+        "remark": "",
+        "created_at": "2023-05-31T16:20:00Z",
+        "updated_at": "2023-05-31T16:20:00Z"
+      }
+      // 更多销售记录...
+    ]
+  }
+}
+```
+
+### 5.2 获取销售记录详情
+
+- **URL**: `/sales/{id}`
+- **方法**: GET
+- **描述**: 获取指定销售记录的详细信息
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "id": 101,
+    "record_id": "S20230601001",
+    "customer_id": 1,
+    "customer_name": "客户A",
+    "customer_phone": "13800138000",
+    "sale_date": "2023-06-01",
+    "fruit_id": 1,
+    "fruit_name": "红富士苹果",
+    "fruit_spec": "10kg/箱",
+    "quantity": 10,
+    "unit_price": 50.00,
+    "amount": 500.00,
+    "payment_status": 1,
+    "remark": "",
+    "created_by": "admin",
+    "created_at": "2023-06-01T10:30:00Z",
+    "updated_at": "2023-06-01T10:30:00Z",
+    "related_payments": [
+      {
+        "id": 56,
+        "payment_id": "P20230601002",
+        "payment_date": "2023-06-01",
+        "amount": 500.00,
+        "payment_method": "微信支付"
+      }
+    ]
+  }
+}
+```
+
+### 5.3 创建销售记录
+
+- **URL**: `/sales`
+- **方法**: POST
+- **描述**: 创建新销售记录
+- **请求参数**:
+
+```json
+{
+  "customer_id": 1,
+  "sale_date": "2023-06-02",
+  "fruit_id": 3,
+  "quantity": 15,
+  "unit_price": 45.00,
+  "payment_status": 0,
+  "remark": "批发订单"
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "创建成功",
+  "data": {
+    "id": 102,
+    "record_id": "S20230602001",
+    "customer_id": 1,
+    "customer_name": "客户A",
+    "sale_date": "2023-06-02",
+    "fruit_id": 3,
+    "fruit_name": "橙子",
+    "quantity": 15,
+    "unit_price": 45.00,
+    "amount": 675.00,
+    "payment_status": 0,
+    "remark": "批发订单",
+    "created_at": "2023-06-02T09:15:00Z",
+    "updated_at": "2023-06-02T09:15:00Z"
+  }
+}
+```
+
+### 5.4 更新销售记录
+
+- **URL**: `/sales/{id}`
+- **方法**: PUT
+- **描述**: 更新指定销售记录信息
+- **请求参数**:
+
+```json
+{
+  "customer_id": 1,
+  "sale_date": "2023-06-02",
+  "fruit_id": 3,
+  "quantity": 20,
+  "unit_price": 42.00,
+  "payment_status": 0,
+  "remark": "批发订单-已修改"
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "更新成功",
+  "data": {
+    "id": 102,
+    "record_id": "S20230602001",
+    "customer_id": 1,
+    "customer_name": "客户A",
+    "sale_date": "2023-06-02",
+    "fruit_id": 3,
+    "fruit_name": "橙子",
+    "quantity": 20,
+    "unit_price": 42.00,
+    "amount": 840.00,
+    "payment_status": 0,
+    "remark": "批发订单-已修改",
+    "created_at": "2023-06-02T09:15:00Z",
+    "updated_at": "2023-06-02T10:30:00Z"
+  }
+}
+```
+
+### 5.5 删除销售记录
+
+- **URL**: `/sales/{id}`
+- **方法**: DELETE
+- **描述**: 删除指定销售记录
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "删除成功",
+  "data": null
+}
+```
+
+### 5.6 更新销售记录付款状态
+
+- **URL**: `/sales/{id}/payment-status`
+- **方法**: PUT
+- **描述**: 更新销售记录的付款状态
+- **请求参数**:
+
+```json
+{
+  "payment_status": 1  // 0:未付款 1:已付款 2:部分付款
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "状态更新成功",
+  "data": {
+    "id": 102,
+    "record_id": "S20230602001",
+    "payment_status": 1,
+    "updated_at": "2023-06-03T14:20:00Z"
+  }
+}
+```
+
+### 5.7 获取销售记录关联的付款记录
+
+- **URL**: `/sales/{id}/payments`
+- **方法**: GET
+- **描述**: 获取指定销售记录关联的付款记录
+- **请求参数**:
+  - `page`: 页码
+  - `limit`: 每页记录数
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total": 2,
+    "pages": 1,
+    "current": 1,
+    "limit": 20,
+    "items": [
+      {
+        "id": 56,
+        "payment_id": "P20230601002",
+        "customer_id": 1,
+        "customer_name": "客户A",
+        "payment_date": "2023-06-01",
+        "amount": 300.00,
+        "payment_method": "微信支付",
+        "remark": "部分付款",
+        "created_at": "2023-06-01T11:00:00Z",
+        "updated_at": "2023-06-01T11:00:00Z"
+      },
+      {
+        "id": 60,
+        "payment_id": "P20230603001",
+        "customer_id": 1,
+        "customer_name": "客户A",
+        "payment_date": "2023-06-03",
+        "amount": 540.00,
+        "payment_method": "银行转账",
+        "remark": "剩余付款",
+        "created_at": "2023-06-03T14:20:00Z",
+        "updated_at": "2023-06-03T14:20:00Z"
+      }
+    ]
+  }
+}
+```
+
+## 6. 库存管理
+
+### 6.1 获取库存记录列表
+
+- **URL**: `/inventory`
+- **方法**: GET
+- **描述**: 获取库存记录列表
+- **请求参数**:
+  - `page`: 页码
+  - `limit`: 每页记录数
+  - `keyword`: 搜索关键词（可选）
+  - `fruit_id`: 水果ID筛选（可选）
+  - `category_id`: 分类ID筛选（可选）
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+  - `type`: 类型筛选（可选，1:入库 2:出库）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total": 150,
+    "pages": 8,
+    "current": 1,
+    "limit": 20,
+    "items": [
+      {
+        "id": 201,
+        "record_id": "I20230605001",
+        "fruit_id": 1,
+        "fruit_name": "红富士苹果",
+        "type": 1,
+        "quantity": 100,
+        "unit_price": 40.00,
+        "amount": 4000.00,
+        "operation_date": "2023-06-05",
+        "supplier": "供应商A",
+        "remark": "批量入库",
+        "created_at": "2023-06-05T09:00:00Z",
+        "updated_at": "2023-06-05T09:00:00Z"
+      },
+      {
+        "id": 200,
+        "record_id": "I20230604002",
+        "fruit_id": 2,
+        "fruit_name": "香蕉",
+        "type": 1,
+        "quantity": 50,
+        "unit_price": 30.00,
+        "amount": 1500.00,
+        "operation_date": "2023-06-04",
+        "supplier": "供应商B",
+        "remark": "常规入库",
+        "created_at": "2023-06-04T14:30:00Z",
+        "updated_at": "2023-06-04T14:30:00Z"
+      }
+      // 更多库存记录...
+    ]
+  }
+}
+```
+
+### 6.2 获取库存记录详情
+
+- **URL**: `/inventory/{id}`
+- **方法**: GET
+- **描述**: 获取指定库存记录的详细信息
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "id": 201,
+    "record_id": "I20230605001",
+    "fruit_id": 1,
+    "fruit_name": "红富士苹果",
+    "fruit_spec": "10kg/箱",
+    "type": 1,
+    "quantity": 100,
+    "unit_price": 40.00,
+    "amount": 4000.00,
+    "operation_date": "2023-06-05",
+    "supplier": "供应商A",
+    "remark": "批量入库",
+    "created_by": "admin",
+    "created_at": "2023-06-05T09:00:00Z",
+    "updated_at": "2023-06-05T09:00:00Z",
+    "related_sales": [],
+    "current_stock": 85  // 当前库存数量
+  }
+}
+```
+
+### 6.3 创建库存记录
+
+- **URL**: `/inventory`
+- **方法**: POST
+- **描述**: 创建新库存记录
+- **请求参数**:
+
+```json
+{
+  "fruit_id": 3,
+  "type": 1,
+  "quantity": 80,
+  "unit_price": 35.00,
+  "operation_date": "2023-06-06",
+  "supplier": "供应商C",
+  "remark": "批量入库"
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "创建成功",
+  "data": {
+    "id": 202,
+    "record_id": "I20230606001",
+    "fruit_id": 3,
+    "fruit_name": "橙子",
+    "type": 1,
+    "quantity": 80,
+    "unit_price": 35.00,
+    "amount": 2800.00,
+    "operation_date": "2023-06-06",
+    "supplier": "供应商C",
+    "remark": "批量入库",
+    "created_at": "2023-06-06T10:15:00Z",
+    "updated_at": "2023-06-06T10:15:00Z"
+  }
+}
+```
+
+### 6.4 更新库存记录
+
+- **URL**: `/inventory/{id}`
+- **方法**: PUT
+- **描述**: 更新指定库存记录信息
+- **请求参数**:
+
+```json
+{
+  "fruit_id": 3,
+  "type": 1,
+  "quantity": 85,
+  "unit_price": 34.00,
+  "operation_date": "2023-06-06",
+  "supplier": "供应商C",
+  "remark": "批量入库-已修改"
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "更新成功",
+  "data": {
+    "id": 202,
+    "record_id": "I20230606001",
+    "fruit_id": 3,
+    "fruit_name": "橙子",
+    "type": 1,
+    "quantity": 85,
+    "unit_price": 34.00,
+    "amount": 2890.00,
+    "operation_date": "2023-06-06",
+    "supplier": "供应商C",
+    "remark": "批量入库-已修改",
+    "created_at": "2023-06-06T10:15:00Z",
+    "updated_at": "2023-06-06T11:30:00Z"
+  }
+}
+```
+
+### 6.5 删除库存记录
+
+- **URL**: `/inventory/{id}`
+- **方法**: DELETE
+- **描述**: 删除指定库存记录
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "删除成功",
+  "data": null
+}
+```
+
+### 6.6 获取当前库存汇总
+
+- **URL**: `/inventory/summary`
+- **方法**: GET
+- **描述**: 获取当前库存汇总信息
+- **请求参数**:
+  - `category_id`: 分类ID筛选（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total_items": 10,
+    "total_quantity": 1200,
+    "total_value": 48000.00,
+    "items": [
+      {
+        "fruit_id": 1,
+        "fruit_name": "红富士苹果",
+        "category_id": 1,
+        "category_name": "苹果",
+        "quantity": 85,
+        "avg_price": 40.00,
+        "value": 3400.00,
+        "last_in_date": "2023-06-05"
+      },
+      {
+        "fruit_id": 2,
+        "fruit_name": "香蕉",
+        "category_id": 3,
+        "category_name": "香蕉",
+        "quantity": 42,
+        "avg_price": 30.00,
+        "value": 1260.00,
+        "last_in_date": "2023-06-04"
+      }
+      // 更多水果库存...
+    ]
+  }
+}
+```
+
+### 6.7 库存警告设置
+
+- **URL**: `/inventory/alert-settings`
+- **方法**: GET
+- **描述**: 获取库存警告设置
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "global_min_quantity": 10,
+    "global_alert_enabled": true,
+    "fruit_settings": [
+      {
+        "fruit_id": 1,
+        "fruit_name": "红富士苹果",
+        "min_quantity": 20,
+        "alert_enabled": true
+      },
+      {
+        "fruit_id": 3,
+        "fruit_name": "橙子",
+        "min_quantity": 15,
+        "alert_enabled": true
+      }
+    ]
+  }
+}
+```
+
+- **URL**: `/inventory/alert-settings`
+- **方法**: PUT
+- **描述**: 更新库存警告设置
+- **请求参数**:
+
+```json
+{
+  "global_min_quantity": 15,
+  "global_alert_enabled": true,
+  "fruit_settings": [
+    {
+      "fruit_id": 1,
+      "min_quantity": 25,
+      "alert_enabled": true
+    },
+    {
+      "fruit_id": 3,
+      "min_quantity": 20,
+      "alert_enabled": true
+    }
+  ]
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "更新成功",
+  "data": {
+    "global_min_quantity": 15,
+    "global_alert_enabled": true,
+    "fruit_settings": [
+      {
+        "fruit_id": 1,
+        "fruit_name": "红富士苹果",
+        "min_quantity": 25,
+        "alert_enabled": true
+      },
+      {
+        "fruit_id": 3,
+        "fruit_name": "橙子",
+        "min_quantity": 20,
+        "alert_enabled": true
+      }
+    ]
+  }
+}
+```
+
+### 6.8 获取库存警告列表
+
+- **URL**: `/inventory/alerts`
+- **方法**: GET
+- **描述**: 获取当前库存警告列表
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": [
+    {
+      "fruit_id": 4,
+      "fruit_name": "梨",
+      "category_name": "梨",
+      "current_quantity": 8,
+      "min_quantity": 10,
+      "alert_level": "warning"
+    },
+    {
+      "fruit_id": 5,
+      "fruit_name": "葡萄",
+      "category_name": "葡萄",
+      "current_quantity": 5,
+      "min_quantity": 15,
+      "alert_level": "danger"
+    }
+  ]
+}
+```
+
+## 7. 财务管理
+
+### 7.1 获取付款记录列表
+
+- **URL**: `/payments`
+- **方法**: GET
+- **描述**: 获取付款记录列表
+- **请求参数**:
+  - `page`: 页码
+  - `limit`: 每页记录数
+  - `keyword`: 搜索关键词（可选）
+  - `customer_id`: 客户ID筛选（可选）
+  - `payment_method`: 付款方式筛选（可选）
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total": 100,
+    "pages": 5,
+    "current": 1,
+    "limit": 20,
+    "items": [
+      {
+        "id": 60,
+        "payment_id": "P20230603001",
+        "customer_id": 1,
+        "customer_name": "客户A",
+        "payment_date": "2023-06-03",
+        "amount": 540.00,
+        "payment_method": "银行转账",
+        "remark": "剩余付款",
+        "created_at": "2023-06-03T14:20:00Z",
+        "updated_at": "2023-06-03T14:20:00Z"
+      },
+      {
+        "id": 56,
+        "payment_id": "P20230601002",
+        "customer_id": 1,
+        "customer_name": "客户A",
+        "payment_date": "2023-06-01",
+        "amount": 300.00,
+        "payment_method": "微信支付",
+        "remark": "部分付款",
+        "created_at": "2023-06-01T11:00:00Z",
+        "updated_at": "2023-06-01T11:00:00Z"
+      }
+      // 更多付款记录...
+    ]
+  }
+}
+```
+
+### 7.2 获取付款记录详情
+
+- **URL**: `/payments/{id}`
+- **方法**: GET
+- **描述**: 获取指定付款记录的详细信息
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "id": 60,
+    "payment_id": "P20230603001",
+    "customer_id": 1,
+    "customer_name": "客户A",
+    "customer_phone": "13800138000",
+    "payment_date": "2023-06-03",
+    "amount": 540.00,
+    "payment_method": "银行转账",
+    "remark": "剩余付款",
+    "created_by": "admin",
+    "created_at": "2023-06-03T14:20:00Z",
+    "updated_at": "2023-06-03T14:20:00Z",
+    "related_sales": [
+      {
+        "id": 102,
+        "record_id": "S20230602001",
+        "sale_date": "2023-06-02",
+        "fruit_name": "橙子",
+        "amount": 840.00,
+        "applied_amount": 540.00
+      }
+    ]
+  }
+}
+```
+
+### 7.3 创建付款记录
+
+- **URL**: `/payments`
+- **方法**: POST
+- **描述**: 创建新付款记录
+- **请求参数**:
+
+```json
+{
+  "customer_id": 2,
+  "payment_date": "2023-06-04",
+  "amount": 320.00,
+  "payment_method": "支付宝",
+  "remark": "全额付款",
+  "related_sales": [100]  // 关联的销售记录ID数组（可选）
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "创建成功",
+  "data": {
+    "id": 61,
+    "payment_id": "P20230604001",
+    "customer_id": 2,
+    "customer_name": "客户B",
+    "payment_date": "2023-06-04",
+    "amount": 320.00,
+    "payment_method": "支付宝",
+    "remark": "全额付款",
+    "created_at": "2023-06-04T09:15:00Z",
+    "updated_at": "2023-06-04T09:15:00Z",
+    "related_sales": [
+      {
+        "id": 100,
+        "record_id": "S20230531005",
+        "sale_date": "2023-05-31",
+        "fruit_name": "香蕉",
+        "amount": 320.00,
+        "applied_amount": 320.00
+      }
+    ]
+  }
+}
+```
+
+### 7.4 更新付款记录
+
+- **URL**: `/payments/{id}`
+- **方法**: PUT
+- **描述**: 更新指定付款记录信息
+- **请求参数**:
+
+```json
+{
+  "customer_id": 2,
+  "payment_date": "2023-06-04",
+  "amount": 320.00,
+  "payment_method": "微信支付",
+  "remark": "全额付款-已修改"
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "更新成功",
+  "data": {
+    "id": 61,
+    "payment_id": "P20230604001",
+    "customer_id": 2,
+    "customer_name": "客户B",
+    "payment_date": "2023-06-04",
+    "amount": 320.00,
+    "payment_method": "微信支付",
+    "remark": "全额付款-已修改",
+    "created_at": "2023-06-04T09:15:00Z",
+    "updated_at": "2023-06-04T10:30:00Z"
+  }
+}
+```
+
+### 7.5 删除付款记录
+
+- **URL**: `/payments/{id}`
+- **方法**: DELETE
+- **描述**: 删除指定付款记录
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "删除成功",
+  "data": null
+}
+```
+
+### 7.6 获取付款记录关联的销售记录
+
+- **URL**: `/payments/{id}/sales`
+- **方法**: GET
+- **描述**: 获取指定付款记录关联的销售记录
+- **请求参数**:
+  - `page`: 页码
+  - `limit`: 每页记录数
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total": 1,
+    "pages": 1,
+    "current": 1,
+    "limit": 20,
+    "items": [
+      {
+        "id": 102,
+        "record_id": "S20230602001",
+        "customer_id": 1,
+        "customer_name": "客户A",
+        "sale_date": "2023-06-02",
+        "fruit_name": "橙子",
+        "quantity": 20,
+        "unit_price": 42.00,
+        "amount": 840.00,
+        "applied_amount": 540.00,
+        "payment_status": 2,
+        "created_at": "2023-06-02T09:15:00Z",
+        "updated_at": "2023-06-03T14:20:00Z"
+      }
+    ]
+  }
+}
+```
+
+### 7.7 为付款记录添加关联的销售记录
+
+- **URL**: `/payments/{id}/sales`
+- **方法**: POST
+- **描述**: 为付款记录添加关联的销售记录
+- **请求参数**:
+
+```json
+{
+  "sales": [
+    {
+      "sale_id": 103,
+      "amount": 200.00  // 应用到该销售记录的金额
+    }
+  ]
+}
+```
+
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "添加成功",
+  "data": {
+    "payment_id": 60,
+    "added_sales": [
+      {
+        "sale_id": 103,
+        "amount": 200.00
+      }
+    ],
+    "remaining_amount": 0.00  // 付款记录中剩余未分配金额
+  }
+}
+```
+
+### 7.8 移除付款记录关联的销售记录
+
+- **URL**: `/payments/{id}/sales/{sale_id}`
+- **方法**: DELETE
+- **描述**: 移除付款记录关联的销售记录
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "移除成功",
+  "data": {
+    "payment_id": 60,
+    "removed_sale_id": 103,
+    "remaining_amount": 200.00  // 付款记录中剩余未分配金额
+  }
+}
+```
+
+### 7.9 财务统计
+
+- **URL**: `/finance/statistics`
+- **方法**: GET
+- **描述**: 获取财务统计信息
+- **请求参数**:
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+  - `period`: 统计周期（day/week/month/year，默认month）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total_sales": 50000.00,
+    "total_payments": 45000.00,
+    "total_unpaid": 5000.00,
+    "total_inventory_in": 40000.00,
+    "total_inventory_out": 38000.00,
+    "gross_profit": 12000.00,
+    "period_data": [
+      {
+        "period": "2023-05",
+        "sales": 25000.00,
+        "payments": 22000.00,
+        "inventory_in": 20000.00,
+        "inventory_out": 19000.00,
+        "profit": 6000.00
+      },
+      {
+        "period": "2023-06",
+        "sales": 25000.00,
+        "payments": 23000.00,
+        "inventory_in": 20000.00,
+        "inventory_out": 19000.00,
+        "profit": 6000.00
+      }
+    ],
+    "top_customers": [
+      {
+        "customer_id": 1,
+        "customer_name": "客户A",
+        "sales_amount": 15000.00,
+        "payment_amount": 14000.00
+      },
+      {
+        "customer_id": 2,
+        "customer_name": "客户B",
+        "sales_amount": 10000.00,
+        "payment_amount": 9500.00
+      }
+    ],
+    "top_fruits": [
+      {
+        "fruit_id": 1,
+        "fruit_name": "红富士苹果",
+        "sales_amount": 12000.00,
+        "sales_quantity": 240
+      },
+      {
+        "fruit_id": 3,
+        "fruit_name": "橙子",
+        "sales_amount": 10000.00,
+        "sales_quantity": 220
+      }
+    ]
+  }
+}
+```
+
+## 8. 系统日志
+
+### 8.1 获取系统日志列表
+
+- **URL**: `/logs`
+- **方法**: GET
+- **描述**: 获取系统日志列表
+- **请求参数**:
+  - `page`: 页码
+  - `limit`: 每页记录数
+  - `keyword`: 搜索关键词（可选）
+  - `user_id`: 用户ID筛选（可选）
+  - `type`: 日志类型筛选（可选）
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total": 500,
+    "pages": 25,
+    "current": 1,
+    "limit": 20,
+    "items": [
+      {
+        "id": 1001,
+        "user_id": 1,
+        "username": "admin",
+        "type": "login",
+        "action": "用户登录",
+        "ip": "192.168.1.100",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "created_at": "2023-06-10T08:00:00Z"
+      },
+      {
+        "id": 1000,
+        "user_id": 1,
+        "username": "admin",
+        "type": "operation",
+        "action": "创建销售记录",
+        "details": {
+          "record_id": "S20230610001",
+          "customer_id": 1,
+          "amount": 500.00
+        },
+        "ip": "192.168.1.100",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "created_at": "2023-06-10T08:15:00Z"
+      }
+      // 更多日志...
+    ]
+  }
+}
+```
+
+### 8.2 获取系统日志详情
+
+- **URL**: `/logs/{id}`
+- **方法**: GET
+- **描述**: 获取指定系统日志的详细信息
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "id": 1000,
+    "user_id": 1,
+    "username": "admin",
+    "type": "operation",
+    "action": "创建销售记录",
+    "details": {
+      "record_id": "S20230610001",
+      "customer_id": 1,
+      "customer_name": "客户A",
+      "fruit_id": 1,
+      "fruit_name": "红富士苹果",
+      "quantity": 10,
+      "unit_price": 50.00,
+      "amount": 500.00,
+      "payment_status": 0
+    },
+    "ip": "192.168.1.100",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "created_at": "2023-06-10T08:15:00Z"
+  }
+}
+```
+
+### 8.3 导出系统日志
+
+- **URL**: `/logs/export`
+- **方法**: GET
+- **描述**: 导出系统日志
+- **请求参数**:
+  - `format`: 导出格式（csv/excel，默认excel）
+  - `keyword`: 搜索关键词（可选）
+  - `user_id`: 用户ID筛选（可选）
+  - `type`: 日志类型筛选（可选）
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+- **响应**: 文件下载
+
+## 9. 统计分析
+
+### 9.1 销售统计
+
+- **URL**: `/statistics/sales`
+- **方法**: GET
+- **描述**: 获取销售统计信息
+- **请求参数**:
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+  - `period`: 统计周期（day/week/month/year，默认month）
+  - `category_id`: 分类ID筛选（可选）
+  - `fruit_id`: 水果ID筛选（可选）
+  - `customer_id`: 客户ID筛选（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total_sales": 50000.00,
+    "total_quantity": 1000,
+    "average_price": 50.00,
+    "period_data": [
+      {
+        "period": "2023-05",
+        "sales": 25000.00,
+        "quantity": 500,
+        "average_price": 50.00
+      },
+      {
+        "period": "2023-06",
+        "sales": 25000.00,
+        "quantity": 500,
+        "average_price": 50.00
+      }
+    ],
+    "category_data": [
+      {
+        "category_id": 1,
+        "category_name": "苹果",
+        "sales": 15000.00,
+        "quantity": 300,
+        "percentage": 30
+      },
+      {
+        "category_id": 3,
+        "category_name": "香蕉",
+        "sales": 10000.00,
+        "quantity": 250,
+        "percentage": 20
+      }
+    ],
+    "fruit_data": [
+      {
+        "fruit_id": 1,
+        "fruit_name": "红富士苹果",
+        "sales": 12000.00,
+        "quantity": 240,
+        "percentage": 24
+      },
+      {
+        "fruit_id": 3,
+        "fruit_name": "橙子",
+        "sales": 10000.00,
+        "quantity": 220,
+        "percentage": 20
+      }
+    ],
+    "customer_data": [
+      {
+        "customer_id": 1,
+        "customer_name": "客户A",
+        "sales": 15000.00,
+        "quantity": 300,
+        "percentage": 30
+      },
+      {
+        "customer_id": 2,
+        "customer_name": "客户B",
+        "sales": 10000.00,
+        "quantity": 200,
+        "percentage": 20
+      }
+    ]
+  }
+}
+```
+
+### 9.2 库存统计
+
+- **URL**: `/statistics/inventory`
+- **方法**: GET
+- **描述**: 获取库存统计信息
+- **请求参数**:
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+  - `period`: 统计周期（day/week/month/year，默认month）
+  - `category_id`: 分类ID筛选（可选）
+  - `fruit_id`: 水果ID筛选（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "current_inventory": {
+      "total_items": 10,
+      "total_quantity": 1200,
+      "total_value": 48000.00
+    },
+    "inventory_in": {
+      "total_quantity": 2000,
+      "total_value": 80000.00,
+      "period_data": [
+        {
+          "period": "2023-05",
+          "quantity": 1000,
+          "value": 40000.00
+        },
+        {
+          "period": "2023-06",
+          "quantity": 1000,
+          "value": 40000.00
+        }
+      ]
+    },
+    "inventory_out": {
+      "total_quantity": 800,
+      "total_value": 32000.00,
+      "period_data": [
+        {
+          "period": "2023-05",
+          "quantity": 400,
+          "value": 16000.00
+        },
+        {
+          "period": "2023-06",
+          "quantity": 400,
+          "value": 16000.00
+        }
+      ]
+    },
+    "category_data": [
+      {
+        "category_id": 1,
+        "category_name": "苹果",
+        "current_quantity": 500,
+        "current_value": 20000.00,
+        "in_quantity": 800,
+        "in_value": 32000.00,
+        "out_quantity": 300,
+        "out_value": 12000.00
+      },
+      {
+        "category_id": 3,
+        "category_name": "香蕉",
+        "current_quantity": 300,
+        "current_value": 9000.00,
+        "in_quantity": 500,
+        "in_value": 15000.00,
+        "out_quantity": 200,
+        "out_value": 6000.00
+      }
+    ],
+    "fruit_data": [
+      {
+        "fruit_id": 1,
+        "fruit_name": "红富士苹果",
+        "current_quantity": 400,
+        "current_value": 16000.00,
+        "in_quantity": 600,
+        "in_value": 24000.00,
+        "out_quantity": 200,
+        "out_value": 8000.00
+      },
+      {
+        "fruit_id": 3,
+        "fruit_name": "橙子",
+        "current_quantity": 300,
+        "current_value": 10500.00,
+        "in_quantity": 500,
+        "in_value": 17500.00,
+        "out_quantity": 200,
+        "out_value": 7000.00
+      }
+    ]
+  }
+}
+```
+
+### 9.3 客户统计
+
+- **URL**: `/statistics/customers`
+- **方法**: GET
+- **描述**: 获取客户统计信息
+- **请求参数**:
+  - `start_date`: 开始日期（可选）
+  - `end_date`: 结束日期（可选）
+  - `period`: 统计周期（day/week/month/year，默认month）
+  - `customer_id`: 客户ID筛选（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total_customers": 50,
+    "active_customers": 30,
+    "new_customers": 5,
+    "total_sales": 50000.00,
+    "total_payments": 45000.00,
+    "total_unpaid": 5000.00,
+    "period_data": [
+      {
+        "period": "2023-05",
+        "active_customers": 25,
+        "new_customers": 3,
+        "sales": 25000.00,
+        "payments": 22000.00
+      },
+      {
+        "period": "2023-06",
+        "active_customers": 30,
+        "new_customers": 2,
+        "sales": 25000.00,
+        "payments": 23000.00
+      }
+    ],
+    "top_customers": [
+      {
+        "customer_id": 1,
+        "customer_name": "客户A",
+        "sales_amount": 15000.00,
+        "payment_amount": 14000.00,
+        "unpaid_amount": 1000.00,
+        "sales_count": 30,
+        "percentage": 30
+      },
+      {
+        "customer_id": 2,
+        "customer_name": "客户B",
+        "sales_amount": 10000.00,
+        "payment_amount": 9500.00,
+        "unpaid_amount": 500.00,
+        "sales_count": 20,
+        "percentage": 20
+      }
+    ],
+    "customer_preferences": [
+      {
+        "customer_id": 1,
+        "customer_name": "客户A",
+        "top_fruits": [
+          {
+            "fruit_id": 1,
+            "fruit_name": "红富士苹果",
+            "quantity": 100,
+            "amount": 5000.00,
+            "percentage": 33.33
+          },
+          {
+            "fruit_id": 3,
+            "fruit_name": "橙子",
+            "quantity": 80,
+            "amount": 3500.00,
+            "percentage": 23.33
+          }
+        ]
+      },
+      {
+        "customer_id": 2,
+        "customer_name": "客户B",
+        "top_fruits": [
+          {
+            "fruit_id": 2,
+            "fruit_name": "香蕉",
+            "quantity": 60,
+            "amount": 2400.00,
+            "percentage": 24
+          },
+          {
+            "fruit_id": 4,
+            "fruit_name": "梨",
+            "quantity": 50,
+            "amount": 2000.00,
+            "percentage": 20
+          }
+        ]
+      }
+    ]
+  }
+}
+```

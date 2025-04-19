@@ -66,6 +66,7 @@
 <script>
 import { ref, reactive, onMounted } from 'vue';
 import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
+import http from '@/services/http.js';
 
 export default {
 	components: {
@@ -87,18 +88,31 @@ export default {
 		});
 		
 		// 获取用户信息
-		const getUserInfo = () => {
-			// 从本地存储获取登录用户信息
-			const loginUserInfo = uni.getStorageSync('loginUser');
-			if (loginUserInfo) {
+		const getUserInfo = async () => {
+			try {
+				const data = await http.request({ url: '/auth/profile', method: 'GET' });
 				userInfo.value = {
-					name: loginUserInfo.name || '默认用户',
-					shopName: loginUserInfo.storeName || '水果档口',
-					avatar: loginUserInfo.avatar || '/static/default-avatar.png',
-					role: loginUserInfo.role || '管理员',
-					phone: loginUserInfo.phone || '',
-					username: loginUserInfo.username || 'admin'
+					name: data.name,
+					shopName: data.shopName || data.storeName,
+					avatar: data.avatar,
+					role: data.role,
+					phone: data.phone,
+					username: data.username
 				};
+			} catch (e) {
+				console.error('获取用户信息失败', e);
+				// fallback 本地存储
+				const loginUserInfo = uni.getStorageSync('loginUser');
+				if (loginUserInfo) {
+					userInfo.value = {
+						name: loginUserInfo.name || '默认用户',
+						shopName: loginUserInfo.storeName || '水果档口',
+						avatar: loginUserInfo.avatar || '/static/default-avatar.png',
+						role: loginUserInfo.role || '管理员',
+						phone: loginUserInfo.phone || '',
+						username: loginUserInfo.username || 'admin'
+					};
+				}
 			}
 		};
 		
