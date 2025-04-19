@@ -1,39 +1,34 @@
 import { ref } from 'vue';
-import { getSalesRecords } from './salesRecordService.js';
+import http from './http.js';
 
 // 客户数据
 const customersData = ref([]);
 
 // 加载客户数据
 function loadCustomersData() {
-    try {
-        const storedCustomers = uni.getStorageSync('customers');
-        if (storedCustomers) {
-            customersData.value = JSON.parse(storedCustomers);
-            console.log('从本地存储加载了客户数据:', customersData.value.length);
+    return http.request({ url: '/customers', method: 'GET' })
+        .then(response => {
+            customersData.value = response.data;
+            console.log('从服务器加载了客户数据:', customersData.value.length);
             return customersData.value;
-        }
-    } catch (e) {
-        console.error('加载客户数据失败', e);
-    }
-
-    // 如果没有存储的客户数据，初始化为空数组
-    customersData.value = [];
-
-    // 保存客户数据到本地存储
-    saveCustomersData();
-
-    return customersData.value;
+        })
+        .catch(error => {
+            console.error('加载客户数据失败', error);
+            return [];
+        });
 }
 
-// 保存客户数据到本地存储
+// 保存客户数据到服务器
 function saveCustomersData() {
-    try {
-        uni.setStorageSync('customers', JSON.stringify(customersData.value));
-        console.log('客户数据已保存到本地存储');
-    } catch (e) {
-        console.error('保存客户数据失败', e);
-    }
+    return http.request({ url: '/customers', method: 'POST', data: customersData.value })
+        .then(response => {
+            console.log('客户数据已保存到服务器');
+            return response.data;
+        })
+        .catch(error => {
+            console.error('保存客户数据失败', error);
+            return null;
+        });
 }
 
 // 更新所有客户的欠款信息
@@ -62,109 +57,114 @@ function updateCustomerDebtInfo(customerId) {
         return;
     }
 
-    // 从 salesRecordService 获取所有销售记录
-    const allSalesRecords = getSalesRecords();
-    console.log('更新客户欠款信息 - 从 salesRecordService 获取的销售记录数量:', allSalesRecords.length);
+    // 从服务器获取客户销售记录
+    getCustomerSales(customerId)
+        .then(salesRecords => {
+            console.log('更新客户欠款信息 - 从服务器获取的销售记录数量:', salesRecords.length);
 
-    // 过滤出该客户的销售记录
-    const customerRecords = allSalesRecords.filter(record => {
-        // 支持多种客户ID存储方式
-        if (record.customerId !== undefined && record.customerId === customerId) {
-            return true;
-        }
+            // 过滤出该客户的销售记录
+            const customerRecords = salesRecords.filter(record => {
+                // 支持多种客户ID存储方式
+                if (record.customerId !== undefined && record.customerId === customerId) {
+                    return true;
+                }
 
-        // 支持客户对象嵌套
-        if (record.customer && record.customer.id === customerId) {
-            return true;
-        }
+                // 支持客户对象嵌套
+                if (record.customer && record.customer.id === customerId) {
+                    return true;
+                }
 
-        // 支持根据客户名称匹配
-        if (record.customerName !== undefined) {
-            const customerName = customersData.value[customerIndex].name;
-            return record.customerName === customerName;
-        }
+                // 支持根据客户名称匹配
+                if (record.customerName !== undefined) {
+                    const customerName = customersData.value[customerIndex].name;
+                    return record.customerName === customerName;
+                }
 
-        return false;
-    });
+                return false;
+            });
 
-    console.log('更新客户欠款信息 - 该客户的销售记录数量:', customerRecords.length);
+            console.log('更新客户欠款信息 - 该客户的销售记录数量:', customerRecords.length);
 
-    // 计算总销售额
-    const totalSales = customerRecords.reduce((sum, record) => {
-        // 支持多种数据结构
-        let amount = 0;
+            // 计算总销售额
+            const totalSales = customerRecords.reduce((sum, record) => {
+                // 支持多种数据结构
+                let amount = 0;
 
-        if (record.amount !== undefined) {
-            amount = parseFloat(record.amount) || 0;
-        } else if (record.total !== undefined) {
-            amount = parseFloat(record.total) || 0;
-        } else if (record.totalAmount !== undefined) {
-            amount = parseFloat(record.totalAmount) || 0;
-        } else if (record.price !== undefined && record.quantity !== undefined) {
-            // 如果有单价和数量，计算总价
-            const price = parseFloat(record.price) || 0;
-            const quantity = parseFloat(record.quantity) || 0;
-            amount = price * quantity;
-        }
+                if (record.amount !== undefined) {
+                    amount = parseFloat(record.amount) || 0;
+                } else if (record.total !== undefined) {
+                    amount = parseFloat(record.total) || 0;
+                } else if (record.totalAmount !== undefined) {
+                    amount = parseFloat(record.totalAmount) || 0;
+                } else if (record.price !== undefined && record.quantity !== undefined) {
+                    // 如果有单价和数量，计算总价
+                    const price = parseFloat(record.price) || 0;
+                    const quantity = parseFloat(record.quantity) || 0;
+                    amount = price * quantity;
+                }
 
-        return sum + amount;
-    }, 0);
+                return sum + amount;
+            }, 0);
 
-    // 计算已回款金额
-    const paidAmount = customerRecords.reduce((sum, record) => {
-        // 支持多种数据结构
-        let paid = 0;
+            // 计算已回款金额
+            const paidAmount = customerRecords.reduce((sum, record) => {
+                // 支持多种数据结构
+                let paid = 0;
 
-        // 如果有已付金额字段
-        if (record.paidAmount !== undefined) {
-            paid = parseFloat(record.paidAmount) || 0;
-        }
-        // 如果有付款状态字段
-        else if (record.paid === true || record.status === '已付款' || record.status === '已回款' || record.paymentStatus === 'paid') {
-            // 如果是已付款状态，使用总金额
-            if (record.amount !== undefined) {
-                paid = parseFloat(record.amount) || 0;
-            } else if (record.total !== undefined) {
-                paid = parseFloat(record.total) || 0;
-            } else if (record.totalAmount !== undefined) {
-                paid = parseFloat(record.totalAmount) || 0;
-            } else if (record.price !== undefined && record.quantity !== undefined) {
-                // 如果有单价和数量，计算总价
-                const price = parseFloat(record.price) || 0;
-                const quantity = parseFloat(record.quantity) || 0;
-                paid = price * quantity;
-            }
-        }
-        // 如果是部分付款状态
-        else if (record.status === '部分回款' || record.paymentStatus === 'partial') {
-            // 使用已付金额，如果没有，默认为0
-            paid = parseFloat(record.paidAmount) || 0;
-        }
+                // 如果有已付金额字段
+                if (record.paidAmount !== undefined) {
+                    paid = parseFloat(record.paidAmount) || 0;
+                }
+                // 如果有付款状态字段
+                else if (record.paid === true || record.status === '已付款' || record.status === '已回款' || record.paymentStatus === 'paid') {
+                    // 如果是已付款状态，使用总金额
+                    if (record.amount !== undefined) {
+                        paid = parseFloat(record.amount) || 0;
+                    } else if (record.total !== undefined) {
+                        paid = parseFloat(record.total) || 0;
+                    } else if (record.totalAmount !== undefined) {
+                        paid = parseFloat(record.totalAmount) || 0;
+                    } else if (record.price !== undefined && record.quantity !== undefined) {
+                        // 如果有单价和数量，计算总价
+                        const price = parseFloat(record.price) || 0;
+                        const quantity = parseFloat(record.quantity) || 0;
+                        paid = price * quantity;
+                    }
+                }
+                // 如果是部分付款状态
+                else if (record.status === '部分回款' || record.paymentStatus === 'partial') {
+                    // 使用已付金额，如果没有，默认为0
+                    paid = parseFloat(record.paidAmount) || 0;
+                }
 
-        return sum + paid;
-    }, 0);
+                return sum + paid;
+            }, 0);
 
-    // 计算未付款金额
-    const unpaidAmount = Math.max(0, totalSales - paidAmount);
+            // 计算未付款金额
+            const unpaidAmount = Math.max(0, totalSales - paidAmount);
 
-    // 计算回款率
-    const paymentRate = totalSales > 0 ? Math.round((paidAmount / totalSales) * 100) : 0;
+            // 计算回款率
+            const paymentRate = totalSales > 0 ? Math.round((paidAmount / totalSales) * 100) : 0;
 
-    console.log(`客户 ${customersData.value[customerIndex].name} 的数据更新:`, {
-        总销售额: totalSales,
-        已回款金额: paidAmount,
-        未付款金额: unpaidAmount,
-        回款率: paymentRate + '%'
-    });
+            console.log(`客户 ${customersData.value[customerIndex].name} 的数据更新:`, {
+                总销售额: totalSales,
+                已回款金额: paidAmount,
+                未付款金额: unpaidAmount,
+                回款率: paymentRate + '%'
+            });
 
-    // 更新客户信息
-    customersData.value[customerIndex].totalSales = totalSales;
-    customersData.value[customerIndex].paidAmount = paidAmount;
-    customersData.value[customerIndex].unpaidAmount = unpaidAmount;
-    customersData.value[customerIndex].paymentRate = paymentRate;
+            // 更新客户信息
+            customersData.value[customerIndex].totalSales = totalSales;
+            customersData.value[customerIndex].paidAmount = paidAmount;
+            customersData.value[customerIndex].unpaidAmount = unpaidAmount;
+            customersData.value[customerIndex].paymentRate = paymentRate;
 
-    // 保存更新后的客户数据
-    saveCustomersData();
+            // 保存更新后的客户数据
+            saveCustomersData();
+        })
+        .catch(error => {
+            console.error('更新客户欠款信息失败', error);
+        });
 }
 
 // 获取客户数据
@@ -195,3 +195,32 @@ export {
     getCustomers,
     getCustomerById
 };
+
+// 客户服务
+export function getCustomers(params = {}) {
+    return http.request({ url: '/customers', method: 'GET', data: params });
+}
+
+export function getCustomerById(id) {
+    return http.request({ url: `/customers/${id}`, method: 'GET' });
+}
+
+export function createCustomer(data) {
+    return http.request({ url: '/customers', method: 'POST', data });
+}
+
+export function updateCustomer(id, data) {
+    return http.request({ url: `/customers/${id}`, method: 'PUT', data });
+}
+
+export function deleteCustomer(id) {
+    return http.request({ url: `/customers/${id}`, method: 'DELETE' });
+}
+
+export function getCustomerSales(id, params = {}) {
+    return http.request({ url: `/customers/${id}/sales`, method: 'GET', data: params });
+}
+
+export function getCustomerPayments(id, params = {}) {
+    return http.request({ url: `/customers/${id}/payments`, method: 'GET', data: params });
+}

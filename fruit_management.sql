@@ -20,13 +20,34 @@ CREATE TABLE `users` (
   UNIQUE INDEX `username_UNIQUE` (`username`)
 );
 
--- 2. 水果表 (fruits)
+-- 2. 水果分类表
+CREATE TABLE `fruit_categories` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(50) NOT NULL,
+  `created_at` DATETIME NOT NULL,
+  `updated_at` DATETIME NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `name_UNIQUE` (`name`)
+);
+
+-- 3. 水果品种表
+CREATE TABLE `fruit_varieties` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `category_id` INT NOT NULL,
+  `name` VARCHAR(100) NOT NULL,
+  `created_at` DATETIME NOT NULL,
+  `updated_at` DATETIME NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_varieties_category` FOREIGN KEY (`category_id`) REFERENCES `fruit_categories` (`id`)
+);
+
+-- 4. 水果表 (fruits)
 CREATE TABLE `fruits` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `brand` VARCHAR(50) NOT NULL,
   `name` VARCHAR(100) NOT NULL,
-  `category` VARCHAR(50) NOT NULL,
-  `variety` VARCHAR(100) NOT NULL,
+  `category_id` INT NOT NULL,
+  `variety_id` INT NOT NULL,
   `spec` VARCHAR(100) NOT NULL,
   `package_type` VARCHAR(50) NULL,
   `weight` DECIMAL(10,2) NOT NULL,
@@ -37,10 +58,12 @@ CREATE TABLE `fruits` (
   `updated_at` DATETIME NOT NULL,
   `status` TINYINT NOT NULL DEFAULT 1,
   `deleted` TINYINT DEFAULT 0,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_fruits_category` FOREIGN KEY (`category_id`) REFERENCES `fruit_categories` (`id`),
+  CONSTRAINT `fk_fruits_variety` FOREIGN KEY (`variety_id`) REFERENCES `fruit_varieties` (`id`)
 );
 
--- 3. 客户表 (customers)
+-- 5. 客户表 (customers)
 CREATE TABLE `customers` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(100) NOT NULL,
@@ -57,7 +80,7 @@ CREATE TABLE `customers` (
   PRIMARY KEY (`id`)
 );
 
--- 4. 销售记录表 (sales_records)
+-- 6. 销售记录表 (sales_records)
 CREATE TABLE `sales_records` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `record_id` VARCHAR(50) NOT NULL,
@@ -82,7 +105,7 @@ CREATE TABLE `sales_records` (
   CONSTRAINT `fk_sales_records_fruit` FOREIGN KEY (`fruit_id`) REFERENCES `fruits` (`id`)
 );
 
--- 5. 付款记录表 (payment_records)
+-- 7. 付款记录表 (payment_records)
 CREATE TABLE `payment_records` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `payment_id` VARCHAR(50) NOT NULL,
@@ -100,7 +123,7 @@ CREATE TABLE `payment_records` (
   CONSTRAINT `fk_payment_records_operator` FOREIGN KEY (`operator_id`) REFERENCES `users` (`id`)
 );
 
--- 6. 付款销售关系表 (payment_sales_relation)
+-- 8. 付款销售关系表 (payment_sales_relation)
 CREATE TABLE `payment_sales_relation` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `payment_id` INT NOT NULL,
@@ -113,7 +136,7 @@ CREATE TABLE `payment_sales_relation` (
   CONSTRAINT `fk_payment_sales_relation_sales` FOREIGN KEY (`sales_id`) REFERENCES `sales_records` (`id`)
 );
 
--- 7. 库存记录表 (inventory_records)
+-- 9. 库存记录表 (inventory_records)
 CREATE TABLE `inventory_records` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `record_id` VARCHAR(50) NOT NULL,
@@ -132,7 +155,7 @@ CREATE TABLE `inventory_records` (
   CONSTRAINT `fk_inventory_records_operator` FOREIGN KEY (`operator_id`) REFERENCES `users` (`id`)
 );
 
--- 8. 操作记录表 (operation_records)
+-- 10. 操作记录表 (operation_records)
 CREATE TABLE `operation_records` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `record_id` VARCHAR(50) NOT NULL,
@@ -152,7 +175,7 @@ CREATE TABLE `operation_records` (
   CONSTRAINT `fk_operation_records_operator` FOREIGN KEY (`operator_id`) REFERENCES `users` (`id`)
 );
 
--- 9. 系统日志表 (system_logs)
+-- 11. 系统日志表 (system_logs)
 CREATE TABLE `system_logs` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `log_type` VARCHAR(50) NOT NULL,
@@ -173,7 +196,7 @@ CREATE TABLE `system_logs` (
   CONSTRAINT `fk_system_logs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 );
 
--- 10. 销售统计表 (sales_statistics)
+-- 12. 销售统计表 (sales_statistics)
 CREATE TABLE `sales_statistics` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `statistic_type` VARCHAR(20) NOT NULL,

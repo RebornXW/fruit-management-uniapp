@@ -308,10 +308,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import CustomTabBar from '@/components/CustomTabBar.vue';
+import fruitService from '@/services/fruitService.js';
 import inventoryRecordService from '@/services/inventoryRecordService.js';
 import operationRecordService from '@/services/operationRecordService.js';
-
-const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 // 数据
 const searchText = ref('');
@@ -323,9 +322,9 @@ const operationRemark = ref('');
 const currentDate = ref('');
 const packageTypes = ['箱装', '框装'];
 const packageTypeIndex = ref(0);
-const fruitCategories = ['全部', '苹果', '梨', '枣', '其他'];
+const fruitCategories = ref([]);
 const categoryIndex = ref(0);
-const fruitVarieties = ref(['阿克苏冰糖心', '红富士', '奶油富士']);
+const fruitVarieties = ref([]);
 const varietyIndex = ref(0);
 const editForm = ref({
 	id: null,
@@ -430,11 +429,11 @@ function showEditFruit(fruit) {
 	currentFruit.value = fruit;
 
 	// 设置品类索引
-	const categoryIdx = fruitCategories.indexOf(fruit.category);
+	const categoryIdx = fruitCategories.value.indexOf(fruit.category);
 	categoryIndex.value = categoryIdx !== -1 ? categoryIdx : 0;
 
 	// 更新品种列表
-	updateVarietiesByCategory(fruitCategories[categoryIndex.value]);
+	updateVarietiesByCategory(fruitCategories.value[categoryIndex.value]);
 
 	// 设置品种索引
 	const varietyIdx = fruitVarieties.value.indexOf(fruit.variety);
@@ -465,7 +464,7 @@ function showAddFruit() {
 	editForm.value = {
 		id: null,
 		brand: '',
-		category: fruitCategories[0],
+		category: fruitCategories.value[0],
 		variety: fruitVarieties.value[0],
 		spec: '',
 		weight: '',
@@ -476,7 +475,7 @@ function showAddFruit() {
 	};
 	packageTypeIndex.value = 0;
 	categoryIndex.value = 0;
-	updateVarietiesByCategory(fruitCategories[0]);
+	updateVarietiesByCategory(fruitCategories.value[0]);
 	varietyIndex.value = 0;
 	editFruitPopup.value.open();
 }
@@ -515,53 +514,29 @@ function incrementQuantity() {
 
 // 确认入库/出库操作
 function confirmOperation() {
-	const index = fruitData.value.findIndex(f => f.id === currentFruit.value.id);
-	if (index !== -1) {
-		if (operationType.value === 'in') {
-			// 入库操作
-			fruitData.value[index].stock += parseInt(operationQuantity.value);
-			todayIn.value += parseInt(operationQuantity.value);
-		} else {
-			// 出库操作
-			if (fruitData.value[index].stock >= operationQuantity.value) {
-				fruitData.value[index].stock -= parseInt(operationQuantity.value);
-				todayOut.value += parseInt(operationQuantity.value);
+	const operator = uni.getStorageSync('loginUser')?.name || '系统管理员';
+	const operationTypeText = operationType.value === 'in' ? '入库' : '出库';
+	inventoryRecordService.addInventoryRecord(
+		operationTypeText,
+		currentFruit.value,
+		parseInt(operationQuantity.value),
+		operationRemark.value,
+		operator
+	)
+		.then(res => {
+			if (res.data.code === 200) {
+				uni.showToast({ title: operationTypeText + '成功', icon: 'success' });
+				loadFruitData();
+				uni.$emit('pageRefresh');
+				closePopup('inventory');
 			} else {
-				uni.showToast({
-					title: '库存不足',
-					icon: 'none'
-				});
-				return;
+				uni.showToast({ title: res.data.message || operationTypeText + '失败', icon: 'none' });
 			}
-		}
-
-		// 保存库存数据到本地存储
-		saveInventoryData();
-
-		// 获取当前登录用户
-		const loginUser = uni.getStorageSync('loginUser');
-		const operator = loginUser ? loginUser.name : '系统管理员';
-
-		// 添加库存记录
-		const operationTypeText = operationType.value === 'in' ? '入库' : '出库';
-		inventoryRecordService.addInventoryRecord(
-			operationTypeText,
-			fruitData.value[index],
-			parseInt(operationQuantity.value),
-			operationRemark.value,
-			operator
-		);
-
-		// 触发页面刷新事件，通知其他页面更新数据
-		uni.$emit('pageRefresh');
-
-		// 在实际应用中，这里应该调用API保存数据和操作记录
-		uni.showToast({
-			title: operationType.value === 'in' ? '入库成功' : '出库成功',
-			icon: 'success'
+		})
+		.catch(err => {
+			uni.showToast({ title: '请求失败', icon: 'none' });
+			console.error(err);
 		});
-		closePopup('inventory');
-	}
 }
 
 // 包装类型选择
@@ -596,50 +571,28 @@ function deleteImage() {
 
 // 确认编辑/新增水果
 function confirmEditFruit() {
-	// 表单验证
 	if (!editForm.value.brand || !editForm.value.category || !editForm.value.variety || !editForm.value.spec) {
-		uni.showToast({
-			title: '请填写必填项',
-			icon: 'none'
-		});
+		uni.showToast({ title: '请填写必填项', icon: 'none' });
 		return;
 	}
-
-	// 转换价格值为数字，空值默认为0
 	const minPrice = editForm.value.minPrice === '' ? 0 : parseInt(editForm.value.minPrice);
 	const maxPrice = editForm.value.maxPrice === '' ? 0 : parseInt(editForm.value.maxPrice);
-
-	// 构建水果名称（品牌+品种）
-	const fruitName = `${editForm.value.brand} ${editForm.value.variety}`;
-
+	const payload = {
+		brand: editForm.value.brand,
+		name: `${editForm.value.brand} ${editForm.value.variety}`,
+		category: editForm.value.category,
+		variety: editForm.value.variety,
+		spec: editForm.value.spec,
+		package_type: packageTypes[packageTypeIndex.value],
+		weight: parseFloat(editForm.value.weight) || 0,
+		min_price: minPrice,
+		max_price: maxPrice,
+		image: editForm.value.image || getDefaultImageByCategory(editForm.value.category),
+		status: 1
+	};
 	if (isAddingFruit.value) {
-		// 新增水果 - 调用后端API
-		const token = uni.getStorageSync('token');
-		let defaultImage = '/static/default-fruit.png';
-		if (!editForm.value.image) {
-			defaultImage = getDefaultImageByCategory(editForm.value.category);
-		}
-		uni.request({
-			url: `${API_BASE_URL}/fruits`,
-			method: 'POST',
-			header: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${token}`
-			},
-			data: {
-				brand: editForm.value.brand,
-				name: fruitName,
-				category: editForm.value.category,
-				variety: editForm.value.variety,
-				spec: editForm.value.spec,
-				package_type: packageTypes[packageTypeIndex.value],
-				weight: parseFloat(editForm.value.weight) || 0,
-				min_price: minPrice,
-				max_price: maxPrice,
-				image: editForm.value.image || defaultImage,
-				status: 1
-			},
-			success: (res) => {
+		fruitService.createFruit(payload)
+			.then(res => {
 				if (res.data.code === 200) {
 					uni.showToast({ title: '添加成功', icon: 'success' });
 					closePopup('edit');
@@ -647,119 +600,30 @@ function confirmEditFruit() {
 				} else {
 					uni.showToast({ title: res.data.message || '添加失败', icon: 'none' });
 				}
-			},
-			fail: (err) => {
+			})
+			.catch(err => {
 				uni.showToast({ title: '请求失败', icon: 'none' });
 				console.error(err);
-			}
-		});
-		return;
+			});
 	} else {
-		// 编辑水果
-		const index = fruitData.value.findIndex(f => f.id === editForm.value.id);
-		if (index !== -1) {
-			// 保存原始数据，用于操作记录
-			const originalFruit = { ...fruitData.value[index] };
-			const originalData = {
-				brand: originalFruit.brand,
-				fruitCategory: originalFruit.category,
-				fruitName: originalFruit.variety,
-				spec: originalFruit.spec,
-				packagingType: originalFruit.packageType,
-				weight: originalFruit.weight,
-				priceRange: `${originalFruit.minPrice}-${originalFruit.maxPrice}`,
-				image: originalFruit.image
-			};
-
-			// 更新水果数据 - 保持SKU关键属性不变
-			// 使用原始数据中的品牌、品类、品种和规格
-			const brand = originalFruit.brand;
-			const category = originalFruit.category;
-			const variety = originalFruit.variety;
-			const spec = originalFruit.spec;
-
-			// 构建水果名称（使用原始品牌和品种）
-			const updatedFruitName = `${brand} ${variety}`;
-
-			// 如果用户删除了图片，根据水果品类选择默认图片
-			let defaultImage = '/static/default-fruit.png';
-			if (!editForm.value.image) {
-				defaultImage = getDefaultImageByCategory(category);
-			}
-
-			// 更新水果数据
-			fruitData.value[index].name = updatedFruitName;
-			fruitData.value[index].spec = spec; // 保持原始规格型号
-			fruitData.value[index].image = editForm.value.image || defaultImage; // 使用根据品类选择的默认图片
-			fruitData.value[index].brand = brand; // 保持原始品牌
-			fruitData.value[index].category = category; // 保持原始品类
-			fruitData.value[index].variety = variety; // 保持原始品种
-			fruitData.value[index].weight = editForm.value.weight || '';
-			fruitData.value[index].packageType = packageTypes[packageTypeIndex.value];
-			fruitData.value[index].minPrice = minPrice;
-			fruitData.value[index].maxPrice = maxPrice;
-
-			// 准备新数据，用于操作记录
-			const newData = {
-				brand: fruitData.value[index].brand,
-				fruitCategory: fruitData.value[index].category,
-				fruitName: fruitData.value[index].variety,
-				spec: fruitData.value[index].spec,
-				packagingType: fruitData.value[index].packageType,
-				weight: fruitData.value[index].weight,
-				priceRange: `${fruitData.value[index].minPrice}-${fruitData.value[index].maxPrice}`,
-				image: fruitData.value[index].image
-			};
-
-			// 获取当前登录用户
-			const loginUser = uni.getStorageSync('loginUser');
-			const operator = loginUser ? loginUser.name : '系统管理员';
-
-			// 添加编辑操作记录
-			operationRecordService.addOperationRecord('编辑', originalData, newData, operator);
-
-			// 同步到今日报价页面
-			syncToPricePage(fruitData.value[index]);
-		}
+		const loginUser = uni.getStorageSync('loginUser');
+		const operator = loginUser ? loginUser.name : '系统管理员';
+		operationRecordService.addOperationRecord('编辑', {}, payload, operator);
+		fruitService.updateFruit(editForm.value.id, payload)
+			.then(res => {
+				if (res.data.code === 200) {
+					uni.showToast({ title: '编辑成功', icon: 'success' });
+					closePopup('edit');
+					loadFruitData();
+				} else {
+					uni.showToast({ title: res.data.message || '编辑失败', icon: 'none' });
+				}
+			})
+			.catch(err => {
+				uni.showToast({ title: '请求失败', icon: 'none' });
+				console.error(err);
+			});
 	}
-
-	// 保存库存数据到本地存储
-	saveInventoryData();
-
-	// 触发页面刷新事件，通知其他页面更新数据
-	uni.$emit('pageRefresh');
-
-	// 在实际应用中，这里应该调用API保存数据
-	uni.showToast({
-		title: isAddingFruit.value ? '添加成功' : '编辑成功',
-		icon: 'success'
-	});
-	closePopup('edit');
-}
-
-// 保存库存数据到本地存储
-function saveInventoryData() {
-	try {
-		const inventoryKey = 'inventoryData';
-		uni.setStorageSync(inventoryKey, JSON.stringify(fruitData.value));
-
-		// 同步所有水果数据到报价页面
-		syncAllToPricePage();
-	} catch (e) {
-		console.error('保存库存数据失败', e);
-	}
-}
-
-// 同步所有水果数据到报价页面
-function syncAllToPricePage() {
-	// 不需要额外的同步操作，因为今日报价页面直接使用库存数据
-	console.log('库存数据已更新，今日报价页面将自动同步');
-}
-
-// 同步价格到今日报价页面
-function syncToPricePage(_fruit) {
-	// 不需要额外的同步操作，因为今日报价页面直接使用库存数据
-	console.log('库存数据已更新，今日报价页面将自动同步');
 }
 
 // 显示/隐藏更多操作
@@ -793,13 +657,13 @@ function handlePageClick() {
 }
 
 // 页面加载时获取数据
-onMounted(() => {
+onMounted(async () => {
 	// 设置当前日期
 	const now = new Date();
 	currentDate.value = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
 
 	// 加载水果数据
-	loadFruitData();
+	await loadFruitData();
 
 	// 确保数据同步到报价页面
 	setTimeout(() => {
@@ -837,23 +701,18 @@ uni.$on('beforeDestroy', () => {
 
 // 加载水果数据
 function loadFruitData() {
-	const token = uni.getStorageSync('token');
-	uni.request({
-		url: `${API_BASE_URL}/fruits`,
-		method: 'GET',
-		header: { Authorization: `Bearer ${token}` },
-		success: (res) => {
+	fruitService.getFruits()
+		.then(res => {
 			if (res.data.code === 200) {
 				fruitData.value = res.data.data.items || res.data.data;
 			} else {
 				uni.showToast({ title: res.data.message || '获取水果列表失败', icon: 'none' });
 			}
-		},
-		fail: (err) => {
+		})
+		.catch(err => {
 			uni.showToast({ title: '请求失败', icon: 'none' });
 			console.error(err);
-		}
-	});
+		});
 }
 
 // 添加盘库功能函数
@@ -879,11 +738,11 @@ function onCategoryChange(e) {
 
 	categoryIndex.value = e.detail.value;
 	// 根据选择的品类更新品种列表
-	updateVarietiesByCategory(fruitCategories[categoryIndex.value]);
+	updateVarietiesByCategory(fruitCategories.value[categoryIndex.value]);
 	// 重置品种索引
 	varietyIndex.value = 0;
 	// 更新表单中的品类
-	editForm.value.category = fruitCategories[categoryIndex.value];
+	editForm.value.category = fruitCategories.value[categoryIndex.value];
 	// 更新表单中的品种
 	editForm.value.variety = fruitVarieties.value[0];
 }
@@ -906,23 +765,58 @@ function onVarietyChange(e) {
 
 // 根据品类更新品种列表
 function updateVarietiesByCategory(category) {
-	switch(category) {
-		case '苹果':
-			fruitVarieties.value = ['阿克苏冰糖心', '红富士', '奶油富士'];
-			break;
-		case '梨':
-			fruitVarieties.value = ['红香酥', '库尔勒香梨', '秋月梨', '皇冠梨'];
-			break;
-		case '枣':
-			fruitVarieties.value = ['大枣', '小枣', '蜜枣'];
-			break;
-		case '其他':
-			fruitVarieties.value = ['自定义'];
-			break;
-		default:
-			fruitVarieties.value = ['自定义'];
-	}
+	const list = category === '全部'
+		? Array.from(new Set(fruitData.value.map(f => f.variety)))
+		: Array.from(new Set(fruitData.value.filter(f => f.category === category).map(f => f.variety)));
+	fruitVarieties.value = list;
+	filteredVarieties.value = ['全部', ...list];
 }
+
+// 筛选条件变更
+function onFilterCategoryChange(e) {
+	filterCategoryIndex.value = e.detail.value;
+	const sel = fruitCategories.value[filterCategoryIndex.value];
+	appliedFilters.value.category = sel;
+	updateVarietiesByCategory(sel);
+	filterVarietyIndex.value = 0;
+	appliedFilters.value.variety = '全部';
+}
+
+function onFilterVarietyChange(e) {
+	filterVarietyIndex.value = e.detail.value;
+	const sel = filteredVarieties.value[filterVarietyIndex.value];
+	appliedFilters.value.variety = sel;
+}
+
+// 表单联动
+function onCategoryChange(e) {
+	categoryIndex.value = e.detail.value;
+	const sel = fruitCategories.value[categoryIndex.value];
+	editForm.value.category = sel;
+	updateVarietiesByCategory(sel);
+	varietyIndex.value = 0;
+	editForm.value.variety = fruitVarieties.value[0] || '';
+}
+
+function onVarietyChange(e) {
+	varietyIndex.value = e.detail.value;
+	const sel = fruitVarieties.value[varietyIndex.value];
+	editForm.value.variety = sel;
+}
+
+// 页面初始化：加载水果 & 分类
+onMounted(async () => {
+	await loadFruitData();
+	try {
+		const res = await fruitService.getCategories();
+		if (res.data.code === 200) {
+			fruitCategories.value = ['全部', ...res.data.data];
+		}
+		updateVarietiesByCategory(fruitCategories.value[0]);
+	} catch (e) {
+		console.error('获取分类失败', e);
+	}
+});
 
 // 显示/隐藏筛选弹窗
 function toggleFilterPopup() {
@@ -932,80 +826,10 @@ function toggleFilterPopup() {
 	// 如果要显示筛选弹窗，确保品种列表与当前选择的品类一致
 	if (!showFilter.value) {
 		// 更新品种列表
-		updateFilteredVarieties(fruitCategories[filterCategoryIndex.value]);
+		updateVarietiesByCategory(fruitCategories.value[filterCategoryIndex.value]);
 	}
 
 	showFilter.value = !showFilter.value;
-}
-
-// 已移除品牌选择功能
-
-// 筛选品类选择
-function onFilterCategoryChange(e) {
-	filterCategoryIndex.value = e.detail.value;
-	// 根据选择的品类更新品种列表
-	updateFilteredVarieties(fruitCategories[filterCategoryIndex.value]);
-	// 重置品种索引
-	filterVarietyIndex.value = 0;
-}
-
-// 筛选品种选择
-function onFilterVarietyChange(e) {
-	filterVarietyIndex.value = e.detail.value;
-}
-
-// 根据品类更新筛选品种列表 - 从当前数据中动态获取
-function updateFilteredVarieties(category) {
-	console.log('更新品种列表，当前选择的品类:', category);
-
-	if (category === '全部') {
-		// 如果选择全部，只显示全部选项
-		filteredVarieties.value = ['全部'];
-		console.log('选择全部品类，品种列表重置为全部');
-	} else {
-		// 从当前数据中获取所选品类的所有不重复品种
-		const varieties = ['全部'];
-
-		// 打印当前水果数据以便调试
-		console.log('当前水果数据:', fruitData.value.map(f => ({ id: f.id, name: f.name, category: f.category, variety: f.variety })));
-
-		// 遍历水果数据，收集当前选中品类的所有不重复品种
-		// 使用更宽松的匹配方式
-		fruitData.value.forEach(fruit => {
-			const categoryMatch = fruit.category && (
-				fruit.category === category ||
-				fruit.category.includes(category) ||
-				category.includes(fruit.category)
-			);
-
-			if (categoryMatch && fruit.variety && !varieties.includes(fruit.variety)) {
-				console.log(`添加品种: ${fruit.variety}, 来自水果: ${fruit.name}`);
-				varieties.push(fruit.variety);
-			}
-		});
-
-		// 如果没有找到任何品种，添加一些默认选项
-		if (varieties.length === 1) { // 只有全部选项
-			console.log('没有找到品种，添加默认选项');
-			switch(category) {
-				case '苹果':
-					varieties.push('阿克苏冰糖心', '红富士', '奶油富士');
-					break;
-				case '梨':
-					varieties.push('红香酥', '库尔勒香梨', '秋月梨', '皇冠梨');
-					break;
-				case '枣':
-					varieties.push('大枣', '小枣', '蜜枣');
-					break;
-				case '其他':
-					varieties.push('自定义');
-					break;
-			}
-		}
-
-		filteredVarieties.value = varieties;
-		console.log('更新后的品种列表:', filteredVarieties.value);
-	}
 }
 
 // 重置筛选条件
@@ -1029,7 +853,7 @@ function resetFilters() {
 // 应用筛选条件
 function applyFilters() {
 	appliedFilters.value = {
-		category: fruitCategories[filterCategoryIndex.value],
+		category: fruitCategories.value[filterCategoryIndex.value],
 		variety: filteredVarieties.value[filterVarietyIndex.value]
 	};
 
@@ -1039,53 +863,23 @@ function applyFilters() {
 
 // 确认删除水果
 function confirmDeleteFruit() {
-	const index = fruitData.value.findIndex(f => f.id === currentFruit.value.id);
-	if (index !== -1) {
-		// 保存原始数据，用于操作记录
-		const originalFruit = { ...fruitData.value[index] };
-		const originalData = {
-			brand: originalFruit.brand,
-			fruitCategory: originalFruit.category,
-			fruitName: originalFruit.variety,
-			spec: originalFruit.spec,
-			packagingType: originalFruit.packageType,
-			weight: originalFruit.weight,
-			priceRange: `${originalFruit.minPrice}-${originalFruit.maxPrice}`,
-			image: originalFruit.image
-		};
-
-		// 获取当前登录用户
-		const loginUser = uni.getStorageSync('loginUser');
-		const operator = loginUser ? loginUser.name : '系统管理员';
-
-		// 添加删除操作记录
-		operationRecordService.addOperationRecord('删除', originalData, {}, operator);
-
-		// 从数组中移除当前水果
-		fruitData.value.splice(index, 1);
-
-		// 保存更新后的库存数据
-		saveInventoryData();
-
-		// 同步删除操作到今日报价页面
-		syncDeleteToPricePage(currentFruit.value.id);
-
-		// 触发页面刷新事件，通知其他页面更新数据
-		uni.$emit('pageRefresh');
-
-		// 在实际应用中，这里应该调用API删除数据
-		uni.showToast({
-			title: '删除成功',
-			icon: 'success'
+	const operator = uni.getStorageSync('loginUser')?.name || '系统管理员';
+	operationRecordService.addOperationRecord('删除', {}, {}, operator);
+	fruitService.deleteFruit(currentFruit.value.id)
+		.then(res => {
+			if (res.data.code === 200) {
+				uni.showToast({ title: '删除成功', icon: 'success' });
+				loadFruitData();
+				uni.$emit('pageRefresh');
+			} else {
+				uni.showToast({ title: res.data.message || '删除失败', icon: 'none' });
+			}
+		})
+		.catch(err => {
+			uni.showToast({ title: '请求失败', icon: 'none' });
+			console.error(err);
 		});
-	}
 	closePopup('delete');
-}
-
-// 同步删除操作到今日报价页面
-function syncDeleteToPricePage(_fruitId) {
-	// 不需要额外的同步操作，因为今日报价页面直接使用库存数据
-	console.log('库存数据已更新，今日报价页面将自动同步');
 }
 
 // 根据水果品类获取默认图片
@@ -1213,6 +1007,10 @@ page {
 	background-color: rgba(255, 255, 255, 0.15);
 	border: none;
 	padding: 0;
+	margin: 0;
+	height: 100%;
+	border: none;
+	position: relative;
 }
 
 .header-btn::after {

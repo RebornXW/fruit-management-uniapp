@@ -1,4 +1,5 @@
 import { ref } from 'vue';
+import http from './http.js';
 
 // 销售记录列表
 const salesRecords = ref([]);
@@ -21,59 +22,44 @@ function formatTime(date) {
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
-// 加载销售记录
-function loadSalesRecords() {
-    try {
-        const storedRecords = uni.getStorageSync('salesRecords');
-        if (storedRecords) {
-            salesRecords.value = JSON.parse(storedRecords);
-            console.log('从本地存储加载了销售记录:', salesRecords.value.length);
-        } else {
-            console.log('本地存储中没有销售记录');
-            salesRecords.value = [];
-        }
-    } catch (e) {
-        console.error('加载销售记录失败', e);
-        salesRecords.value = [];
-    }
+// 获取销售记录
+export function getSalesRecords(params = {}) {
+    return http.request({ url: '/sales_records', method: 'GET', data: params });
 }
 
-// 保存销售记录到本地存储
-function saveSalesRecords() {
-    try {
-        uni.setStorageSync('salesRecords', JSON.stringify(salesRecords.value));
-        console.log('销售记录已保存到本地存储');
-    } catch (e) {
-        console.error('保存销售记录失败', e);
-    }
+// 获取销售记录详情
+export function getSalesRecordById(id) {
+    return http.request({ url: `/sales_records/${id}`, method: 'GET' });
 }
 
 // 添加销售记录
-function addSalesRecord(record) {
-    // 直接使用传入的记录，因为它已经符合服务层结构
-
-    // 添加到记录列表
-    salesRecords.value.unshift(record);
-
-    // 保存到本地存储
-    saveSalesRecords();
-
-    return record;
+export function createSalesRecord(data) {
+    return http.request({ url: '/sales_records', method: 'POST', data });
 }
 
-// 获取销售记录
-function getSalesRecords() {
-    // 如果记录为空，先尝试加载
-    if (salesRecords.value.length === 0) {
-        loadSalesRecords();
-    }
-    return salesRecords.value;
+// 更新销售记录
+export function updateSalesRecord(id, data) {
+    return http.request({ url: `/sales_records/${id}`, method: 'PUT', data });
+}
+
+// 删除销售记录
+export function deleteSalesRecord(id) {
+    return http.request({ url: `/sales_records/${id}`, method: 'DELETE' });
 }
 
 // 导出服务
 export {
-    salesRecords,
-    loadSalesRecords,
-    addSalesRecord,
-    getSalesRecords
+    getSalesRecords,
+    getSalesRecordById,
+    createSalesRecord,
+    updateSalesRecord,
+    deleteSalesRecord
+};
+
+export default {
+    getSalesRecords,
+    getSalesRecordById,
+    createSalesRecord,
+    updateSalesRecord,
+    deleteSalesRecord
 };

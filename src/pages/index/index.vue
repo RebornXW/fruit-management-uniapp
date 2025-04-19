@@ -41,6 +41,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import http from '../../services/http.js';
 
 // 登录表单数据
 const username = ref('');
@@ -72,103 +73,29 @@ onMounted(() => {
 	}
 });
 
-// 默认账号
-const defaultAccounts = [
-	{
-		username: 'admin',
-		password: '123456',
-		name: '管理员',
-		role: '管理员',
-		phone: '13800000000',
-		avatar: '/static/default-avatar.png',
-		storeName: '水果大档口'
-	},
-	{
-		username: 'sales',
-		password: '123456',
-		name: '张业务',
-		role: '业务员',
-		phone: '13900000000',
-		avatar: '/static/default-avatar.png',
-		storeName: '水果大档口'
-	},
-	{
-		username: 'finance',
-		password: '123456',
-		name: '王财务',
-		role: '财务',
-		phone: '13700000000',
-		avatar: '/static/default-avatar.png',
-		storeName: '水果大档口'
-	},
-	{
-		username: 'owner',
-		password: '123456',
-		name: '李老板',
-		role: '货主',
-		phone: '13600000000',
-		avatar: '/static/default-avatar.png',
-		storeName: '水果大档口'
-	}
-];
-
 // 处理登录
-function handleLogin() {
+async function handleLogin() {
 	if (!username.value || !password.value) {
-		uni.showToast({
-			title: '请输入账号和密码',
-			icon: 'none'
-		});
+		uni.showToast({ title: '请输入账号和密码', icon: 'none' });
 		return;
 	}
-	
-	// 模拟登录验证
-	const user = defaultAccounts.find(
-		account => account.username === username.value && account.password === password.value
-	);
-	
-	if (user) {
-		// 保存登录状态
-		try {
-			uni.setStorageSync('loginUser', user);
-			
-			// 记住密码
-			if (rememberPwd.value) {
-				uni.setStorageSync('rememberedAccount', {
-					username: username.value,
-					password: password.value
-				});
-			} else {
-				uni.removeStorageSync('rememberedAccount');
-			}
-			
-			// 显示登录成功提示
-			uni.showToast({
-				title: '登录成功',
-				icon: 'success',
-				duration: 1500,
-				success: () => {
-					// 登录成功后跳转到个人中心页面
-					setTimeout(() => {
-						uni.switchTab({
-							url: '/pages/profile/profile'
-						});
-					}, 1500);
-				}
-			});
-		} catch (e) {
-			console.error('保存登录状态失败', e);
-			uni.showToast({
-				title: '登录失败，请重试',
-				icon: 'none'
-			});
+
+	try {
+		const data = await http.request({ url: '/auth/login', method: 'POST', data: { username: username.value, password: password.value } });
+		const { token, user } = data;
+		uni.setStorageSync('token', token);
+		uni.setStorageSync('loginUser', user);
+		if (rememberPwd.value) {
+			uni.setStorageSync('rememberedAccount', { username: username.value, password: password.value });
+		} else {
+			uni.removeStorageSync('rememberedAccount');
 		}
-	} else {
-		// 登录失败
-		uni.showToast({
-			title: '账号或密码错误',
-			icon: 'none'
-		});
+		uni.showToast({ title: '登录成功', icon: 'success', duration: 1500, success: () => {
+			setTimeout(() => uni.switchTab({ url: '/pages/profile/profile' }), 1500);
+		}});
+	} catch (err) {
+		console.error('登录失败', err);
+		uni.showToast({ title: err.message || '登录失败，请重试', icon: 'none' });
 	}
 }
 </script>
