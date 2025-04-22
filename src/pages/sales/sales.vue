@@ -127,7 +127,9 @@
 								<text class="sales-history-total">¥{{record.amount}}</text>
 
 								<!-- 下部：付款状态 -->
-								<text :class="['sales-history-payment-status', record.status === '已付款' ? 'status-paid' : 'status-unpaid']">{{record.status}}</text>
+								<text :class="['sales-history-payment-status',
+									record.status === '已付款' ? 'status-paid' :
+									(record.status === '部分付款' ? 'status-partial' : 'status-unpaid')]">{{record.status}}</text>
 							</view>
 						</view>
 					</view>
@@ -222,7 +224,7 @@
 		</uni-popup>
 
 		<!-- 客户选择弹窗 -->
-		<uni-popup ref="customerSelectorPopup" type="bottom">
+		<uni-popup ref="customerSelectorPopup" type="bottom" :safe-area="false" :mask-click="true" :animation="true">
 			<view class="customer-selector-container">
 				<view class="customer-selector-header">
 					<text class="customer-selector-title">选择客户</text>
@@ -241,7 +243,7 @@
 					/>
 				</view>
 
-				<scroll-view scroll-y class="customer-selector-list">
+				<scroll-view scroll-y class="customer-selector-list" :show-scrollbar="true" enhanced>
 					<view
 						v-for="customer in filteredCustomersList"
 						:key="customer.id"
@@ -251,6 +253,8 @@
 						<text class="customer-selector-name">{{customer.name}}</text>
 						<text class="customer-selector-phone">{{customer.phone}}</text>
 					</view>
+					<!-- 添加底部安全区域的占位元素 -->
+					<view class="customer-selector-safe-area"></view>
 				</scroll-view>
 			</view>
 		</uni-popup>
@@ -378,8 +382,9 @@ import { ref, computed, onMounted } from 'vue';
 import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
 import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
 import CustomTabBar from '@/components/CustomTabBar.vue';
-import { addSalesRecord } from '@/services/salesRecordService.js';
-import { updateCustomerDebtInfo, getCustomers } from '@/services/customerService.js';
+import { createSalesRecord, getSalesRecords } from '@/services/salesRecordService.js';
+import { getCustomers } from '@/services/customerService.js';
+import { getFruits, getDefaultFruitImage } from '@/services/fruitService.js';
 
 // 数据
 const searchText = ref('');
@@ -436,10 +441,10 @@ const totalCustomers = computed(() => {
 
 // 计算今日未收款金额
 const totalUnpaidAmount = computed(() => {
-	// 过滤出今日未付款的销售记录
+	// 过滤出今日未付款和部分付款的销售记录
 	const todaySales = salesRecords.value;
 	const unpaidSales = todaySales.filter(record =>
-		record.status === '未付款' || record.paymentStatus === 'unpaid'
+		record.status === '未付款' || record.status === '部分付款'
 	);
 
 	// 计算未付款总额
@@ -529,7 +534,7 @@ const customerRanking = computed(() => {
 		.sort((a, b) => b.amount - a.amount);
 
 	// 只取前5名客户
-	const topCustomers = sortedCustomers.slice(0, 5);
+	const topCustomers = sortedCustomers.slice(0, 3);
 
 	// 计算百分比 - 以最高销售额为基准(100%)
 	const maxAmount = topCustomers.length > 0 ? topCustomers[0].amount : 0;
@@ -726,6 +731,7 @@ function selectCustomer(customer) {
 
 // 确认销售
 function confirmSale() {
+	// 基本验证
 	if (saleQuantity.value > currentFruit.value.stock) {
 		uni.showToast({
 			title: '库存不足',
@@ -750,104 +756,61 @@ function confirmSale() {
 		return;
 	}
 
-	// 更新库存
-	const index = fruitData.value.findIndex(f => f.id === currentFruit.value.id);
-	if (index !== -1) {
-		fruitData.value[index].stock -= saleQuantity.value;
-
-		// 同步更新库存管理中的数据
-		try {
-			const inventoryKey = 'inventoryData';
-			const storedInventory = uni.getStorageSync(inventoryKey);
-
-			if (storedInventory) {
-				const inventoryData = JSON.parse(storedInventory);
-				const inventoryIndex = inventoryData.findIndex(f => f.id === currentFruit.value.id);
-
-				if (inventoryIndex !== -1) {
-					// 更新库存管理中的库存
-					inventoryData[inventoryIndex].stock -= saleQuantity.value;
-
-					// 保存更新后的库存数据
-					uni.setStorageSync(inventoryKey, JSON.stringify(inventoryData));
-					console.log('已同步更新库存管理中的库存');
-
-					// 触发页面刷新事件，通知其他页面更新数据
-					uni.$emit('pageRefresh');
-				}
-			}
-		} catch (e) {
-			console.error('更新库存管理中的库存失败', e);
-		}
-	}
-
-	// 添加销售记录
-	const now = new Date();
-	const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-	const date = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
-
-	// 创建符合服务层结构的记录
-	const newRecord = {
-		orderNo: `S${date.replace(/-/g, '')}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-		date: date,
-		time: time,
-		salesPerson: '系统用户', // 可以根据实际情况设置为登录用户
-		customerName: selectedCustomer.value.name || '散客',
-		brand: currentFruit.value.brand || '',
-		fruitCategory: currentFruit.value.category || '',
-		productName: currentFruit.value.name,
-		spec: currentFruit.value.spec || '',
-		unitPrice: parseFloat(salePrice.value).toFixed(2),
-		quantity: saleQuantity.value,
-		amount: parseFloat(totalPrice.value).toFixed(2),
-		status: isFullPayment.value ? '已付款' : '未付款',
-		paymentMethod: isFullPayment.value ? '现金' : '',
-		paymentTime: isFullPayment.value ? `${date} ${time}` : '',
-		remark: '',
-		// 保存原始数据，便于其他功能使用
-		customer: {
-			id: selectedCustomer.value.id,
-			name: selectedCustomer.value.name
-		},
-		paidAmount: isFullPayment.value ? parseFloat(totalPrice.value) : 0,
-		variety: currentFruit.value.variety || ''
-	};
-
-	// 添加到本地销售记录
-	salesRecords.value.unshift(newRecord);
-
-	// 限制记录数量
-	if (salesRecords.value.length > 10) {
-		salesRecords.value = salesRecords.value.slice(0, 10);
-	}
-
-	// 同时添加到销售记录服务
-	addSalesRecord(newRecord);
-
-	// 保存销售记录到本地存储
-	try {
-		const salesRecordsKey = 'salesRecords';
-		uni.setStorageSync(salesRecordsKey, JSON.stringify(salesRecords.value));
-	} catch (e) {
-		console.error('保存销售记录失败', e);
-	}
-
-	// 保存客户ID以更新欠款信息
-	const customerId = selectedCustomer.value.id;
-
-	// 重置选择的客户
-	selectedCustomer.value = {};
-
-	// 更新客户欠款信息
-	updateCustomerDebtInfo(customerId);
-
-	// 在实际应用中，这里应该调用API保存销售记录
-	uni.showToast({
-		title: '销售成功',
-		icon: 'success'
+	// 显示加载中提示
+	uni.showLoading({
+		title: '正在创建销售记录...'
 	});
 
-	closePopup();
+	// 从本地存储获取登录用户信息
+	let userId = uni.getStorageSync('loginUser')?.id;
+
+	// 创建符合API文档中5.3创建销售记录的请求参数
+	const newRecord = {
+		user_id: userId,
+		customer_id: selectedCustomer.value.id,
+		fruit_id: currentFruit.value.id,
+		unit_price: parseFloat(salePrice.value),
+		quantity: parseInt(saleQuantity.value),
+		amount: parseFloat(totalPrice.value),
+		payment_status: isFullPayment.value ? "1" : "0", // 付款状态，0表示未付款，1表示已付款，2表示部分付款
+		remark: ''
+	};
+
+	// 调用API创建销售记录
+	createSalesRecord(newRecord)
+		.then(res => {
+			// 创建成功后重新加载销售记录和水果数据
+			loadSalesRecords();
+			loadFruitData();
+
+			// 显示成功提示
+			uni.showToast({
+				title: '销售成功',
+				icon: 'success'
+			});
+
+			// 触发页面刷新事件，通知其他页面更新数据
+			uni.$emit('pageRefresh');
+
+			// 重置选择的客户
+			selectedCustomer.value = {};
+
+			// 关闭弹窗
+			closePopup();
+		})
+		.catch(err => {
+			console.error('创建销售记录失败:', err);
+
+			// 显示错误提示
+			uni.showToast({
+				title: '创建销售记录失败',
+				icon: 'none'
+			});
+		})
+		.finally(() => {
+			// 隐藏加载中提示
+			uni.hideLoading();
+		});
 }
 
 // 页面加载时获取数据
@@ -894,69 +857,254 @@ uni.$on('beforeDestroy', () => {
 
 // 加载水果数据
 function loadFruitData() {
-	// 从库存管理中获取数据
-	try {
-		const inventoryKey = 'inventoryData';
-		const storedInventory = uni.getStorageSync(inventoryKey);
+	// 显示加载中提示
+	uni.showLoading({
+		title: '加载中...'
+	});
 
-		if (storedInventory) {
-			// 如果有库存数据，使用库存数据
-			const inventoryData = JSON.parse(storedInventory);
+	// 使用API获取水果数据
+	getFruits({
+		status: 1 // 只获取上架的水果
+	})
+	.then(res => {
+		// 处理返回的数据
+		let fruitsArray = [];
 
-			// 将库存数据转换为销售数据格式
-			fruitData.value = inventoryData.map(item => ({
-				id: item.id,
-				name: `${item.brand} ${item.variety}`,
-				spec: item.spec,
-				stock: item.stock,
-				minPrice: item.minPrice,
-				maxPrice: item.maxPrice,
-				image: item.image,
-				brand: item.brand,
-				category: item.category,
-				variety: item.variety
-			}));
+		// 输出原始响应数据，便于调试
+		console.log('原始水果数据响应:', JSON.stringify(res));
 
-			console.log('从库存数据加载了销售数据');
-			return;
+		// 处理不同的响应格式
+		if (res && typeof res === 'object') {
+			if (Array.isArray(res)) {
+				fruitsArray = res;
+				console.log('使用数组响应格式');
+			} else if (res.data && Array.isArray(res.data)) {
+				fruitsArray = res.data;
+				console.log('使用res.data数组格式');
+			} else if (res.data && res.data.items && Array.isArray(res.data.items)) {
+				fruitsArray = res.data.items;
+				console.log('使用res.data.items数组格式');
+			} else if (res.items && Array.isArray(res.items)) {
+				fruitsArray = res.items;
+				console.log('使用res.items数组格式');
+			} else {
+				console.log('无法识别的响应格式:', res);
+			}
 		}
-	} catch (e) {
-		console.error('加载库存数据失败', e);
-	}
 
-	// 如果没有库存数据，显示空数组
-	fruitData.value = [];
-	console.log('没有找到库存数据，显示空列表');
+		// 将API返回的水果数据转换为销售页面所需的格式
+		if (fruitsArray && fruitsArray.length > 0) {
+			fruitData.value = fruitsArray.map(item => {
+				// 打印单个水果项目数据，便于调试
+				console.log('处理水果项目:', item);
+
+				// 获取水果图片，如果没有图片则使用默认图片
+				const image = item.image || getDefaultFruitImage(item.name);
+
+				// 处理价格字段，兼容不同的字段名
+				const minPrice = item.min_price !== undefined ? item.min_price : (item.minPrice || 0);
+				const maxPrice = item.max_price !== undefined ? item.max_price : (item.maxPrice || 0);
+
+				// 处理库存字段
+				const stock = item.inventory !== undefined ? item.inventory : (item.stock || 0);
+
+				// 处理包装类型字段
+				const packageType = item.package_type !== undefined ? item.package_type : (item.packageType || '');
+
+				// 处理分类和品种字段
+				const categoryId = item.category_id;
+				const varietyId = item.variety_id;
+
+				// 构建水果名称，使用品牌+品种名称
+				// 如果没有品牌，则只使用名称
+				let name = item.name || '';
+				if (item.brand) {
+					name = `${item.brand} ${name}`;
+				}
+
+				return {
+					id: item.id,
+					name: name.trim(),
+					spec: item.spec || '',
+					stock: stock,
+					minPrice: minPrice,
+					maxPrice: maxPrice,
+					image: image,
+					brand: item.brand || '',
+					category: item.category_name || '',
+					variety: item.name || '',
+					categoryId: categoryId,
+					varietyId: varietyId,
+					packageType: packageType
+				};
+			});
+			console.log('从后端API加载了销售水果数据:', fruitData.value.length);
+		} else {
+			fruitData.value = [];
+			console.log('没有水果数据或数组为空');
+		}
+	})
+	.catch(err => {
+		console.error('加载水果数据失败:', err);
+		// 如果加载失败，显示空数组
+		fruitData.value = [];
+
+		// 显示错误提示
+		uni.showToast({
+			title: '加载水果数据失败',
+			icon: 'none'
+		});
+	})
+	.finally(() => {
+		// 隐藏加载中提示
+		uni.hideLoading();
+	});
 }
 
 // 加载销售记录
 function loadSalesRecords() {
-	// 尝试从本地存储加载销售记录
-	try {
-		const salesRecordsKey = 'salesRecords';
-		const storedRecords = uni.getStorageSync(salesRecordsKey);
-		if (storedRecords) {
-			salesRecords.value = JSON.parse(storedRecords);
-			return;
-		}
-	} catch (e) {
-		console.error('加载销售记录失败', e);
+	// 显示加载中提示
+	uni.showLoading({
+		title: '加载销售记录...'
+	});
+
+	// 从API文档中5.1获取销售记录列表接口获取最近销售记录
+
+	// 构建查询参数
+	const params = {
+		page: 1,
+		limit: 5, // 只获取最近5条记录
+		payment_status: '0,1,2' // 获取所有付款状态的记录
+	};
+
+	// 如果选择了客户，添加客户ID筛选
+	if (selectedCustomer.value && selectedCustomer.value.id) {
+		params.customer_id = selectedCustomer.value.id;
 	}
 
-	// 如果没有存储的销售记录，初始化为空数组
-	salesRecords.value = [];
+	// 使用getSalesRecords函数获取销售记录列表
+	getSalesRecords(params)
+	.then(res => {
+		// 处理不同的响应格式
+		let recordsArray = [];
+		if (res && typeof res === 'object') {
+			if (Array.isArray(res)) {
+				recordsArray = res;
+			} else if (res.data && Array.isArray(res.data)) {
+				recordsArray = res.data;
+			} else if (res.data && res.data.items && Array.isArray(res.data.items)) {
+				recordsArray = res.data.items;
+			} else if (res.items && Array.isArray(res.items)) {
+				recordsArray = res.items;
+			}
+		}
+
+		// 将API返回的销售记录转换为前端显示所需的格式
+		salesRecords.value = recordsArray.map(item => {
+			// 处理日期和时间
+			let date = item.sale_date || '';
+			let time = '';
+
+			// 如果有created_at字段，尝试提取时间
+			if (item.created_at) {
+				const createdDate = new Date(item.created_at);
+				if (!isNaN(createdDate.getTime())) {
+					time = `${createdDate.getHours().toString().padStart(2, '0')}:${createdDate.getMinutes().toString().padStart(2, '0')}`;
+				}
+			}
+
+			// 构建前端显示所需的记录格式
+			return {
+				id: item.id,
+				orderNo: item.record_id || '',
+				date: date,
+				time: time,
+				customerName: item.customer_name || '',
+				productName: item.fruit_name || '',
+				spec: item.fruit_spec || '',
+				quantity: item.quantity || 0,
+				unitPrice: item.unit_price || 0,
+				amount: item.amount || 0,
+				status: item.payment_status === 1 || item.payment_status === '1' ? '已付款' :
+					(item.payment_status === 2 || item.payment_status === '2' ? '部分付款' : '未付款'),
+				customer: {
+					id: item.customer_id || 0,
+					name: item.customer_name || ''
+				}
+			};
+		});
+
+
+	})
+	.catch(err => {
+		console.error('加载销售记录失败:', err);
+
+		// 如果加载失败，初始化为空数组
+		salesRecords.value = [];
+
+		// 显示错误提示
+		uni.showToast({
+			title: '加载销售记录失败',
+			icon: 'none'
+		});
+	})
+	.finally(() => {
+		// 隐藏加载中提示
+		uni.hideLoading();
+	});
 }
 
 // 加载客户数据
 function loadCustomersData() {
-	// 从客户服务获取最新的客户数据
-	customersList.value = getCustomers();
-	console.log('从客户服务加载了客户数据:', customersList.value.length);
+	// 显示加载中提示
+	uni.showLoading({
+		title: '加载客户数据...'
+	});
 
-	// 如果没有客户数据，显示提示
-	if (customersList.value.length === 0) {
-		console.log('没有找到客户数据');
-	}
+	// 从客户服务获取最新的客户数据
+	getCustomers()
+		.then(res => {
+			// 根据API文档中4.1获取客户列表的响应格式处理数据
+			if (res && res.data && res.data.items && Array.isArray(res.data.items)) {
+				// 更新客户列表
+				customersList.value = res.data.items;
+			} else {
+				// 如果响应格式不符合预期，尝试其他可能的格式
+				if (Array.isArray(res)) {
+					customersList.value = res;
+				} else if (res.data && Array.isArray(res.data)) {
+					customersList.value = res.data;
+				} else if (res.items && Array.isArray(res.items)) {
+					customersList.value = res.items;
+				} else {
+					customersList.value = [];
+				}
+			}
+
+			// 如果没有客户数据，显示提示
+			if (customersList.value.length === 0) {
+				uni.showToast({
+					title: '没有找到客户数据',
+					icon: 'none'
+				});
+			}
+
+		})
+		.catch(err => {
+			console.error('加载客户数据失败:', err);
+			// 如果加载失败，显示空数组
+			customersList.value = [];
+
+			// 显示错误提示
+			uni.showToast({
+				title: '加载客户数据失败',
+				icon: 'none'
+			});
+		})
+		.finally(() => {
+			// 隐藏加载中提示
+			uni.hideLoading();
+		});
 }
 </script>
 
@@ -1541,6 +1689,13 @@ function loadCustomersData() {
 	background-color: rgba(239, 68, 68, 0.05);
 	border: 1rpx solid rgba(239, 68, 68, 0.1);
 	box-shadow: 0 1rpx 2rpx rgba(239, 68, 68, 0.05);
+}
+
+.status-partial {
+	color: #F59E0B;
+	background-color: rgba(245, 158, 11, 0.05);
+	border: 1rpx solid rgba(245, 158, 11, 0.1);
+	box-shadow: 0 1rpx 2rpx rgba(245, 158, 11, 0.05);
 }
 
 /* 弹窗样式 */
@@ -2245,9 +2400,13 @@ function loadCustomersData() {
 	border-top-left-radius: 24rpx;
 	border-top-right-radius: 24rpx;
 	padding: 30rpx;
-	padding-bottom: env(safe-area-inset-bottom);
-	max-height: 70vh;
+	padding-bottom: calc(env(safe-area-inset-bottom) + 100rpx); /* 增加底部内边距，考虑到TAB栏高度 */
+	max-height: 60vh; /* 增加弹窗高度 */
 	box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	position: relative; /* 添加相对定位，便于定位内部元素 */
+	z-index: 100; /* 确保在底部TAB栏之上 */
 }
 
 .customer-selector-header {
@@ -2286,12 +2445,26 @@ function loadCustomersData() {
 }
 
 .customer-selector-list {
-	max-height: 50vh;
+	flex: 1;
+	overflow-y: auto; /* 改为auto允许滚动 */
+	height: 600rpx; /* 增加高度，确保可以显示更多客户 */
+	margin-bottom: 30rpx; /* 增加底部间距 */
+	padding-bottom: 20rpx; /* 添加内部底部填充 */
 }
 
 .customer-selector-item {
 	padding: 20rpx 16rpx;
 	border-bottom: 1rpx solid #E5E7EB;
+	height: 100rpx;
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+.customer-selector-safe-area {
+	height: 150rpx; /* 底部安全区域的高度，考虑到TAB栏的高度 */
+	width: 100%;
 }
 
 .customer-selector-item:active {

@@ -22,7 +22,17 @@
   - [3.4 更新水果](#34-更新水果)
   - [3.5 删除水果](#35-删除水果)
   - [3.6 更新水果状态](#36-更新水果状态)
-  - [3.7 获取水果类别列表](#37-获取水果类别列表)
+  - [3.7 获取水果分类列表](#37-获取水果分类列表)
+  - [3.8 获取单个水果分类](#38-获取单个水果分类)
+  - [3.9 新增水果分类](#39-新增水果分类)
+  - [3.10 更新水果分类](#310-更新水果分类)
+  - [3.11 删除水果分类](#311-删除水果分类)
+  - [3.12 获取水果品种列表](#312-获取水果品种列表)
+  - [3.13 获取单个水果品种](#313-获取单个水果品种)
+  - [3.14 新增水果品种](#314-新增水果品种)
+  - [3.15 更新水果品种](#315-更新水果品种)
+  - [3.16 删除水果品种](#316-删除水果品种)
+  - [3.17 获取水果分类及其品种](#317-获取水果分类及其品种)
 - [4. 客户管理](#4-客户管理)
   - [4.1 获取客户列表](#41-获取客户列表)
   - [4.2 获取客户详情](#42-获取客户详情)
@@ -61,6 +71,11 @@
   - [9.1 销售统计](#91-销售统计)
   - [9.2 库存统计](#92-库存统计)
   - [9.3 客户统计](#93-客户统计)
+- [10. 系统码表](#10-系统码表)
+  - [10.1 获取指定类型的码值](#101-获取指定类型的码值)
+  - [10.2 获取所有码值类型](#102-获取所有码值类型)
+  - [10.3 批量获取多个类型的码值](#103-批量获取多个类型的码值)
+
 
 ## 1. 通用说明
 
@@ -485,13 +500,16 @@
         "image": "https://example.com/apple.jpg",
         "created_at": "2023-05-01T00:00:00Z",
         "updated_at": "2023-05-01T00:00:00Z",
-        "status": 1
+        "status": 1,
+        "inventory": 85  // 当前库存数量
       }
       // 更多水果...
     ]
   }
 }
 ```
+
+> 注意：每个水果项都包含`inventory`字段，表示当前库存数量。
 
 ### 3.2 获取水果详情
 
@@ -937,6 +955,61 @@
 }
 ```
 
+### 3.17 获取水果分类及其品种
+
+- **URL**: `/fruits/categories/with-varieties`
+- **方法**: GET
+- **描述**: 获取所有水果分类及其对应的品种
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": [
+    {
+      "id": 1,
+      "name": "苹果",
+      "varieties": [
+        {
+          "id": 1,
+          "name": "红富士",
+          "category_id": 1
+        },
+        {
+          "id": 2,
+          "name": "嘉啦",
+          "category_id": 1
+        },
+        {
+          "id": 3,
+          "name": "金帅",
+          "category_id": 1
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "橙子",
+      "varieties": [
+        {
+          "id": 4,
+          "name": "脖橙",
+          "category_id": 2
+        },
+        {
+          "id": 5,
+          "name": "血橙",
+          "category_id": 2
+        }
+      ]
+    }
+    // 更多分类...
+  ]
+}
+```
+
 ## 4. 客户管理
 
 ### 4.1 获取客户列表
@@ -1150,7 +1223,7 @@
   - `limit`: 每页记录数
   - `start_date`: 开始日期（可选）
   - `end_date`: 结束日期（可选）
-  - `payment_status`: 付款状态（可选）
+  - `payment_status`: 付款状态（可选，0:未付款, 1:已付款, 2:部分付款，可使用逗号分隔多个值如"0,2"表示所有待付款记录）
 - **响应示例**:
 
 ```json
@@ -1249,6 +1322,7 @@
 - **URL**: `/sales`
 - **方法**: GET
 - **描述**: 获取销售记录列表
+- **权限**: 需要登录认证，销售员只能查看自己的销售记录，管理员、档口老板和财务员可以查看所有销售记录
 - **请求参数**:
   - `page`: 页码
   - `limit`: 每页记录数
@@ -1360,15 +1434,20 @@
 
 ```json
 {
+  "user_id": 1,
   "customer_id": 1,
-  "sale_date": "2023-06-02",
   "fruit_id": 3,
-  "quantity": 15,
   "unit_price": 45.00,
-  "payment_status": 0,
+  "quantity": 15,
+  "amount": 675.00,
+  "payment_status": "0",
   "remark": "批发订单"
 }
 ```
+
+> 注意：
+> 1. `recordId`（销售记录编号）由系统自动生成，格式为"S + 年月日 + 3位序号"，例如"S20230602001"
+> 2. `sale_datetime`（销售时间）由系统自动生成为当前时间，不需要在请求中提供
 
 - **响应示例**:
 
@@ -1640,14 +1719,15 @@
 ```json
 {
   "fruit_id": 3,
-  "type": 1,
+  "operation_type": "in",
   "quantity": 80,
-  "unit_price": 35.00,
-  "operation_date": "2023-06-06",
-  "supplier": "供应商C",
+  "operator_id": 1,
+  "source": "供应商C",
   "remark": "批量入库"
 }
 ```
+
+> 注意：`recordId`（库存记录编号）由系统自动生成，格式为“I/O(入库/出库) + 年月日 + 3位序号”，例如“I20230606001”
 
 - **响应示例**:
 
@@ -1683,14 +1763,16 @@
 ```json
 {
   "fruit_id": 3,
-  "type": 1,
+  "operation_type": 1,
   "quantity": 85,
+  "operator_id": 1,
   "unit_price": 34.00,
-  "operation_date": "2023-06-06",
-  "supplier": "供应商C",
+  "source": "供应商C",
   "remark": "批量入库-已修改"
 }
 ```
+
+> 注意：`record_id`（库存记录编号）和`operation_datetime`（操作时间）由系统自动生成和更新，客户端无需提供。
 
 - **响应示例**:
 
@@ -2371,11 +2453,18 @@
 
 ## 9. 统计分析
 
+> **权限说明**:
+> - 系统管理员、档口老板、财务员可以查看所有统计数据
+> - 销售员只能查看自己创建的销售记录的统计数据
+> - 货主无法访问客户统计功能
+> - 热销水果排行榜功能对所有用户开放，显示整个档口的数据
+
 ### 9.1 销售统计
 
 - **URL**: `/statistics/sales`
 - **方法**: GET
 - **描述**: 获取销售统计信息
+- **权限**: 需要登录认证，销售员只能查看自己的销售记录
 - **请求参数**:
   - `start_date`: 开始日期（可选）
   - `end_date`: 结束日期（可选）
@@ -2392,34 +2481,42 @@
   "data": {
     "total_sales": 50000.00,
     "total_quantity": 1000,
-    "average_price": 50.00,
+    "total_count": 50,
+    "total_paid": 45000.00,
+    "total_unpaid": 5000.00,
     "period_data": [
       {
         "period": "2023-05",
-        "sales": 25000.00,
+        "sales_count": 25,
         "quantity": 500,
-        "average_price": 50.00
+        "sales": 25000.00,
+        "payments": 22000.00,
+        "unpaid": 3000.00
       },
       {
         "period": "2023-06",
-        "sales": 25000.00,
+        "sales_count": 25,
         "quantity": 500,
-        "average_price": 50.00
+        "sales": 25000.00,
+        "payments": 23000.00,
+        "unpaid": 2000.00
       }
     ],
     "category_data": [
       {
         "category_id": 1,
         "category_name": "苹果",
-        "sales": 15000.00,
+        "sales_count": 15,
         "quantity": 300,
+        "sales": 15000.00,
         "percentage": 30
       },
       {
         "category_id": 3,
         "category_name": "香蕉",
-        "sales": 10000.00,
+        "sales_count": 10,
         "quantity": 250,
+        "sales": 10000.00,
         "percentage": 20
       }
     ],
@@ -2427,31 +2524,41 @@
       {
         "fruit_id": 1,
         "fruit_name": "红富士苹果",
-        "sales": 12000.00,
+        "category_name": "苹果",
+        "sales_count": 12,
         "quantity": 240,
+        "sales": 12000.00,
         "percentage": 24
       },
       {
         "fruit_id": 3,
         "fruit_name": "橙子",
-        "sales": 10000.00,
+        "category_name": "橘子",
+        "sales_count": 10,
         "quantity": 220,
+        "sales": 10000.00,
         "percentage": 20
       }
     ],
     "customer_data": [
       {
         "customer_id": 1,
-        "customer_name": "客户A",
-        "sales": 15000.00,
+        "customer_name": "张三水果店",
+        "sales_count": 15,
         "quantity": 300,
+        "sales": 15000.00,
+        "payments": 14000.00,
+        "unpaid": 1000.00,
         "percentage": 30
       },
       {
         "customer_id": 2,
-        "customer_name": "客户B",
-        "sales": 10000.00,
+        "customer_name": "李四水果批发",
+        "sales_count": 10,
         "quantity": 200,
+        "sales": 10000.00,
+        "payments": 9000.00,
+        "unpaid": 1000.00,
         "percentage": 20
       }
     ]
@@ -2464,6 +2571,7 @@
 - **URL**: `/statistics/inventory`
 - **方法**: GET
 - **描述**: 获取库存统计信息
+- **权限**: 需要登录认证
 - **请求参数**:
   - `start_date`: 开始日期（可选）
   - `end_date`: 结束日期（可选）
@@ -2477,85 +2585,109 @@
   "code": 200,
   "message": "获取成功",
   "data": {
-    "current_inventory": {
-      "total_items": 10,
-      "total_quantity": 1200,
-      "total_value": 48000.00
-    },
-    "inventory_in": {
-      "total_quantity": 2000,
-      "total_value": 80000.00,
-      "period_data": [
-        {
-          "period": "2023-05",
-          "quantity": 1000,
-          "value": 40000.00
-        },
-        {
-          "period": "2023-06",
-          "quantity": 1000,
-          "value": 40000.00
-        }
-      ]
-    },
-    "inventory_out": {
-      "total_quantity": 800,
-      "total_value": 32000.00,
-      "period_data": [
-        {
-          "period": "2023-05",
-          "quantity": 400,
-          "value": 16000.00
-        },
-        {
-          "period": "2023-06",
-          "quantity": 400,
-          "value": 16000.00
-        }
-      ]
-    },
+    "total_items": 5,
+    "total_quantity": 2,
+    "total_value": 100.00,
+    "total_in_quantity": 2,
+    "total_out_quantity": 0,
+    "period_data": [
+      {
+        "period": "2024-10",
+        "in_quantity": 0,
+        "out_quantity": 0
+      },
+      {
+        "period": "2024-11",
+        "in_quantity": 0,
+        "out_quantity": 0
+      },
+      {
+        "period": "2024-12",
+        "in_quantity": 0,
+        "out_quantity": 0
+      },
+      {
+        "period": "2025-01",
+        "in_quantity": 0,
+        "out_quantity": 0
+      },
+      {
+        "period": "2025-02",
+        "in_quantity": 0,
+        "out_quantity": 0
+      },
+      {
+        "period": "2025-03",
+        "in_quantity": 0,
+        "out_quantity": 0
+      },
+      {
+        "period": "2025-04",
+        "in_quantity": 2,
+        "out_quantity": 0
+      }
+    ],
     "category_data": [
       {
         "category_id": 1,
         "category_name": "苹果",
-        "current_quantity": 500,
-        "current_value": 20000.00,
-        "in_quantity": 800,
-        "in_value": 32000.00,
-        "out_quantity": 300,
-        "out_value": 12000.00
+        "inventory_quantity": 2,
+        "inventory_value": 100.00
+      },
+      {
+        "category_id": 2,
+        "category_name": "橘子",
+        "inventory_quantity": 0,
+        "inventory_value": 0
       },
       {
         "category_id": 3,
         "category_name": "香蕉",
-        "current_quantity": 300,
-        "current_value": 9000.00,
-        "in_quantity": 500,
-        "in_value": 15000.00,
-        "out_quantity": 200,
-        "out_value": 6000.00
+        "inventory_quantity": 0,
+        "inventory_value": 0
+      },
+      {
+        "category_id": 4,
+        "category_name": "葡萄",
+        "inventory_quantity": 0,
+        "inventory_value": 0
       }
     ],
     "fruit_data": [
       {
         "fruit_id": 1,
         "fruit_name": "红富士苹果",
-        "current_quantity": 400,
-        "current_value": 16000.00,
-        "in_quantity": 600,
-        "in_value": 24000.00,
-        "out_quantity": 200,
-        "out_value": 8000.00
+        "category_name": "苹果",
+        "inventory_quantity": 2,
+        "inventory_value": 100.00
+      },
+      {
+        "fruit_id": 2,
+        "fruit_name": "嘎啦苹果",
+        "category_name": "苹果",
+        "inventory_quantity": 0,
+        "inventory_value": 0
       },
       {
         "fruit_id": 3,
-        "fruit_name": "橙子",
-        "current_quantity": 300,
-        "current_value": 10500.00,
-        "in_quantity": 500,
-        "in_value": 17500.00,
-        "out_quantity": 200,
-        "out_value": 7000.00
+        "fruit_name": "脐橙",
+        "category_name": "橘子",
+        "inventory_quantity": 0,
+        "inventory_value": 0
+      },
+      {
+        "fruit_id": 4,
+        "fruit_name": "小米蕉",
+        "category_name": "香蕉",
+        "inventory_quantity": 0,
+        "inventory_value": 0
+      },
+      {
+        "fruit_id": 5,
+        "fruit_name": "红提",
+        "category_name": "葡萄",
+        "inventory_quantity": 0,
+        "inventory_value": 0
       }
     ]
   }
@@ -2567,6 +2699,7 @@
 - **URL**: `/statistics/customers`
 - **方法**: GET
 - **描述**: 获取客户统计信息
+- **权限**: 需要登录认证，销售员只能查看自己的客户数据，货主无法访问此接口
 - **请求参数**:
   - `start_date`: 开始日期（可选）
   - `end_date`: 结束日期（可选）
@@ -2588,79 +2721,98 @@
     "period_data": [
       {
         "period": "2023-05",
-        "active_customers": 25,
-        "new_customers": 3,
+        "sales_count": 25,
+        "quantity": 500,
         "sales": 25000.00,
-        "payments": 22000.00
+        "payments": 22000.00,
+        "unpaid": 3000.00,
+        "active_customers": 25,
+        "new_customers": 3
       },
       {
         "period": "2023-06",
-        "active_customers": 30,
-        "new_customers": 2,
+        "sales_count": 25,
+        "quantity": 500,
         "sales": 25000.00,
-        "payments": 23000.00
+        "payments": 23000.00,
+        "unpaid": 2000.00,
+        "active_customers": 30,
+        "new_customers": 2
       }
     ],
-    "top_customers": [
+    "customer_data": [
       {
         "customer_id": 1,
-        "customer_name": "客户A",
-        "sales_amount": 15000.00,
-        "payment_amount": 14000.00,
-        "unpaid_amount": 1000.00,
+        "customer_name": "张三水果店",
         "sales_count": 30,
+        "quantity": 600,
+        "sales": 15000.00,
+        "payments": 14000.00,
+        "unpaid": 1000.00,
         "percentage": 30
       },
       {
         "customer_id": 2,
-        "customer_name": "客户B",
-        "sales_amount": 10000.00,
-        "payment_amount": 9500.00,
-        "unpaid_amount": 500.00,
+        "customer_name": "李四水果批发",
         "sales_count": 20,
+        "quantity": 400,
+        "sales": 10000.00,
+        "payments": 9500.00,
+        "unpaid": 500.00,
         "percentage": 20
       }
-    ],
-    "customer_preferences": [
+    ]
+  }
+}
+```
+
+### 9.4 热销水果排行榜
+
+- **URL**: `/statistics/top-fruits`
+- **方法**: GET
+- **描述**: 获取热销水果排行榜
+- **权限**: 所有用户可访问，显示整个档口的数据
+- **请求参数**:
+  - `time_range`: 时间范围，可选值为"day"（当日）、"week"（本周）、"month"（本月）、"year"（本年），默认为"month"（可选）
+  - `limit`: 返回数量限制，默认为10（可选）
+  - `sort_by`: 排序依据，可选值为"sales"（销售额）或"quantity"（销售量），默认为"sales"（可选）
+- **响应示例**:
+
+```json
+{
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "period": "本月(2023年5月)",
+    "total_sales": 50000.00,
+    "total_quantity": 1000,
+    "fruits": [
       {
-        "customer_id": 1,
-        "customer_name": "客户A",
-        "top_fruits": [
-          {
-            "fruit_id": 1,
-            "fruit_name": "红富士苹果",
-            "quantity": 100,
-            "amount": 5000.00,
-            "percentage": 33.33
-          },
-          {
-            "fruit_id": 3,
-            "fruit_name": "橙子",
-            "quantity": 80,
-            "amount": 3500.00,
-            "percentage": 23.33
-          }
-        ]
+        "rank": 1,
+        "fruit_id": 1,
+        "fruit_name": "红富士苹果",
+        "category_name": "苹果",
+        "sales": 12000.00,
+        "quantity": 240,
+        "percentage": 24.00
       },
       {
-        "customer_id": 2,
-        "customer_name": "客户B",
-        "top_fruits": [
-          {
-            "fruit_id": 2,
-            "fruit_name": "香蕉",
-            "quantity": 60,
-            "amount": 2400.00,
-            "percentage": 24
-          },
-          {
-            "fruit_id": 4,
-            "fruit_name": "梨",
-            "quantity": 50,
-            "amount": 2000.00,
-            "percentage": 20
-          }
-        ]
+        "rank": 2,
+        "fruit_id": 3,
+        "fruit_name": "脑橙",
+        "category_name": "橘子",
+        "sales": 10000.00,
+        "quantity": 220,
+        "percentage": 20.00
+      },
+      {
+        "rank": 3,
+        "fruit_id": 4,
+        "fruit_name": "小米蕉",
+        "category_name": "香蕉",
+        "sales": 8000.00,
+        "quantity": 200,
+        "percentage": 16.00
       }
     ]
   }

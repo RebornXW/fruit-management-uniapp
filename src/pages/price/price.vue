@@ -145,6 +145,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import CustomTabBar from '@/components/CustomTabBar.vue';
+import fruitService from '@/services/fruitService.js';
 
 // 数据
 const searchText = ref('');
@@ -242,44 +243,40 @@ function onMaxPriceChange(e) {
 function confirmPriceAdjust() {
 	const index = fruitData.value.findIndex(f => f.id === currentFruit.value.id);
 	if (index !== -1) {
-		// 更新报价页面的价格
-		fruitData.value[index].minPrice = minPrice.value;
-		fruitData.value[index].maxPrice = maxPrice.value;
+		// 显示加载中提示
+		uni.showLoading({ title: '更新中...' });
 
-		// 同步更新库存管理中的价格
-		try {
-			const inventoryKey = 'inventoryData';
-			const storedInventory = uni.getStorageSync(inventoryKey);
+		// 调用API更新水果价格
+		fruitService.updateFruitPrice(currentFruit.value.id, minPrice.value, maxPrice.value)
+			.then(() => {
+				uni.hideLoading();
 
-			if (storedInventory) {
-				const inventoryData = JSON.parse(storedInventory);
-				const inventoryIndex = inventoryData.findIndex(f => f.id === currentFruit.value.id);
+				// 更新报价页面的价格
+				fruitData.value[index].minPrice = minPrice.value;
+				fruitData.value[index].maxPrice = maxPrice.value;
 
-				if (inventoryIndex !== -1) {
-					// 更新库存管理中的价格
-					inventoryData[inventoryIndex].minPrice = minPrice.value;
-					inventoryData[inventoryIndex].maxPrice = maxPrice.value;
+				// 触发页面刷新事件，通知其他页面更新数据
+				uni.$emit('pageRefresh');
 
-					// 保存更新后的库存数据
-					uni.setStorageSync(inventoryKey, JSON.stringify(inventoryData));
-					console.log('已同步更新库存管理中的价格');
-				}
-			}
-		} catch (e) {
-			console.error('更新库存管理中的价格失败', e);
-		}
-
-		// 触发页面刷新事件，通知其他页面更新数据
-		uni.$emit('pageRefresh');
-
-		// 显示成功提示
-		uni.showToast({
-			title: '价格调整成功',
-			icon: 'success'
-		});
-		closePopup();
+				// 显示成功提示
+				uni.showToast({
+					title: '价格调整成功',
+					icon: 'success'
+				});
+				closePopup();
+			})
+			.catch(err => {
+				uni.hideLoading();
+				uni.showToast({
+					title: '价格更新失败，请重试',
+					icon: 'none'
+				});
+				console.error('更新水果价格失败:', err);
+			});
 	}
 }
+
+// 使用fruitService中的getDefaultFruitImage方法替代原来的getDefaultImageByCategory函数
 
 // 页面加载时获取数据
 onMounted(() => {
@@ -313,53 +310,105 @@ uni.$on('pageRefresh', () => {
 	loadFruitData();
 });
 
+// 监听报价页面刷新事件
+uni.$on('refreshPricePage', () => {
+	console.log('今日报价页面收到refreshPricePage事件');
+	// 重新加载数据
+	loadFruitData();
+});
+
 // 页面卸载时移除事件监听
 uni.$on('beforeDestroy', () => {
 	uni.$off('pageRefresh');
+	uni.$off('refreshPricePage');
 	uni.$off('onShow');
 });
 
 // 加载水果数据
 function loadFruitData() {
-	// 从库存管理中获取数据
-	try {
-		const inventoryKey = 'inventoryData';
-		const storedInventory = uni.getStorageSync(inventoryKey);
+	// 显示加载中提示
+	uni.showLoading({ title: '加载中...' });
 
-		if (storedInventory) {
-			// 如果有库存数据，使用库存数据
-			const inventoryData = JSON.parse(storedInventory);
+	// 从后端API获取水果数据
+	fruitService.getFruits()
+		.then(res => {
+			uni.hideLoading();
+			console.log('从后端获取到的水果数据:', res);
 
-			// 将库存数据转换为报价数据格式
-			fruitData.value = inventoryData.map(item => ({
-				id: item.id,
-				name: item.name,
-				spec: item.spec,
-				stock: item.stock,
-				minPrice: item.minPrice,
-				maxPrice: item.maxPrice,
-				image: item.image,
-				brand: item.brand,
-				category: item.category,
-				variety: item.variety,
-				packageType: item.packageType,
-				weight: item.weight
+			// 处理返回的水果数据，兼容不同的响应格式
+			let fruits = [];
+
+			// 如果是数组，直接使用
+			if (Array.isArray(res)) {
+				fruits = res;
+				console.log('数据是数组格式');
+			}
+			// 如果是对象，并且有items属性，使用items
+			else if (res && typeof res === 'object' && res.items) {
+				fruits = res.items;
+				console.log('数据是分页对象格式，使用items属性');
+			}
+			// 如果是对象，并且有data属性
+			else if (res && typeof res === 'object' && res.data) {
+				// 如果data是数组，直接使用
+				if (Array.isArray(res.data)) {
+					fruits = res.data;
+					console.log('数据在data属性中，是数组格式');
+				}
+				// 如果data是对象，并且有items属性
+				else if (typeof res.data === 'object' && res.data.items) {
+					fruits = res.data.items;
+					console.log('数据在data.items属性中');
+				}
+			}
+
+			console.log('处理后的水果数据:', fruits);
+
+			// 确保水果数据是数组
+			if (!Array.isArray(fruits)) {
+				console.error('处理后的水果数据仍然不是数组:', fruits);
+				fruits = [];
+			}
+
+			// 将API返回的数据转换为报价页面所需的格式
+			fruitData.value = fruits.map(fruit => ({
+				id: fruit.id,
+				name: fruit.name,
+				spec: fruit.spec,
+				stock: fruit.inventory || fruit.stock || 0, // 使用inventory字段作为库存数量
+				minPrice: fruit.min_price || fruit.minPrice || 0,
+				maxPrice: fruit.max_price || fruit.maxPrice || 0,
+				image: fruit.image || fruitService.getDefaultFruitImage(fruit.category),
+				brand: fruit.brand,
+				category: fruit.category,
+				variety: fruit.variety,
+				packageType: fruit.package_type || fruit.packageType,
+				weight: fruit.weight
 			}));
 
-			console.log('从库存数据加载了报价数据');
+			console.log('从后端加载了报价数据');
+
+			// 提取所有水果的品类，用于更新分类标签
+			const categories = Array.from(new Set(fruitData.value.map(f => f.category).filter(Boolean)));
+			fruitCategories.length = 0;
+			fruitCategories.push(...categories);
+
 			// 更新分类标签
 			updateCategories();
-			return;
-		}
-	} catch (e) {
-		console.error('加载库存数据失败', e);
-	}
+		})
+		.catch(err => {
+			uni.hideLoading();
+			uni.showToast({
+				title: '获取水果列表失败，请重试',
+				icon: 'none'
+			});
+			console.error('加载水果数据失败:', err);
 
-	// 如果没有库存数据，使用空数组
-	fruitData.value = [];
-	console.log('没有库存数据，报价页面为空');
-	// 即使没有数据也要更新分类标签
-	updateCategories();
+			// 如果获取失败，使用空数组
+			fruitData.value = [];
+			// 即使没有数据也要更新分类标签
+			updateCategories();
+		});
 }
 </script>
 

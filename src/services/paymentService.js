@@ -1,199 +1,256 @@
-import { ref } from 'vue';
-import { getSalesRecords } from './salesRecordService.js';
-import { getCustomerById } from './customerService.js';
 import http from './http.js';
 
-// 回款记录列表
-const paymentRecords = ref([]);
-
-// 生成回款记录ID
-function generatePaymentId() {
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}`;
-    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `P${dateStr}${randomNum}`;
-}
-
-// 格式化日期为 YYYY-MM-DD
-function formatDate(date) {
-    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-}
-
-// 格式化时间为 HH:MM
-function formatTime(date) {
-    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-}
-
-// 计算客户欠款总额
-function calculateCustomerDebt(customerId) {
-    // 获取所有销售记录
-    const allSalesRecords = getSalesRecords();
-
-    // 过滤出该客户的销售记录
-    const customerRecords = allSalesRecords.filter(record => {
-        // 支持新旧两种数据结构
-        if (record.customerId === customerId) {
-            return true;
-        }
-        if (record.customer && record.customer.id === customerId) {
-            return true;
-        }
-        return false;
-    });
-
-    // 计算未付款总额
-    return customerRecords.reduce((total, record) => {
-        // 如果是已付款状态，则没有欠款
-        if (record.status === '已付款' || record.paymentStatus === 'paid') {
-            return total;
-        }
-
-        // 计算未付金额
-        let unpaidAmount = 0;
-        if (record.unpaidAmount !== undefined) {
-            // 如果有明确的未付金额字段
-            unpaidAmount = parseFloat(record.unpaidAmount);
-        } else if (record.paidAmount !== undefined && record.amount !== undefined) {
-            // 如果有已付金额和总金额，计算差额
-            unpaidAmount = parseFloat(record.amount) - parseFloat(record.paidAmount);
-        } else if (record.amount !== undefined) {
-            // 如果只有总金额，且状态为未付款，则全额未付
-            unpaidAmount = parseFloat(record.amount);
-        } else if (record.total !== undefined) {
-            // 兼容旧结构
-            unpaidAmount = parseFloat(record.total);
-        }
-
-        return total + (unpaidAmount > 0 ? unpaidAmount : 0);
-    }, 0);
-}
-
-// 获取客户的待付款销售记录（包含未回款和部分回款的记录）
-function getCustomerUnpaidRecords(customerId) {
-    // 获取所有销售记录
-    const allSalesRecords = getSalesRecords();
-
-    // 获取客户信息
-    const customer = getCustomerById(customerId);
-    if (!customer) {
-        console.error(`未找到客户ID: ${customerId}`);
-        return [];
-    }
-
-    console.log(`获取客户 ${customer.name} (客户ID: ${customerId}) 的待付款记录`);
-
-    // 过滤出该客户的待付款销售记录（未回款和部分回款）
-    const filteredRecords = allSalesRecords.filter(record => {
-        // 检查客户匹配
-        let isCustomerMatch = false;
-
-        // 通过客户ID匹配
-        if (record.customerId === customerId || (record.customer && record.customer.id === customerId)) {
-            isCustomerMatch = true;
-        }
-        // 通过客户名称匹配
-        else if (record.customerName && record.customerName === customer.name) {
-            isCustomerMatch = true;
-        }
-
-        if (!isCustomerMatch) {
-            return false; // 如果客户不匹配，直接跳过
-        }
-
-        // 检查付款状态 - 包含未付款和部分付款的记录
-        const needsPayment =
-            record.status === '未付款' || record.status === '未回款' || record.paymentStatus === 'unpaid' ||
-            record.status === '部分付款' || record.status === '部分回款' || record.paymentStatus === 'partial';
-
-        if (!needsPayment) {
-            return false; // 如果不需要付款，直接跳过
-        }
-
-        // 计算未付金额
-        let unpaidAmount = 0;
-
-        // 如果有明确的未付金额字段
-        if (record.unpaidAmount !== undefined) {
-            unpaidAmount = parseFloat(record.unpaidAmount) || 0;
-        }
-        // 如果有金额和已付金额，计算差额
-        else if (record.amount !== undefined && record.paidAmount !== undefined) {
-            unpaidAmount = Math.max(0, parseFloat(record.amount) - parseFloat(record.paidAmount));
-        }
-        // 如果有总额和已付金额，计算差额
-        else if (record.total !== undefined && record.paidAmount !== undefined) {
-            unpaidAmount = Math.max(0, parseFloat(record.total) - parseFloat(record.paidAmount));
-        }
-        // 如果只有金额或总额，且状态为未付款
-        else if ((record.status === '未付款' || record.status === '未回款' || record.paymentStatus === 'unpaid')) {
-            unpaidAmount = parseFloat(record.amount || record.total || 0);
-        }
-
-        // 如果没有未付金额，跳过该记录
-        if (unpaidAmount <= 0) {
-            return false;
-        }
-
-        // 添加计算出的未付金额到记录中，便于后续处理
-        record._calculatedUnpaidAmount = unpaidAmount;
-
-        return true; // 所有条件都满足，保留该记录
-    });
-
-    // 按日期排序，从最早到最近
-    const sortedRecords = filteredRecords.sort((a, b) => {
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
-        return dateA - dateB; // 升序排列，最早的在前
-    });
-
-    console.log(`找到 ${sortedRecords.length} 条待付款记录，已按日期排序（从最早到最近）`);
-
-    // 输出详细信息便于调试
-    sortedRecords.forEach((record, index) => {
-        console.log(`记录 ${index + 1}: ${record.orderNo || record.id}, 日期: ${record.date}, 未付金额: ${record._calculatedUnpaidAmount}, 状态: ${record.status || record.paymentStatus}`);
-    });
-
-    return sortedRecords;
-}
-
-// 获取回款记录列表
+/**
+ * 获取付款记录列表
+ * @param {Object} params 查询参数
+ * @returns {Promise} 付款记录列表
+ */
 export function getPaymentRecords(params = {}) {
-  return http.request({ url: '/payment_records', method: 'GET', data: params });
+    return http.request({ url: '/payments', method: 'GET', data: params });
 }
 
-// 获取回款记录详情
+/**
+ * 获取付款记录详情
+ * @param {string|number} id 付款记录ID
+ * @returns {Promise} 付款记录详情
+ */
 export function getPaymentRecordById(id) {
-  return http.request({ url: `/payment_records/${id}`, method: 'GET' });
+    return http.request({ url: `/payments/${id}`, method: 'GET' });
 }
 
-// 创建回款记录
+/**
+ * 创建付款记录
+ * @param {Object} data 付款记录数据
+ * @returns {Promise} 创建结果
+ */
 export function createPaymentRecord(data) {
-  return http.request({ url: '/payment_records', method: 'POST', data });
+    return http.request({ url: '/payments', method: 'POST', data });
 }
 
-// 更新回款记录
+/**
+ * 更新付款记录
+ * @param {string|number} id 付款记录ID
+ * @param {Object} data 更新字段
+ * @returns {Promise} 更新结果
+ */
 export function updatePaymentRecord(id, data) {
-  return http.request({ url: `/payment_records/${id}`, method: 'PUT', data });
+    return http.request({ url: `/payments/${id}`, method: 'PUT', data });
 }
 
-// 删除回款记录
+/**
+ * 删除付款记录
+ * @param {string|number} id 付款记录ID
+ * @returns {Promise} 删除结果
+ */
 export function deletePaymentRecord(id) {
-  return http.request({ url: `/payment_records/${id}`, method: 'DELETE' });
+    return http.request({ url: `/payments/${id}`, method: 'DELETE' });
 }
 
-// 获取客户的回款记录
+/**
+ * 获取付款记录关联的销售记录
+ * @param {string|number} id 付款记录ID
+ * @param {Object} params 查询参数
+ * @returns {Promise} 销售记录列表
+ */
+export function getPaymentRecordSales(id, params = {}) {
+    return http.request({ url: `/payments/${id}/sales`, method: 'GET', data: params });
+}
+
+/**
+ * 为付款记录添加关联的销售记录
+ * @param {string|number} id 付款记录ID
+ * @param {Array} sales 销售记录数组，每个元素包含sale_id和amount
+ * @returns {Promise} 添加结果
+ */
+export function addPaymentRecordSales(id, sales) {
+    return http.request({
+        url: `/payments/${id}/sales`,
+        method: 'POST',
+        data: { sales }
+    });
+}
+
+/**
+ * 移除付款记录关联的销售记录
+ * @param {string|number} id 付款记录ID
+ * @param {string|number} saleId 销售记录ID
+ * @returns {Promise} 移除结果
+ */
+export function removePaymentRecordSale(id, saleId) {
+    return http.request({
+        url: `/payments/${id}/sales/${saleId}`,
+        method: 'DELETE'
+    });
+}
+
+/**
+ * 获取客户的付款记录
+ * @param {string|number} customerId 客户ID
+ * @param {Object} params 查询参数
+ * @returns {Promise} 付款记录列表
+ */
 export function getCustomerPaymentRecords(customerId, params = {}) {
-  return http.request({ url: `/customers/${customerId}/payment_records`, method: 'GET', data: params });
+    return http.request({
+        url: `/customers/${customerId}/payments`,
+        method: 'GET',
+        data: params
+    });
+}
+
+/**
+ * 获取客户的待付款销售记录
+ * @param {string|number} customerId 客户ID
+ * @param {Object} params 查询参数
+ * @returns {Promise} 待付款销售记录列表
+ */
+export function getCustomerUnpaidRecords(customerId, params = {}) {
+    console.log('调用 getCustomerUnpaidRecords API, 客户ID:', customerId, '参数:', params);
+
+    // 使用API文档中的4.6获取客户销售记录接口
+    // 通过传递payment_status参数为0或2来获取待付款的记录
+    // payment_status: 0-未付款, 1-已付款, 2-部分付款
+    const queryParams = {
+        ...params,
+        customer_id: customerId,
+        payment_status: [0, 2] // 未付款和部分付款
+    };
+
+    return new Promise((resolve, reject) => {
+        http.request({
+            url: '/sales', // 使用销售记录接口
+            method: 'GET',
+            data: queryParams
+        })
+        .then(res => {
+            console.log('获取客户待付款记录成功:', res);
+
+            // 处理返回的数据，兼容不同的响应格式
+            let records = [];
+
+            // 如果是数组，直接使用
+            if (Array.isArray(res)) {
+                records = res;
+            }
+            // 如果是对象，并且有items属性
+            else if (res && typeof res === 'object' && res.items) {
+                records = res.items;
+            }
+            // 如果是对象，并且有data属性
+            else if (res && typeof res === 'object' && res.data) {
+                // 如果data是数组，直接使用
+                if (Array.isArray(res.data)) {
+                    records = res.data;
+                }
+                // 如果data是对象，并且有items属性
+                else if (typeof res.data === 'object' && res.data.items) {
+                    records = res.data.items;
+                }
+            }
+
+            console.log('处理后的待付款记录数据:', records);
+            resolve(records);
+        })
+        .catch(err => {
+            console.error('获取客户待付款记录失败:', err);
+            // 失败时返回空数组，而不是拒绝 Promise
+            resolve([]);
+        });
+    });
+}
+
+/**
+ * 获取客户欠款总额
+ * @param {string|number} customerId 客户ID
+ * @returns {Promise} 欠款总额
+ */
+export function calculateCustomerDebt(customerId) {
+    return http.request({
+        url: `/customers/${customerId}`,
+        method: 'GET'
+    })
+    .then(res => {
+        // 直接返回unpaid_amount字段
+        return res && res.unpaid_amount !== undefined ? parseFloat(res.unpaid_amount) : 0;
+    })
+    .catch(() => {
+        // 失败时返回0
+        return 0;
+    });
+}
+
+/**
+ * 处理客户回款
+ * @param {string|number} customerId 客户ID
+ * @param {Object} data 回款数据
+ * @returns {Promise} 回款结果
+ */
+export function processCustomerRepayment(customerId, data) {
+    console.log('调用 processCustomerRepayment API, 客户ID:', customerId, '回款数据:', data);
+    return new Promise((resolve, reject) => {
+        http.request({
+            url: `/customers/${customerId}/repayment`,
+            method: 'POST',
+            data
+        })
+        .then(res => {
+            console.log('处理客户回款成功:', res);
+            resolve(res);
+        })
+        .catch(err => {
+            console.error('处理客户回款失败:', err);
+            reject(err);
+        });
+    });
+}
+
+/**
+ * 处理付款
+ * @param {Object} paymentData 付款数据
+ * @returns {Promise} 付款结果
+ */
+export function processPayment(paymentData) {
+    console.log('调用 processPayment API, 付款数据:', paymentData);
+    return new Promise((resolve, reject) => {
+        try {
+            // 如果有客户ID，使用processCustomerRepayment
+            let paymentPromise;
+            if (paymentData.customerId) {
+                console.log('使用 processCustomerRepayment 处理付款');
+                paymentPromise = processCustomerRepayment(paymentData.customerId, paymentData);
+            } else {
+                // 否则创建一个新的付款记录
+                console.log('使用 createPaymentRecord 创建付款记录');
+                paymentPromise = createPaymentRecord(paymentData);
+            }
+
+            paymentPromise
+                .then(res => {
+                    console.log('处理付款成功:', res);
+                    resolve(res);
+                })
+                .catch(err => {
+                    console.error('处理付款失败:', err);
+                    reject(err);
+                });
+        } catch (error) {
+            console.error('处理付款过程中发生异常:', error);
+            reject(error);
+        }
+    });
 }
 
 export default {
-  getPaymentRecords,
-  getPaymentRecordById,
-  createPaymentRecord,
-  updatePaymentRecord,
-  deletePaymentRecord,
-  getCustomerPaymentRecords,
-  calculateCustomerDebt,
-  getCustomerUnpaidRecords
+    getPaymentRecords,
+    getPaymentRecordById,
+    createPaymentRecord,
+    updatePaymentRecord,
+    deletePaymentRecord,
+    getPaymentRecordSales,
+    addPaymentRecordSales,
+    removePaymentRecordSale,
+    getCustomerPaymentRecords,
+    getCustomerUnpaidRecords,
+    calculateCustomerDebt,
+    processCustomerRepayment,
+    processPayment
 };

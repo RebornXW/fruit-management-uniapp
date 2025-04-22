@@ -126,7 +126,7 @@
 						</view>
 						<view class="fruit-details">
 							<view class="fruit-header">
-								<text class="fruit-name">{{fruit.brand}} {{fruit.variety}}</text>
+								<text class="fruit-name">{{fruit.name}}</text>
 								<view class="fruit-stock-tag">
 									<text class="stock-text">库存: {{fruit.stock}}箱</text>
 								</view>
@@ -311,6 +311,7 @@ import CustomTabBar from '@/components/CustomTabBar.vue';
 import fruitService from '@/services/fruitService.js';
 import inventoryRecordService from '@/services/inventoryRecordService.js';
 import operationRecordService from '@/services/operationRecordService.js';
+import statisticsService from '@/services/statisticsService.js';
 
 // 数据
 const searchText = ref('');
@@ -326,6 +327,11 @@ const fruitCategories = ref([]);
 const categoryIndex = ref(0);
 const fruitVarieties = ref([]);
 const varietyIndex = ref(0);
+// 存储完整的分类及品种数据
+const categoryVarietyData = ref([]);
+// 数据加载状态标志，避免重复加载
+const isLoading = ref(false);
+const lastLoadTime = ref(0);
 const editForm = ref({
 	id: null,
 	brand: '',
@@ -339,8 +345,9 @@ const editForm = ref({
 	maxPrice: ''
 });
 const isAddingFruit = ref(false);
-const todayIn = ref(12);
-const todayOut = ref(8);
+const totalStock = ref(0);
+const todayIn = ref(0);
+const todayOut = ref(0);
 
 // 筛选相关数据
 const showFilter = ref(false);
@@ -352,10 +359,7 @@ const appliedFilters = ref({
 	variety: '全部'
 });
 
-// 计算总库存
-const totalStock = computed(() => {
-	return fruitData.value.reduce((total, fruit) => total + fruit.stock, 0);
-});
+// 总库存、今日入库、今日出库数据从API获取，不再使用计算属性
 
 // 过滤后的水果数据
 const filteredFruits = computed(() => {
@@ -425,34 +429,59 @@ function showEditFruit(fruit) {
 	// 先关闭所有其他水果的操作菜单
 	closeAllMoreActions();
 
-	isAddingFruit.value = false;
-	currentFruit.value = fruit;
+	// 显示加载中提示
+	uni.showLoading({ title: '加载中...' });
 
-	// 设置品类索引
-	const categoryIdx = fruitCategories.value.indexOf(fruit.category);
-	categoryIndex.value = categoryIdx !== -1 ? categoryIdx : 0;
+	// 从后端获取最新的水果信息
+	fruitService.getFruitById(fruit.id)
+		.then(latestFruit => {
+			uni.hideLoading();
 
-	// 更新品种列表
-	updateVarietiesByCategory(fruitCategories.value[categoryIndex.value]);
+			// 处理返回的数据，将下划线命名转换为驼峰命名
+			const processedFruit = {
+				...latestFruit,
+				packageType: latestFruit.package_type,
+				minPrice: latestFruit.min_price,
+				maxPrice: latestFruit.max_price
+			};
 
-	// 设置品种索引
-	const varietyIdx = fruitVarieties.value.indexOf(fruit.variety);
-	varietyIndex.value = varietyIdx !== -1 ? varietyIdx : 0;
+			isAddingFruit.value = false;
+			currentFruit.value = processedFruit;
 
-	editForm.value = {
-		id: fruit.id,
-		brand: fruit.brand,
-		category: fruit.category,
-		variety: fruit.variety,
-		spec: fruit.spec,
-		weight: fruit.weight,
-		stock: fruit.stock,
-		image: fruit.image,
-		minPrice: fruit.minPrice || '',
-		maxPrice: fruit.maxPrice || ''
-	};
-	packageTypeIndex.value = packageTypes.indexOf(fruit.packageType);
-	editFruitPopup.value.open();
+			// 设置品类索引
+			const categoryIdx = fruitCategories.value.indexOf(processedFruit.category);
+			categoryIndex.value = categoryIdx !== -1 ? categoryIdx : 0;
+
+			// 更新品种列表
+			updateVarietiesByCategory(fruitCategories.value[categoryIndex.value]);
+
+			// 设置品种索引
+			const varietyIdx = fruitVarieties.value.indexOf(processedFruit.variety);
+			varietyIndex.value = varietyIdx !== -1 ? varietyIdx : 0;
+
+			editForm.value = {
+				id: processedFruit.id,
+				brand: processedFruit.brand,
+				category: processedFruit.category,
+				variety: processedFruit.variety,
+				spec: processedFruit.spec,
+				weight: processedFruit.weight,
+				stock: processedFruit.stock,
+				image: processedFruit.image,
+				minPrice: processedFruit.minPrice || '',
+				maxPrice: processedFruit.maxPrice || ''
+			};
+			packageTypeIndex.value = packageTypes.indexOf(processedFruit.packageType);
+			editFruitPopup.value.open();
+		})
+		.catch(err => {
+			uni.hideLoading();
+			uni.showToast({
+				title: '获取水果信息失败，请重试',
+				icon: 'none'
+			});
+			console.error('获取水果信息失败:', err);
+		});
 }
 
 // 显示新增水果弹窗
@@ -514,28 +543,51 @@ function incrementQuantity() {
 
 // 确认入库/出库操作
 function confirmOperation() {
+	// 显示加载中提示
+	uni.showLoading({ title: '处理中...' });
+
+	// 获取当前登录用户信息
+	const token = uni.getStorageSync('token');
+	if (!token) {
+		uni.hideLoading();
+		uni.showToast({ title: '请先登录', icon: 'none' });
+		return;
+	}
+
+	// 获取操作人信息
 	const operator = uni.getStorageSync('loginUser')?.name || '系统管理员';
+	const operatorId = uni.getStorageSync('loginUser')?.id;
 	const operationTypeText = operationType.value === 'in' ? '入库' : '出库';
+
+	// 调用库存记录服务添加记录
 	inventoryRecordService.addInventoryRecord(
-		operationTypeText,
+		operationType.value,
 		currentFruit.value,
 		parseInt(operationQuantity.value),
 		operationRemark.value,
-		operator
+		operatorId
 	)
-		.then(res => {
-			if (res.data.code === 200) {
-				uni.showToast({ title: operationTypeText + '成功', icon: 'success' });
-				loadFruitData();
-				uni.$emit('pageRefresh');
-				closePopup('inventory');
-			} else {
-				uni.showToast({ title: res.data.message || operationTypeText + '失败', icon: 'none' });
-			}
+		.then(() => {
+			uni.hideLoading();
+			// API返回成功
+			uni.showToast({ title: operationTypeText + '成功', icon: 'success' });
+			// 重新加载库存统计数据
+			loadInventoryStatistics();
+			// 重新加载水果数据
+			loadFruitData();
+			// 通知其他页面刷新
+			uni.$emit('pageRefresh');
+			// 关闭弹窗
+			closePopup('inventory');
 		})
 		.catch(err => {
-			uni.showToast({ title: '请求失败', icon: 'none' });
-			console.error(err);
+			uni.hideLoading();
+			// 显示错误信息
+			uni.showToast({
+				title: err.message || operationTypeText + '失败，请重试',
+				icon: 'none'
+			});
+			console.error('库存操作失败:', err);
 		});
 }
 
@@ -571,10 +623,16 @@ function deleteImage() {
 
 // 确认编辑/新增水果
 function confirmEditFruit() {
+	// 表单验证
 	if (!editForm.value.brand || !editForm.value.category || !editForm.value.variety || !editForm.value.spec) {
 		uni.showToast({ title: '请填写必填项', icon: 'none' });
 		return;
 	}
+
+	// 显示加载中提示
+	uni.showLoading({ title: '处理中...' });
+
+	// 准备数据
 	const minPrice = editForm.value.minPrice === '' ? 0 : parseInt(editForm.value.minPrice);
 	const maxPrice = editForm.value.maxPrice === '' ? 0 : parseInt(editForm.value.maxPrice);
 	const payload = {
@@ -583,45 +641,68 @@ function confirmEditFruit() {
 		category: editForm.value.category,
 		variety: editForm.value.variety,
 		spec: editForm.value.spec,
-		package_type: packageTypes[packageTypeIndex.value],
+		packageType: packageTypes[packageTypeIndex.value],
 		weight: parseFloat(editForm.value.weight) || 0,
-		min_price: minPrice,
-		max_price: maxPrice,
-		image: editForm.value.image || getDefaultImageByCategory(editForm.value.category),
+		minPrice: minPrice,
+		maxPrice: maxPrice,
+		image: editForm.value.image || fruitService.getDefaultFruitImage(editForm.value.category),
 		status: 1
 	};
+
+	// 获取操作人信息
+	const loginUser = uni.getStorageSync('loginUser');
+	const operator = loginUser ? loginUser.name : '系统管理员';
+
 	if (isAddingFruit.value) {
+		// 新增水果
 		fruitService.createFruit(payload)
-			.then(res => {
-				if (res.data.code === 200) {
-					uni.showToast({ title: '添加成功', icon: 'success' });
-					closePopup('edit');
-					loadFruitData();
-				} else {
-					uni.showToast({ title: res.data.message || '添加失败', icon: 'none' });
-				}
+			.then(() => {
+				uni.hideLoading();
+				uni.showToast({ title: '添加成功', icon: 'success' });
+				closePopup('edit');
+				loadFruitData();
+
+				// 记录操作
+				operationRecordService.addOperationRecord('新增水果', {}, payload, operator);
+
+				// 通知其他页面刷新
+				uni.$emit('pageRefresh');
 			})
 			.catch(err => {
-				uni.showToast({ title: '请求失败', icon: 'none' });
-				console.error(err);
+				uni.hideLoading();
+				uni.showToast({
+					title: err.message || '添加失败，请重试',
+					icon: 'none'
+				});
+				console.error('添加水果失败:', err);
 			});
 	} else {
-		const loginUser = uni.getStorageSync('loginUser');
-		const operator = loginUser ? loginUser.name : '系统管理员';
-		operationRecordService.addOperationRecord('编辑', {}, payload, operator);
-		fruitService.updateFruit(editForm.value.id, payload)
-			.then(res => {
-				if (res.data.code === 200) {
-					uni.showToast({ title: '编辑成功', icon: 'success' });
-					closePopup('edit');
-					loadFruitData();
-				} else {
-					uni.showToast({ title: res.data.message || '编辑失败', icon: 'none' });
-				}
+		// 编辑水果
+		// 先获取原始数据以便记录操作
+		fruitService.getFruitById(editForm.value.id)
+			.then(originalFruit => {
+				// 记录操作
+				operationRecordService.addOperationRecord('编辑水果', originalFruit, payload, operator);
+
+				// 更新水果信息
+				return fruitService.updateFruit(editForm.value.id, payload);
+			})
+			.then(() => {
+				uni.hideLoading();
+				uni.showToast({ title: '编辑成功', icon: 'success' });
+				closePopup('edit');
+				loadFruitData();
+
+				// 通知其他页面刷新
+				uni.$emit('pageRefresh');
 			})
 			.catch(err => {
-				uni.showToast({ title: '请求失败', icon: 'none' });
-				console.error(err);
+				uni.hideLoading();
+				uni.showToast({
+					title: err.message || '编辑失败，请重试',
+					icon: 'none'
+				});
+				console.error('编辑水果失败:', err);
 			});
 	}
 }
@@ -657,17 +738,17 @@ function handlePageClick() {
 }
 
 // 页面加载时获取数据
-onMounted(async () => {
+onMounted(() => {
 	// 设置当前日期
 	const now = new Date();
 	currentDate.value = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
 
 	// 加载水果数据
-	await loadFruitData();
+	loadFruitData();
 
-	// 确保数据同步到报价页面
+	// 通知报价页面刷新数据
 	setTimeout(() => {
-		syncAllToPricePage();
+		uni.$emit('refreshPricePage');
 	}, 100);
 
 	// 触发tabChange事件以更新底部导航状态
@@ -679,8 +760,17 @@ onMounted(async () => {
 	// 监听页面显示事件
 	uni.$on('onShow', () => {
 		console.log('库存页面显示');
-		// 重新加载数据
-		loadFruitData();
+
+		// 判断是否需要重新加载数据
+		// 如果距离上次加载时间超过 10 秒，才重新加载
+		const now = Date.now();
+		if (now - lastLoadTime.value > 10000) { // 10秒以上才重新加载
+			console.log('距离上次加载时间超过 10 秒，重新加载数据');
+			loadFruitData();
+		} else {
+			console.log('距离上次加载时间太短，不重新加载');
+		}
+
 		// 触发tabChange事件
 		uni.$emit('tabChange');
 	});
@@ -689,8 +779,22 @@ onMounted(async () => {
 // 监听页面刷新事件
 uni.$on('pageRefresh', () => {
 	console.log('库存页面收到刷新事件');
-	// 重新加载数据
-	loadFruitData();
+
+	// 判断是否需要重新加载数据
+	// 如果正在加载中，则跳过
+	if (isLoading.value) {
+		console.log('正在加载中，跳过刷新请求');
+		return;
+	}
+
+	// 如果距离上次加载时间超过 2 秒，才重新加载
+	const now = Date.now();
+	if (now - lastLoadTime.value > 2000) { // 2秒以上才重新加载
+		console.log('距离上次加载时间超过 2 秒，重新加载数据');
+		loadFruitData();
+	} else {
+		console.log('距离上次加载时间太短，不重新加载');
+	}
 });
 
 // 页面卸载时移除事件监听
@@ -699,19 +803,203 @@ uni.$on('beforeDestroy', () => {
 	uni.$off('onShow');
 });
 
-// 加载水果数据
-function loadFruitData() {
-	fruitService.getFruits()
-		.then(res => {
-			if (res.data.code === 200) {
-				fruitData.value = res.data.data.items || res.data.data;
-			} else {
-				uni.showToast({ title: res.data.message || '获取水果列表失败', icon: 'none' });
-			}
+// 加载库存统计数据
+function loadInventoryStatistics() {
+	console.log('加载库存统计数据');
+
+	// 使用API 9.2 获取库存统计数据
+	// 可以添加查询参数，如当前日期等
+	const today = new Date();
+	const year = today.getFullYear();
+	const month = String(today.getMonth() + 1).padStart(2, '0');
+	const day = String(today.getDate()).padStart(2, '0');
+	const formattedDate = `${year}-${month}-${day}`;
+
+	const params = {
+		start_date: formattedDate,
+		end_date: formattedDate,
+		period: 'day'
+	};
+
+	statisticsService.getInventoryStatistics(params)
+		.then(data => {
+			console.log('获取库存统计数据成功:', data);
+
+			// 更新库存统计数据
+			totalStock.value = data.totalStock;
+			todayIn.value = data.todayIn;
+			todayOut.value = data.todayOut;
 		})
 		.catch(err => {
-			uni.showToast({ title: '请求失败', icon: 'none' });
-			console.error(err);
+			console.error('获取库存统计数据失败:', err);
+		});
+}
+
+// 加载水果数据
+function loadFruitData() {
+	// 防止重复加载，如果正在加载中，直接返回
+	if (isLoading.value) {
+		console.log('数据正在加载中，跳过重复请求');
+		return;
+	}
+
+	// 防止短时间内重复加载，如果距离上次加载不足 2 秒，直接返回
+	const now = Date.now();
+	if (now - lastLoadTime.value < 2000) { // 2秒内不重复加载
+		console.log('距离上次加载时间太短，跳过重复请求');
+		return;
+	}
+
+	// 设置加载状态和时间
+	isLoading.value = true;
+	lastLoadTime.value = now;
+
+	// 显示加载中提示
+	uni.showLoading({ title: '加载中...' });
+
+	// 加载库存统计数据
+	loadInventoryStatistics();
+
+	// 根据API文档，水果列表默认包含库存数量
+	fruitService.getFruits()
+		.then(res => {
+			uni.hideLoading();
+			// 打印原始响应数据，便于调试
+			console.log('获取到的原始水果数据:', res);
+
+			// 处理返回的水果数据，兼容不同的响应格式
+			let fruits = [];
+
+			// 如果是数组，直接使用
+			if (Array.isArray(res)) {
+				fruits = res;
+				console.log('数据是数组格式');
+			}
+			// 如果是对象，并且有items属性，使用items
+			else if (res && typeof res === 'object' && res.items) {
+				fruits = res.items;
+				console.log('数据是分页对象格式，使用items属性');
+			}
+			// 如果是对象，并且有data属性
+			else if (res && typeof res === 'object' && res.data) {
+				// 如果data是数组，直接使用
+				if (Array.isArray(res.data)) {
+					fruits = res.data;
+					console.log('数据在data属性中，是数组格式');
+				}
+				// 如果data是对象，并且有items属性
+				else if (typeof res.data === 'object' && res.data.items) {
+					fruits = res.data.items;
+					console.log('数据在data.items属性中');
+				}
+			}
+
+			console.log('处理后的水果数据:', fruits);
+
+			// 确保水果数据是数组
+			if (!Array.isArray(fruits)) {
+				console.error('处理后的水果数据仍然不是数组:', fruits);
+				fruits = [];
+			}
+
+			// 对每个水果添加显示属性
+			fruitData.value = fruits.map(fruit => ({
+				...fruit,
+				showMoreActions: false, // 控制更多操作菜单的显示
+				// 确保图片路径正确
+				image: fruit.image || fruitService.getDefaultFruitImage(fruit.category),
+				// 确保库存数量存在，根据API文档，直接使用inventory字段
+				stock: fruit.inventory || fruit.stock || 0
+			}));
+
+			// 加载分类及其品种数据
+			loadCategoriesWithVarieties();
+		})
+		.catch(err => {
+			uni.hideLoading();
+			uni.showToast({
+				title: '获取水果列表失败，请重试',
+				icon: 'none'
+			});
+			console.error('加载水果数据失败:', err);
+		})
+		.finally(() => {
+			// 无论成功失败，都重置加载状态
+			isLoading.value = false;
+		});
+}
+
+// 加载水果分类及其品种数据
+function loadCategoriesWithVarieties() {
+	// 显示加载中提示
+	uni.showLoading({ title: '加载分类数据...' });
+
+	// 使用新的API 3.17获取分类及其品种数据
+	// 使用缓存数据，不强制刷新，减少请求次数
+	fruitService.getCategoriesWithVarieties(false)
+		.then(res => {
+			uni.hideLoading();
+			console.log('获取到的分类及品种数据:', res);
+
+			// 处理返回的数据，兼容不同的响应格式
+			let categoriesData = [];
+
+			// 如果是数组，直接使用
+			if (Array.isArray(res)) {
+				categoriesData = res;
+			}
+			// 如果是对象，并且有data属性
+			else if (res && typeof res === 'object' && res.data) {
+				// 如果data是数组，直接使用
+				if (Array.isArray(res.data)) {
+					categoriesData = res.data;
+				}
+				// 如果data是对象，并且有items属性
+				else if (typeof res.data === 'object' && res.data.items) {
+					categoriesData = res.data.items;
+				}
+			}
+
+			console.log('处理后的分类数据:', categoriesData);
+
+			// 确保分类数据是数组
+			if (!Array.isArray(categoriesData)) {
+				console.error('处理后的分类数据仍然不是数组:', categoriesData);
+				categoriesData = [];
+			}
+
+			// 存储完整的分类及品种数据，便于后续使用
+			categoryVarietyData.value = categoriesData;
+
+			// 提取品类名称列表
+			const categories = categoriesData.map(item => {
+				// 如果是字符串，直接使用
+				if (typeof item === 'string') {
+					return item;
+				}
+				// 如果是对象，使用name属性
+				else if (typeof item === 'object' && item !== null) {
+					return item.name || item.category_name || '';
+				}
+				return '';
+			}).filter(name => name); // 过滤掉空值
+
+			console.log('提取后的品类名称列表:', categories);
+
+			// 更新品类列表
+			fruitCategories.value = ['全部', ...categories];
+
+			// 更新品种列表
+			updateVarietiesByCategory(fruitCategories.value[filterCategoryIndex.value]);
+		})
+		.catch(err => {
+			uni.hideLoading();
+			console.error('获取水果分类及品种失败:', err);
+
+			// 如果获取失败，回退到使用旧的方式获取分类和品种
+			const categories = Array.from(new Set(fruitData.value.map(f => f.category))).filter(Boolean);
+			fruitCategories.value = ['全部', ...categories];
+			updateVarietiesByCategory(fruitCategories.value[filterCategoryIndex.value]);
 		});
 }
 
@@ -765,11 +1053,116 @@ function onVarietyChange(e) {
 
 // 根据品类更新品种列表
 function updateVarietiesByCategory(category) {
-	const list = category === '全部'
-		? Array.from(new Set(fruitData.value.map(f => f.variety)))
-		: Array.from(new Set(fruitData.value.filter(f => f.category === category).map(f => f.variety)));
-	fruitVarieties.value = list;
-	filteredVarieties.value = ['全部', ...list];
+	// 如果选择的是全部，则从本地数据中获取所有品种
+	if (category === '全部') {
+		const list = Array.from(new Set(fruitData.value.map(f => f.variety)));
+		fruitVarieties.value = list;
+		filteredVarieties.value = ['全部', ...list];
+		return;
+	}
+
+	// 如果有完整的分类及品种数据，则从中获取对应的品种列表
+	if (categoryVarietyData.value && categoryVarietyData.value.length > 0) {
+		console.log('从完整数据中获取品种列表，当前品类:', category);
+
+		// 查找对应的品类数据
+		const categoryData = categoryVarietyData.value.find(item => {
+			const categoryName = item.name || item.category_name || '';
+			return categoryName === category;
+		});
+
+		console.log('找到的品类数据:', categoryData);
+
+		// 如果找到了对应的品类数据，并且有品种列表
+		if (categoryData && categoryData.varieties && Array.isArray(categoryData.varieties)) {
+			// 提取品种名称列表
+			const varieties = categoryData.varieties.map(item => {
+				// 如果是字符串，直接使用
+				if (typeof item === 'string') {
+					return item;
+				}
+				// 如果是对象，使用name属性
+				else if (typeof item === 'object' && item !== null) {
+					return item.name || item.variety_name || '';
+				}
+				return '';
+			}).filter(name => name); // 过滤掉空值
+
+			console.log('提取后的品种名称列表:', varieties);
+
+			// 更新品种列表
+			fruitVarieties.value = varieties;
+			filteredVarieties.value = ['全部', ...varieties];
+			return;
+		}
+	}
+
+	// 如果没有完整数据或者没有找到对应的品类数据，则从 API 获取
+	uni.showLoading({ title: '加载品种...' });
+
+	// 构造查询参数
+	const params = { category_name: category };
+
+	fruitService.getVarieties(params)
+		.then(res => {
+			uni.hideLoading();
+			console.log('从 API 获取到的原始品种数据:', res);
+
+			// 处理返回的品种数据，兼容不同的响应格式
+			let varietiesData = [];
+
+			// 如果是数组，直接使用
+			if (Array.isArray(res)) {
+				varietiesData = res;
+			}
+			// 如果是对象，并且有data属性
+			else if (res && typeof res === 'object' && res.data) {
+				// 如果data是数组，直接使用
+				if (Array.isArray(res.data)) {
+					varietiesData = res.data;
+				}
+				// 如果data是对象，并且有items属性
+				else if (typeof res.data === 'object' && res.data.items) {
+					varietiesData = res.data.items;
+				}
+			}
+
+			console.log('处理后的品种原始数据:', varietiesData);
+
+			// 确保品种数据是数组
+			if (!Array.isArray(varietiesData)) {
+				console.error('处理后的品种数据仍然不是数组:', varietiesData);
+				varietiesData = [];
+			}
+
+			// 根据API文档中的格式提取品种名称
+			const varieties = varietiesData.map(item => {
+				// 如果是字符串，直接使用
+				if (typeof item === 'string') {
+					return item;
+				}
+				// 如果是对象，使用name属性
+				else if (typeof item === 'object' && item !== null) {
+					return item.name || item.variety_name || '';
+				}
+				return '';
+			}).filter(name => name); // 过滤掉空值
+
+			console.log('提取后的品种名称列表:', varieties);
+
+			// 更新品种列表
+			fruitVarieties.value = varieties;
+			filteredVarieties.value = ['全部', ...varieties];
+		})
+		.catch(err => {
+			uni.hideLoading();
+			console.error('获取水果品种失败:', err);
+
+			// 如果 API 请求失败，回退到从本地数据获取品种
+			const list = Array.from(new Set(fruitData.value.filter(f => f.category === category).map(f => f.variety)));
+			fruitVarieties.value = list;
+			filteredVarieties.value = ['全部', ...list];
+		});
 }
 
 // 筛选条件变更
@@ -788,35 +1181,9 @@ function onFilterVarietyChange(e) {
 	appliedFilters.value.variety = sel;
 }
 
-// 表单联动
-function onCategoryChange(e) {
-	categoryIndex.value = e.detail.value;
-	const sel = fruitCategories.value[categoryIndex.value];
-	editForm.value.category = sel;
-	updateVarietiesByCategory(sel);
-	varietyIndex.value = 0;
-	editForm.value.variety = fruitVarieties.value[0] || '';
-}
+// 删除重复的函数
 
-function onVarietyChange(e) {
-	varietyIndex.value = e.detail.value;
-	const sel = fruitVarieties.value[varietyIndex.value];
-	editForm.value.variety = sel;
-}
-
-// 页面初始化：加载水果 & 分类
-onMounted(async () => {
-	await loadFruitData();
-	try {
-		const res = await fruitService.getCategories();
-		if (res.data.code === 200) {
-			fruitCategories.value = ['全部', ...res.data.data];
-		}
-		updateVarietiesByCategory(fruitCategories.value[0]);
-	} catch (e) {
-		console.error('获取分类失败', e);
-	}
-});
+// 删除重复的onMounted函数
 
 // 显示/隐藏筛选弹窗
 function toggleFilterPopup() {
@@ -863,48 +1230,48 @@ function applyFilters() {
 
 // 确认删除水果
 function confirmDeleteFruit() {
+	// 显示加载中提示
+	uni.showLoading({ title: '处理中...' });
+
+	// 获取操作人信息
 	const operator = uni.getStorageSync('loginUser')?.name || '系统管理员';
-	operationRecordService.addOperationRecord('删除', {}, {}, operator);
-	fruitService.deleteFruit(currentFruit.value.id)
-		.then(res => {
-			if (res.data.code === 200) {
-				uni.showToast({ title: '删除成功', icon: 'success' });
-				loadFruitData();
-				uni.$emit('pageRefresh');
-			} else {
-				uni.showToast({ title: res.data.message || '删除失败', icon: 'none' });
-			}
+
+	// 先获取要删除的水果信息，以便记录操作
+	fruitService.getFruitById(currentFruit.value.id)
+		.then(originalFruit => {
+			// 记录删除操作
+			operationRecordService.addOperationRecord('删除水果', originalFruit, {}, operator);
+
+			// 执行删除操作
+			return fruitService.deleteFruit(currentFruit.value.id);
+		})
+		.then(() => {
+			uni.hideLoading();
+			uni.showToast({ title: '删除成功', icon: 'success' });
+
+			// 重新加载数据
+			loadFruitData();
+
+			// 通知其他页面刷新
+			uni.$emit('pageRefresh');
+
+			// 关闭弹窗
+			closePopup('delete');
 		})
 		.catch(err => {
-			uni.showToast({ title: '请求失败', icon: 'none' });
-			console.error(err);
+			uni.hideLoading();
+			uni.showToast({
+				title: err.message || '删除失败，请重试',
+				icon: 'none'
+			});
+			console.error('删除水果失败:', err);
+
+			// 关闭弹窗
+			closePopup('delete');
 		});
-	closePopup('delete');
 }
 
-// 根据水果品类获取默认图片
-function getDefaultImageByCategory(category) {
-	let defaultImage = '/static/default-fruit.png';
-
-	switch(category) {
-		case '苹果':
-			defaultImage = '/static/fruit/apple.png';
-			break;
-		case '梨':
-			defaultImage = '/static/fruit/pear.png';
-			break;
-		case '枣':
-			defaultImage = '/static/fruit/grape.png';
-			break;
-		case '其他':
-			defaultImage = '/static/fruit/strawberry.png';
-			break;
-		default:
-			defaultImage = '/static/fruit/strawberry.png';
-	}
-
-	return defaultImage;
-}
+// 使用fruitService中的getDefaultFruitImage方法替代原来的getDefaultImageByCategory函数
 </script>
 
 <style>

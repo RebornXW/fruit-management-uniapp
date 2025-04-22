@@ -5,7 +5,7 @@
 			<text class="app-name">水果档口管理系统</text>
 			<text class="app-slogan">高效管理 · 轻松销售</text>
 		</view>
-		
+
 		<view class="login-form">
 			<view class="form-item">
 				<view class="input-label">
@@ -14,7 +14,7 @@
 				</view>
 				<input class="input" type="text" v-model="username" placeholder="请输入账号" />
 			</view>
-			
+
 			<view class="form-item">
 				<view class="input-label">
 					<text class="fas fa-lock"></text>
@@ -22,17 +22,17 @@
 				</view>
 				<input class="input" type="password" v-model="password" placeholder="请输入密码" password />
 			</view>
-			
+
 			<view class="remember-row">
 				<label class="remember-pwd">
 					<checkbox :checked="rememberPwd" @tap="rememberPwd = !rememberPwd" color="#0D9488" style="transform:scale(0.7)" />
 					<text>记住密码</text>
 				</label>
 			</view>
-			
+
 			<button class="login-btn" @tap="handleLogin" :disabled="!username || !password">登录</button>
 		</view>
-		
+
 		<view class="account-notice">
 			<text>* 账号由管理员统一创建和分配</text>
 		</view>
@@ -42,6 +42,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import http from '../../services/http.js';
+import { login, getUserProfile } from '@/services/authService.js';
 
 // 登录表单数据
 const username = ref('');
@@ -51,22 +52,32 @@ const rememberPwd = ref(false);
 // 从本地存储中获取保存的账号密码
 onMounted(() => {
 	try {
+		// 获取记住的账号
 		const rememberedAccount = uni.getStorageSync('rememberedAccount');
 		if (rememberedAccount) {
 			username.value = rememberedAccount.username;
 			password.value = rememberedAccount.password;
 			rememberPwd.value = true;
 		}
-		
+
 		// 检查是否已登录
-		const loginUser = uni.getStorageSync('loginUser');
-		if (loginUser) {
-			// 已登录，直接跳转到主页
-			setTimeout(() => {
+		const token = uni.getStorageSync('token');
+		if (token) {
+			// 如果有token，尝试获取用户信息验证token有效性
+			uni.showLoading({ title: '正在验证登录状态...' });
+
+			getUserProfile().then(() => {
+				// token有效，直接跳转到主页
+				uni.hideLoading();
 				uni.switchTab({
 					url: '/pages/profile/profile'
 				});
-			}, 100);
+			}).catch(err => {
+				// token无效，清除token
+				console.error('验证登录状态失败', err);
+				uni.hideLoading();
+				uni.removeStorageSync('token');
+			});
 		}
 	} catch (e) {
 		console.error('读取存储数据失败', e);
@@ -80,22 +91,47 @@ async function handleLogin() {
 		return;
 	}
 
+	// 显示加载中
+	uni.showLoading({ title: '正在登录...' });
+
 	try {
-		const data = await http.request({ url: '/auth/login', method: 'POST', data: { username: username.value, password: password.value } });
-		const { token, user } = data;
-		uni.setStorageSync('token', token);
-		uni.setStorageSync('loginUser', user);
+		// 调用登录API
+		const data = await login(username.value, password.value);
+
+		// 存储token
+		uni.setStorageSync('token', data.token);
+
+		// 如果选择了记住密码，存储账号信息
 		if (rememberPwd.value) {
 			uni.setStorageSync('rememberedAccount', { username: username.value, password: password.value });
 		} else {
 			uni.removeStorageSync('rememberedAccount');
 		}
-		uni.showToast({ title: '登录成功', icon: 'success', duration: 1500, success: () => {
-			setTimeout(() => uni.switchTab({ url: '/pages/profile/profile' }), 1500);
-		}});
+
+		// 隐藏加载中
+		uni.hideLoading();
+
+		// 显示登录成功提示
+		uni.showToast({
+			title: '登录成功',
+			icon: 'success',
+			duration: 1500,
+			success: () => {
+				// 延迟跳转，让用户看到成功提示
+				setTimeout(() => {
+					uni.switchTab({ url: '/pages/profile/profile' });
+				}, 1500);
+			}
+		});
 	} catch (err) {
+		// 隐藏加载中
+		uni.hideLoading();
+
 		console.error('登录失败', err);
-		uni.showToast({ title: err.message || '登录失败，请重试', icon: 'none' });
+		uni.showToast({
+			title: err.message || '登录失败，请重试',
+			icon: 'none'
+		});
 	}
 }
 </script>
