@@ -1,4 +1,5 @@
 import http from './http.js';
+import { getSalesRecords } from './salesRecordService.js';
 
 /**
  * 获取付款记录列表
@@ -24,7 +25,20 @@ export function getPaymentRecordById(id) {
  * @returns {Promise} 创建结果
  */
 export function createPaymentRecord(data) {
-    return http.request({ url: '/payments', method: 'POST', data });
+    console.log('调用 createPaymentRecord API, 付款数据:', data);
+
+    // 根据API文档中7.3创建付款记录的要求格式化数据
+    // 使用下划线命名法而不是驼峰命名法
+    const paymentData = {
+        customer_id: data.customerId || data.customer_id,
+        amount: parseFloat(data.amount),
+        payment_method: data.paymentMethod || data.payment_method,
+        operator_id: uni.getStorageSync('loginUser')?.id || 1, // 从本地存储中获取当前登录用户ID
+        remark: data.remark || '',
+        related_sales: data.selectedRecords || data.related_sales || []
+    };
+
+    return http.request({ url: '/payments', method: 'POST', data: paymentData });
 }
 
 /**
@@ -106,8 +120,8 @@ export function getCustomerPaymentRecords(customerId, params = {}) {
 export function getCustomerUnpaidRecords(customerId, params = {}) {
     console.log('调用 getCustomerUnpaidRecords API, 客户ID:', customerId, '参数:', params);
 
-    // 使用API文档中的4.6获取客户销售记录接口
-    // 通过传递payment_status参数为0或2来获取待付款的记录
+    // 使用salesRecordService中的getSalesRecords函数
+    // 通过传递customer_id和payment_status参数为0或2来获取待付款的记录
     // payment_status: 0-未付款, 1-已付款, 2-部分付款
     const queryParams = {
         ...params,
@@ -115,12 +129,11 @@ export function getCustomerUnpaidRecords(customerId, params = {}) {
         payment_status: [0, 2] // 未付款和部分付款
     };
 
+    // 使用已导入的getSalesRecords函数
+
     return new Promise((resolve, reject) => {
-        http.request({
-            url: '/sales', // 使用销售记录接口
-            method: 'GET',
-            data: queryParams
-        })
+        // 调用getSalesRecords函数获取待付款记录
+        getSalesRecords(queryParams)
         .then(res => {
             console.log('获取客户待付款记录成功:', res);
 
@@ -210,33 +223,10 @@ export function processCustomerRepayment(customerId, data) {
  */
 export function processPayment(paymentData) {
     console.log('调用 processPayment API, 付款数据:', paymentData);
-    return new Promise((resolve, reject) => {
-        try {
-            // 如果有客户ID，使用processCustomerRepayment
-            let paymentPromise;
-            if (paymentData.customerId) {
-                console.log('使用 processCustomerRepayment 处理付款');
-                paymentPromise = processCustomerRepayment(paymentData.customerId, paymentData);
-            } else {
-                // 否则创建一个新的付款记录
-                console.log('使用 createPaymentRecord 创建付款记录');
-                paymentPromise = createPaymentRecord(paymentData);
-            }
 
-            paymentPromise
-                .then(res => {
-                    console.log('处理付款成功:', res);
-                    resolve(res);
-                })
-                .catch(err => {
-                    console.error('处理付款失败:', err);
-                    reject(err);
-                });
-        } catch (error) {
-            console.error('处理付款过程中发生异常:', error);
-            reject(error);
-        }
-    });
+    // 直接调用createPaymentRecord函数，根据API文档中7.3创建付款记录
+    // 前端不需要考虑如何分配金额，直接调用后端就行了
+    return createPaymentRecord(paymentData);
 }
 
 export default {

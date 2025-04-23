@@ -915,12 +915,8 @@ function loadFruitData() {
 				const categoryId = item.category_id;
 				const varietyId = item.variety_id;
 
-				// 构建水果名称，使用品牌+品种名称
-				// 如果没有品牌，则只使用名称
+				// 只使用水果名称，不包含品牌
 				let name = item.name || '';
-				if (item.brand) {
-					name = `${item.brand} ${name}`;
-				}
 
 				return {
 					id: item.id,
@@ -973,8 +969,7 @@ function loadSalesRecords() {
 	// 构建查询参数
 	const params = {
 		page: 1,
-		limit: 5, // 只获取最近5条记录
-		payment_status: '0,1,2' // 获取所有付款状态的记录
+		limit: 5 // 只获取最近5条记录
 	};
 
 	// 如果选择了客户，添加客户ID筛选

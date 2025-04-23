@@ -29,18 +29,18 @@
                 <view
                     v-for="(record, index) in unpaidRecords"
                     :key="index"
-                    :class="['unpaid-record-item', selectedRecords.includes(record.orderNo) ? 'selected' : '']"
+                    :class="['unpaid-record-item', selectedRecords.includes(getRecordId(record)) ? 'selected' : '']"
                     @tap="toggleRecordSelection(record)"
                 >
                     <view class="record-checkbox">
-                        <view class="checkbox-inner" v-if="selectedRecords.includes(record.orderNo)"></view>
+                        <view class="checkbox-inner" v-if="selectedRecords.includes(getRecordId(record))"></view>
                     </view>
                     <view class="record-info">
                         <view class="record-header">
-                            <text class="record-date">{{record.date}}</text>
+                            <text class="record-date">{{getRecordDate(record)}}</text>
                             <text class="record-amount">¥{{formatMoney(getRecordUnpaidAmount(record))}}</text>
                         </view>
-                        <view class="record-product">{{record.productName || record.name}}</view>
+                        <view class="record-product">{{getRecordProductName(record)}}</view>
                     </view>
                 </view>
             </scroll-view>
@@ -72,6 +72,7 @@
                         <text>{{method.label}}</text>
                     </view>
                 </view>
+                <text class="payment-method-selected">当前选择: {{getPaymentMethodLabel(selectedMethod)}}</text>
             </view>
 
             <!-- 备注 -->
@@ -161,7 +162,16 @@ function openWithSelectedRecords(recordIds) {
 
         // 计算选中记录的未付金额总和
         recordIds.forEach(recordId => {
-            const record = props.unpaidRecords.find(r => (r.orderNo === recordId || r.id === recordId));
+            // 尝试使用多种字段匹配记录
+            const record = props.unpaidRecords.find(r => {
+                return r.orderNo === recordId ||
+                       r.id === recordId ||
+                       r.order_no === recordId ||
+                       r.order_id === recordId ||
+                       r.sale_id === recordId ||
+                       getRecordId(r) === recordId;
+            });
+
             if (record) {
                 const unpaidAmount = getRecordUnpaidAmount(record);
                 console.log(`记录 ${recordId} 的未付金额: ${unpaidAmount}`);
@@ -194,9 +204,22 @@ function selectPaymentMethod(method) {
     selectedMethod.value = method;
 }
 
+// 获取记录ID
+function getRecordId(record) {
+    // 尝试不同的ID字段
+    if (record.orderNo) return record.orderNo;
+    if (record.id) return record.id;
+    if (record.order_no) return record.order_no;
+    if (record.order_id) return record.order_id;
+    if (record.sale_id) return record.sale_id;
+
+    // 如果没有找到ID，使用索引作为ID
+    return props.unpaidRecords.indexOf(record).toString();
+}
+
 // 切换记录选择状态
 function toggleRecordSelection(record) {
-    const recordId = record.orderNo || record.id;
+    const recordId = getRecordId(record);
     const index = selectedRecords.value.indexOf(recordId);
 
     if (index === -1) {
@@ -213,25 +236,55 @@ function toggleSelectAll() {
         selectedRecords.value = [];
     } else {
         // 全选
-        selectedRecords.value = props.unpaidRecords.map(record => record.orderNo || record.id);
+        selectedRecords.value = props.unpaidRecords.map(record => getRecordId(record));
     }
 }
 
 // 获取记录的未付金额
 function getRecordUnpaidAmount(record) {
+    console.log('计算记录的未付金额:', record);
+
     // 如果有明确的未付金额字段
     if (record.unpaidAmount !== undefined) {
         return parseFloat(record.unpaidAmount) || 0;
+    }
+    if (record.unpaid_amount !== undefined) {
+        return parseFloat(record.unpaid_amount) || 0;
     }
 
     // 如果有金额和已付金额，计算差额
     if (record.amount !== undefined && record.paidAmount !== undefined) {
         return Math.max(0, parseFloat(record.amount) - parseFloat(record.paidAmount));
     }
+    if (record.amount !== undefined && record.paid_amount !== undefined) {
+        return Math.max(0, parseFloat(record.amount) - parseFloat(record.paid_amount));
+    }
 
     // 如果有总额和已付金额，计算差额
     if (record.total !== undefined && record.paidAmount !== undefined) {
         return Math.max(0, parseFloat(record.total) - parseFloat(record.paidAmount));
+    }
+    if (record.total !== undefined && record.paid_amount !== undefined) {
+        return Math.max(0, parseFloat(record.total) - parseFloat(record.paid_amount));
+    }
+
+    // 如果有payment_status字段，根据付款状态判断
+    if (record.payment_status !== undefined) {
+        const status = parseInt(record.payment_status);
+        // 如果是未付款(0)，返回全额
+        if (status === 0) {
+            if (record.amount !== undefined) return parseFloat(record.amount) || 0;
+            if (record.total !== undefined) return parseFloat(record.total) || 0;
+        }
+        // 如果是部分付款(2)，计算差额
+        else if (status === 2) {
+            if (record.amount !== undefined && record.paid_amount !== undefined) {
+                return Math.max(0, parseFloat(record.amount) - parseFloat(record.paid_amount));
+            }
+            if (record.total !== undefined && record.paid_amount !== undefined) {
+                return Math.max(0, parseFloat(record.total) - parseFloat(record.paid_amount));
+            }
+        }
     }
 
     // 如果只有金额或总额，且状态为未付款或未回款
@@ -240,7 +293,16 @@ function getRecordUnpaidAmount(record) {
         return parseFloat(record.amount || record.total);
     }
 
+    // 如果没有明确的金额信息，尝试使用金额字段
+    if (record.amount !== undefined) {
+        return parseFloat(record.amount) || 0;
+    }
+    if (record.total !== undefined) {
+        return parseFloat(record.total) || 0;
+    }
+
     // 如果没有明确的金额信息，返回0
+    console.warn('无法计算记录的未付金额:', record);
     return 0;
 }
 
@@ -265,15 +327,17 @@ function confirmPayment() {
         return;
     }
 
-    // 构建支付数据
+    // 根据API文档中7.3创建付款记录的要求构建支付数据
+    // 使用下划线命名法而不是驼峰命名法
     const paymentData = {
-        customerId: props.customer.id,
-        customerName: props.customer.name,
+        customer_id: props.customer.id,
         amount: amount,
-        paymentMethod: getPaymentMethodLabel(selectedMethod.value),
+        payment_method: selectedMethod.value, // 使用原始的支付方式值：cash、wechat、alipay、bank_transfer
         remark: paymentRemark.value,
-        selectedRecords: selectedRecords.value.length > 0 ? selectedRecords.value : null
+        related_sales: selectedRecords.value.length > 0 ? selectedRecords.value : []
     };
+
+    console.log('构建的付款数据:', paymentData);
 
     // 触发确认事件
     emit('confirm', paymentData);
@@ -283,9 +347,49 @@ function confirmPayment() {
 }
 
 // 获取支付方式标签
+// 注意：这个函数保留作为展示用途，在UI中显示支付方式的中文名称
 function getPaymentMethodLabel(value) {
     const method = paymentMethods.find(m => m.value === value);
     return method ? method.label : '现金';
+}
+
+// 获取记录日期
+function getRecordDate(record) {
+    // 尝试不同的日期字段
+    if (record.date) return record.date;
+    if (record.createDate) return record.createDate;
+    if (record.createTime) return record.createTime;
+    if (record.saleDate) return record.saleDate;
+    if (record.sale_date) return record.sale_date;
+    if (record.create_time) return record.create_time;
+
+    // 如果有时间戳
+    if (record.timestamp) {
+        const date = new Date(record.timestamp);
+        return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+    }
+
+    // 如果没有日期，返回默认值
+    return '';
+}
+
+// 获取记录产品名称
+function getRecordProductName(record) {
+    // 尝试不同的产品名称字段
+    if (record.productName) return record.productName;
+    if (record.name) return record.name;
+    if (record.fruitName) return record.fruitName;
+    if (record.fruit_name) return record.fruit_name;
+    if (record.title) return record.title;
+    if (record.product_name) return record.product_name;
+
+    // 尝试组合字段
+    if (record.brand && record.variety) {
+        return `${record.brand}${record.variety}`;
+    }
+
+    // 如果没有名称，返回默认值
+    return '水果';
 }
 
 // 格式化金额
@@ -487,6 +591,13 @@ defineExpose({
     display: flex;
     flex-wrap: wrap;
     gap: 20rpx;
+    margin-bottom: 10rpx;
+}
+
+.payment-method-selected {
+    font-size: 24rpx;
+    color: #6B7280;
+    margin-top: 10rpx;
 }
 
 .payment-method-option {

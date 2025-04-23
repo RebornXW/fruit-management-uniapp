@@ -34,56 +34,135 @@
 			</view>
 		</view>
 
-		<!-- 销售数据统计卡片 - 优化版 -->
+		<!-- 销售数据统计 - 创意简约版 -->
 		<view class="px-4 -mt-8 mb-4">
-			<view class="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
-				<view class="flex justify-between items-center mb-4">
-					<view class="flex items-center">
-						<view class="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center mr-3 shadow-sm">
-							<uni-icons type="chart" size="20" color="#FFFFFF"></uni-icons>
-						</view>
-						<text class="font-bold text-gray-800 text-base">销售数据统计</text>
-					</view>
-					<view class="flex items-center">
-						<view class="text-sm bg-teal-50 rounded-full px-3 py-1 shadow-sm border border-teal-100">
-							<picker @change="onReportTypeChange" :value="reportTypeIndex" :range="reportTypes">
-								<view class="flex items-center">
-									<text class="text-teal-600 font-medium">{{reportTypes[reportTypeIndex]}}</text>
-									<uni-icons type="down" size="12" color="#0D9488" class="ml-1"></uni-icons>
-								</view>
-							</picker>
-						</view>
+			<view class="sales-dashboard bg-white rounded-2xl shadow-lg overflow-hidden">
+				<!-- 标题区域与时间选择器 -->
+				<view class="sales-dashboard-header">
+					<text class="dashboard-title">销售数据统计</text>
+					<view class="report-tabs">
+						<view class="report-tab" :class="{active: reportTypeIndex === 0}" @tap="setReportType(0)">日报</view>
+						<view class="report-tab" :class="{active: reportTypeIndex === 1}" @tap="setReportType(1)">月报</view>
+						<view class="report-tab" :class="{active: reportTypeIndex === 2}" @tap="setReportType(2)">年报</view>
 					</view>
 				</view>
 
-				<!-- 优化的数据卡片区域 -->
-				<view class="sales-stats-grid">
-					<!-- 销售总额卡片 -->
-					<view class="sales-stat-card bg-gradient-to-br from-teal-500 to-teal-700 rounded-xl p-4 shadow-sm border border-teal-600">
-						<view class="flex items-center justify-between mb-2">
-							<text class="text-xs text-white font-medium">销售总额</text>
-							<view class="flex items-center bg-teal-400 bg-opacity-30 rounded-full px-2 py-0.5 border border-white border-opacity-20" v-if="getCurrentData().amountTrend !== 0">
-								<uni-icons :type="getCurrentData().amountTrend > 0 ? 'top' : 'bottom'" size="12" color="#ffffff"></uni-icons>
-								<text class="text-xs text-white ml-1">{{Math.abs(getCurrentData().amountTrend)}}%</text>
+				<!-- 滚动切换区域 -->
+				<swiper class="report-swiper" :current="reportTypeIndex" @change="onSwiperChange">
+					<!-- 日报页 -->
+					<swiper-item>
+						<view class="dashboard-content">
+							<!-- 左侧目标完成环形图 -->
+							<view class="dashboard-left">
+								<view class="circle-progress-wrapper" @click="showTargetSetting">
+									<view class="circle-progress-container">
+										<view class="circle-bg"></view>
+										<view class="circle-progress-mask" :style="{transform: 'rotate(' + (getCurrentData().targetCompletion * 3.6) + 'deg)'}"></view>
+										<view class="circle-content">
+											<text class="circle-percentage">{{getCurrentData().targetCompletion}}%</text>
+											<text class="circle-label">目标完成</text>
+										</view>
+									</view>
+								</view>
 							</view>
-						</view>
-						<text class="text-2xl font-bold text-white mt-1">¥{{getCurrentData().amount}}</text>
-					</view>
 
-					<!-- 销售量卡片 -->
-					<view class="sales-stat-card bg-gradient-to-br from-cyan-50 to-teal-50 border border-teal-100 rounded-xl p-4 shadow-sm">
-						<view class="flex items-center justify-between mb-2">
-							<text class="text-xs text-teal-700 font-medium">销售量</text>
-							<view class="flex items-center" v-if="getCurrentData().volumeTrend !== 0">
-								<view class="flex items-center rounded-full px-2 py-0.5 border" :class="getCurrentData().volumeTrend > 0 ? 'bg-green-100 border-green-200' : 'bg-red-100 border-red-200'">
-									<uni-icons :type="getCurrentData().volumeTrend > 0 ? 'top' : 'bottom'" size="12" :color="getCurrentData().volumeTrend > 0 ? '#10B981' : '#EF4444'"></uni-icons>
-									<text class="text-xs ml-1" :class="getCurrentData().volumeTrend > 0 ? 'text-green-600' : 'text-red-600'">{{Math.abs(getCurrentData().volumeTrend)}}%</text>
+							<!-- 右侧数据指标区 -->
+							<view class="dashboard-right">
+								<!-- 总销售额 -->
+								<view class="metric-item sales-item">
+									<view class="metric-header">
+										<text class="metric-label">总销售额</text>
+									</view>
+									<text class="metric-value sales-value">¥{{getCurrentData().amount}}</text>
+								</view>
+
+								<!-- 预计提成收入 -->
+								<view class="metric-item commission-item">
+									<view class="metric-header">
+										<text class="metric-label">预计提成收入</text>
+									</view>
+									<text class="metric-value commission-value">¥{{getCurrentData().commission}}</text>
 								</view>
 							</view>
 						</view>
-						<text class="text-2xl font-bold text-teal-800 mt-1">{{getCurrentData().volume}}箱</text>
-					</view>
-				</view>
+					</swiper-item>
+
+					<!-- 月报页 -->
+					<swiper-item>
+						<view class="dashboard-content">
+							<!-- 左侧目标完成环形图 -->
+							<view class="dashboard-left">
+								<view class="circle-progress-wrapper" @click="showTargetSetting">
+									<view class="circle-progress-container">
+										<view class="circle-bg"></view>
+										<view class="circle-progress-mask" :style="{transform: 'rotate(' + (getCurrentData().targetCompletion * 3.6) + 'deg)'}"></view>
+										<view class="circle-content">
+											<text class="circle-percentage">{{getCurrentData().targetCompletion}}%</text>
+											<text class="circle-label">目标完成</text>
+										</view>
+									</view>
+								</view>
+							</view>
+
+							<!-- 右侧数据指标区 -->
+							<view class="dashboard-right">
+								<!-- 总销售额 -->
+								<view class="metric-item sales-item-monthly">
+									<view class="metric-header">
+										<text class="metric-label">总销售额</text>
+									</view>
+									<text class="metric-value sales-value-monthly">¥{{getCurrentData().amount}}</text>
+								</view>
+
+								<!-- 预计提成收入 -->
+								<view class="metric-item commission-item-monthly">
+									<view class="metric-header">
+										<text class="metric-label">预计提成收入</text>
+									</view>
+									<text class="metric-value commission-value-monthly">¥{{getCurrentData().commission}}</text>
+								</view>
+							</view>
+						</view>
+					</swiper-item>
+
+					<!-- 年报页 -->
+					<swiper-item>
+						<view class="dashboard-content">
+							<!-- 左侧目标完成环形图 -->
+							<view class="dashboard-left">
+								<view class="circle-progress-wrapper" @click="showTargetSetting">
+									<view class="circle-progress-container">
+										<view class="circle-bg"></view>
+										<view class="circle-progress-mask" :style="{transform: 'rotate(' + (getCurrentData().targetCompletion * 3.6) + 'deg)'}"></view>
+										<view class="circle-content">
+											<text class="circle-percentage">{{getCurrentData().targetCompletion}}%</text>
+											<text class="circle-label">目标完成</text>
+										</view>
+									</view>
+								</view>
+							</view>
+
+							<!-- 右侧数据指标区 -->
+							<view class="dashboard-right">
+								<!-- 总销售额 -->
+								<view class="metric-item sales-item-yearly">
+									<view class="metric-header">
+										<text class="metric-label">总销售额</text>
+									</view>
+									<text class="metric-value sales-value-yearly">¥{{getCurrentData().amount}}</text>
+								</view>
+
+								<!-- 预计提成收入 -->
+								<view class="metric-item commission-item-yearly">
+									<view class="metric-header">
+										<text class="metric-label">预计提成收入</text>
+									</view>
+									<text class="metric-value commission-value-yearly">¥{{getCurrentData().commission}}</text>
+								</view>
+							</view>
+						</view>
+					</swiper-item>
+				</swiper>
 			</view>
 		</view>
 
@@ -780,7 +859,7 @@ const staffList = ref([
 const staffIndex = ref(0);
 
 // 报表类型
-const reportTypes = ['日报', '周报', '月报'];
+const reportTypes = ['日报', '月报', '年报'];
 const reportTypeIndex = ref(0);
 
 // 销售数据面板
@@ -788,26 +867,29 @@ const dashboardData = reactive({
 	daily: {
 		amount: '8,356',
 		amountTrend: 12.5,
-		volume: 156,
-		volumeTrend: -8.2,
-		customers: 56,
-		customersTrend: -3.1
-	},
-	weekly: {
-		amount: '58,420',
-		amountTrend: 8.7,
-		volume: 1024,
-		volumeTrend: -5.3,
-		customers: 128,
-		customersTrend: -2.1
+		targetCompletion: 85,
+		commission: '334.24',  // 预计提成收入（4%）
+		commissionTrend: 15.8,
+		topProduct: '阿克苏苹果',
+		topProductQuantity: 52
 	},
 	monthly: {
 		amount: '246,850',
 		amountTrend: 15.2,
-		volume: 4268,
-		volumeTrend: 11.5,
-		customers: 320,
-		customersTrend: 4.8
+		targetCompletion: 92,
+		commission: '9,874.00',  // 预计提成收入（4%）
+		commissionTrend: 18.3,
+		topProduct: '阿克苏苹果',
+		topProductQuantity: 320
+	},
+	yearly: {
+		amount: '2,985,600',
+		amountTrend: 22.8,
+		targetCompletion: 75,
+		commission: '119,424.00',  // 预计提成收入（4%）
+		commissionTrend: 25.6,
+		topProduct: '阿克苏苹果',
+		topProductQuantity: 3850
 	}
 });
 
@@ -840,13 +922,43 @@ onMounted(() => {
 	uni.$on('onShow', checkLoginStatus);
 
 	// 监听用户信息更新事件
-	uni.$on('userInfoUpdated', loadUserInfo);
+	uni.$on('userInfoUpdated', (updatedInfo) => {
+		if (updatedInfo) {
+			// 如果提供了更新的用户信息，直接使用
+			console.log('收到用户信息更新事件，带有数据:', updatedInfo);
+			userData.value = {
+				name: updatedInfo.name,
+				shopName: updatedInfo.stallName,
+				avatar: updatedInfo.avatar || '/static/default-avatar.png',
+				role: updatedInfo.role,
+				phone: updatedInfo.phone || '',
+				username: updatedInfo.username || '',
+				lastLogin: updatedInfo.lastLogin || ''
+			};
+
+			// 更新本地存储
+			uni.setStorageSync('loginUser', {
+				id: updatedInfo.id,
+				name: updatedInfo.name,
+				storeName: updatedInfo.stallName,
+				avatar: updatedInfo.avatar || '/static/default-avatar.png',
+				role: updatedInfo.role,
+				phone: updatedInfo.phone || '',
+				username: updatedInfo.username || '',
+				last_login: updatedInfo.lastLogin || ''
+			});
+		} else {
+			// 如果没有提供更新的用户信息，重新加载
+			console.log('收到用户信息更新事件，无数据，重新加载');
+			loadUserInfo();
+		}
+	});
 });
 
 // 在组件卸载时移除监听器
 onUnmounted(() => {
 	uni.$off('onShow', checkLoginStatus);
-	uni.$off('userInfoUpdated', loadUserInfo);
+	uni.$off('userInfoUpdated');
 });
 
 // 加载用户信息
@@ -948,6 +1060,12 @@ function onReportTypeChange(e) {
 	refreshDashboardData();
 }
 
+// 设置报表类型
+function setReportType(index) {
+	reportTypeIndex.value = index;
+	refreshDashboardData();
+}
+
 // 轮播切换
 function onSwiperChange(e) {
 	reportTypeIndex.value = e.detail.current;
@@ -967,13 +1085,13 @@ function refreshDashboardData() {
 
 // 获取当前选择的报表类型的数据
 function getCurrentData() {
-	const reportType = reportTypes[reportTypeIndex.value];
-	if (reportType === '日报') {
-		return dashboardData.value.daily;
-	} else if (reportType === '周报') {
-		return dashboardData.value.weekly;
+	const index = reportTypeIndex.value;
+	if (index === 0) {
+		return dashboardData.daily;
+	} else if (index === 1) {
+		return dashboardData.monthly;
 	} else {
-		return dashboardData.value.monthly;
+		return dashboardData.yearly;
 	}
 }
 
@@ -1768,23 +1886,327 @@ function closePopup() {
 	white-space: nowrap;
 }
 
-/* 销售数据统计卡片样式 */
-.sales-stats-grid {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 16rpx;
+/* 销售数据统计创意简约版样式 */
+.sales-dashboard {
+	position: relative;
+	overflow: hidden;
+	padding: 0 0 30rpx 0;
+	background: #ffffff;
+	border-radius: 24rpx;
 }
 
-.sales-stat-card {
-	border-radius: 16rpx;
-	padding: 20rpx;
-	box-shadow: 0 4rpx 6rpx rgba(0, 0, 0, 0.05);
-	transition: all 0.2s ease;
+/* 标题区域样式 */
+.sales-dashboard-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 24rpx 30rpx;
+	border-bottom: 1px solid #f3f4f6;
+	position: relative;
 }
 
-.sales-stat-card:active {
-	transform: scale(0.98);
+.dashboard-title {
+	font-size: 32rpx;
+	font-weight: 600;
+	color: #1f2937;
+	position: relative;
+	padding-left: 20rpx;
 }
+
+.dashboard-title::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 8rpx;
+	height: 32rpx;
+	background: linear-gradient(to bottom, #0ea5e9, #0284c7);
+	border-radius: 4rpx;
+}
+
+.report-tabs {
+	display: flex;
+	align-items: center;
+	background-color: #f3f4f6;
+	border-radius: 30rpx;
+	padding: 4rpx;
+}
+
+.report-tab {
+	padding: 8rpx 20rpx;
+	font-size: 24rpx;
+	color: #6b7280;
+	border-radius: 26rpx;
+	transition: all 0.3s ease;
+}
+
+.report-tab.active {
+	background-color: #ffffff;
+	color: #0d9488;
+	font-weight: 500;
+	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+}
+
+.report-swiper {
+	height: 300rpx;
+}
+
+/* 主要内容区域样式 */
+.dashboard-content {
+	display: flex;
+	padding: 30rpx;
+	position: relative;
+}
+
+/* 左侧环形图样式 */
+.dashboard-left {
+	width: 40%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.circle-progress-wrapper {
+	position: relative;
+	width: 180rpx;
+	height: 180rpx;
+}
+
+.circle-progress-container {
+	width: 100%;
+	height: 100%;
+	position: relative;
+	border-radius: 50%;
+	overflow: hidden;
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.circle-bg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	background-color: #e5e7eb;
+	z-index: 1;
+	box-shadow: inset 0 0 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.circle-progress {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 50%;
+	height: 100%;
+	background-color: transparent;
+	transform-origin: right center;
+	z-index: 2;
+	transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.circle-progress::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: -100%;
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	background: linear-gradient(135deg, #597fbd, #1d4ed8, #1e40af);
+	box-shadow: 0 0 100rpx rgba(255, 0, 0, 0.5);
+}
+
+.circle-content {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 80%;
+	height: 80%;
+	border-radius: 50%;
+	background-color: white;
+	box-shadow: inset 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.circle-percentage {
+	font-size: 40rpx;
+	font-weight: bold;
+	color: #0284c7;
+	line-height: 1;
+}
+
+.circle-label {
+	font-size: 20rpx;
+	color: #6b7280;
+	margin-top: 8rpx;
+}
+
+/* 右侧指标区样式 */
+.dashboard-right {
+	width: 60%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 24rpx;
+	padding-left: 60rpx;
+	padding-right: 0rpx;
+}
+
+.metric-item {
+	position: relative;
+	transition: all 0.3s ease;
+}
+
+.metric-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8rpx;
+}
+
+.metric-label {
+	font-size: 24rpx;
+	color: #6b7280;
+	font-weight: 500;
+}
+
+.trend-indicator {
+	font-size: 20rpx;
+	font-weight: 500;
+	padding: 2rpx 10rpx;
+	border-radius: 20rpx;
+}
+
+.positive {
+	color: #10b981;
+	background-color: #ecfdf5;
+}
+
+.negative {
+	color: #ef4444;
+	background-color: #fef2f2;
+}
+
+.metric-value {
+	font-size: 40rpx;
+	font-weight: bold;
+	display: block;
+	position: relative;
+}
+
+/* 日报样式 */
+.sales-value {
+	color: #0ea5e9;
+	position: relative;
+	padding-bottom: 12rpx;
+}
+
+.sales-value::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 60%;
+	height: 4rpx;
+	background: linear-gradient(to right, #0ea5e9, transparent);
+	border-radius: 2rpx;
+}
+
+.commission-value {
+	color: #8b5cf6;
+	position: relative;
+	padding-bottom: 12rpx;
+}
+
+.commission-value::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 60%;
+	height: 4rpx;
+	background: linear-gradient(to right, #8b5cf6, transparent);
+	border-radius: 2rpx;
+}
+
+/* 月报样式 */
+.sales-value-monthly {
+	color: #f59e0b;
+	position: relative;
+	padding-bottom: 12rpx;
+}
+
+.sales-value-monthly::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 60%;
+	height: 4rpx;
+	background: linear-gradient(to right, #f59e0b, transparent);
+	border-radius: 2rpx;
+}
+
+.commission-value-monthly {
+	color: #10b981;
+	position: relative;
+	padding-bottom: 12rpx;
+}
+
+.commission-value-monthly::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 60%;
+	height: 4rpx;
+	background: linear-gradient(to right, #10b981, transparent);
+	border-radius: 2rpx;
+}
+
+/* 年报样式 */
+.sales-value-yearly {
+	color: #ec4899;
+	position: relative;
+	padding-bottom: 12rpx;
+}
+
+.sales-value-yearly::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 60%;
+	height: 4rpx;
+	background: linear-gradient(to right, #ec4899, transparent);
+	border-radius: 2rpx;
+}
+
+.commission-value-yearly {
+	color: #3b82f6;
+	position: relative;
+	padding-bottom: 12rpx;
+}
+
+.commission-value-yearly::after {
+	content: '';
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 60%;
+	height: 4rpx;
+	background: linear-gradient(to right, #3b82f6, transparent);
+	border-radius: 2rpx;
+}
+
+
 
 /* 数据摘要卡片样式优化 */
 .data-item {
@@ -1938,7 +2360,7 @@ function closePopup() {
 
 .popup-header {
 	position: relative;
-	background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+	background: linear-gradient(135deg, #66b257 0%, #0F766E 100%);
 	padding: 30rpx 40rpx;
 	border-bottom: 1rpx solid rgba(255, 255, 255, 0.1);
 }

@@ -34,7 +34,7 @@
 				<view class="info-item">
 					<text class="item-label">档口名称</text>
 					<view class="item-content flex items-center">
-						<text class="item-value">{{userInfo.shopName}}</text>
+						<text class="item-value">{{userInfo.stallName}}</text>
 					</view>
 				</view>
 
@@ -75,11 +75,12 @@ export default {
 	setup() {
 		const userInfo = ref({
 			name: '默认用户',
-			shopName: '水果档口',
+			stallName: '水果档口',
 			avatar: '/static/default-avatar.png',
 			role: '管理员',
 			phone: '',
-			username: 'admin'
+			username: 'admin',
+			id: null
 		});
 
 		// 生命周期
@@ -94,12 +95,14 @@ export default {
 			getUserProfile().then(res => {
 				userInfo.value = {
 					name: res.name || '默认用户',
-					shopName: res.storeName || '水果档口',
+					stallName: res.stall_name || '水果档口',
 					avatar: res.avatar || '/static/default-avatar.png',
 					role: res.role || '管理员',
 					phone: res.phone || '',
-					username: res.username || 'admin'
+					username: res.username || 'admin',
+					id: res.id
 				};
+				console.log('获取用户信息成功:', res);
 				uni.hideLoading();
 			}).catch(err => {
 				console.error('获取用户信息失败', err);
@@ -185,21 +188,23 @@ export default {
 				return;
 			}
 
-			// 准备要提交的数据
+			// 准备要提交的数据，使用下划线命名法
 			const profileData = {
 				name: userInfo.value.name,
-				phone: userInfo.value.phone
+				phone: userInfo.value.phone,
+				stall_name: userInfo.value.stallName
 			};
 
 			// 如果头像发生了变化且是本地文件路径
-			if (userInfo.value.avatar && userInfo.value.avatar.startsWith('file://')) {
+			if (userInfo.value.avatar && (userInfo.value.avatar.startsWith('file://') || userInfo.value.avatar.startsWith('http://tmp'))) {
 				// 显示上传中提示
 				uni.showLoading({ title: '正在上传头像...' });
 
 				// 上传头像
 				uploadAvatar(userInfo.value.avatar).then(res => {
 					// 头像上传成功，将返回的URL添加到要提交的数据中
-					profileData.avatar = res.avatarUrl;
+					profileData.avatar = res.avatar_url || res.avatarUrl;
+					console.log('头像上传成功:', res);
 
 					// 提交个人信息
 					submitProfileData(profileData);
@@ -220,12 +225,23 @@ export default {
 		// 提交个人信息到API
 		const submitProfileData = (profileData) => {
 			uni.showLoading({ title: '正在保存...' });
+			console.log('提交的个人信息数据:', profileData);
 
-			updateUserProfile(profileData).then(() => {
+			updateUserProfile(profileData).then((res) => {
 				uni.hideLoading();
+				console.log('个人信息更新成功:', res);
+
+				// 更新本地用户信息
+				userInfo.value = {
+					...userInfo.value,
+					name: res.name || userInfo.value.name,
+					phone: res.phone || userInfo.value.phone,
+					stallName: res.stall_name || userInfo.value.stallName,
+					avatar: res.avatar || userInfo.value.avatar
+				};
 
 				// 通知个人中心页面刷新
-				uni.$emit('userInfoUpdated');
+				uni.$emit('userInfoUpdated', userInfo.value);
 
 				// 显示成功提示
 				uni.showToast({

@@ -1448,6 +1448,10 @@
 > 注意：
 > 1. `recordId`（销售记录编号）由系统自动生成，格式为"S + 年月日 + 3位序号"，例如"S20230602001"
 > 2. `sale_datetime`（销售时间）由系统自动生成为当前时间，不需要在请求中提供
+> 3. `payment_status`（付款状态）的值说明：
+>    - "0": 未付款
+>    - "1": 已付款
+>    - "2": 部分付款
 
 - **响应示例**:
 
@@ -1510,7 +1514,7 @@
     "quantity": 20,
     "unit_price": 42.00,
     "amount": 840.00,
-    "payment_status": 0,
+    "payment_status": "0",
     "remark": "批发订单-已修改",
     "created_at": "2023-06-02T09:15:00Z",
     "updated_at": "2023-06-02T10:30:00Z"
@@ -1983,19 +1987,18 @@
 - **方法**: GET
 - **描述**: 获取付款记录列表
 - **请求参数**:
-  - `page`: 页码
-  - `limit`: 每页记录数
-  - `keyword`: 搜索关键词（可选）
-  - `customer_id`: 客户ID筛选（可选）
-  - `payment_method`: 付款方式筛选（可选）
-  - `start_date`: 开始日期（可选）
-  - `end_date`: 结束日期（可选）
+  - `page`: 页码，默认为1
+  - `limit`: 每页记录数，默认为20
+  - `keyword`: 关键字搜索（付款编号），可选
+  - `customer_id`: 客户ID过滤，可选
+  - `operator_id`: 操作员ID过滤，可选
+  - `payment_method`: 付款方式过滤，可选
 - **响应示例**:
 
 ```json
 {
-  "code": 200,
-  "message": "获取成功",
+  "code": 0,
+  "message": "",
   "data": {
     "total": 100,
     "pages": 5,
@@ -2003,30 +2006,18 @@
     "limit": 20,
     "items": [
       {
-        "id": 60,
-        "payment_id": "P20230603001",
+        "id": 1,
+        "payment_id": "P20230601001",
         "customer_id": 1,
-        "customer_name": "客户A",
-        "payment_date": "2023-06-03",
-        "amount": 540.00,
-        "payment_method": "银行转账",
-        "remark": "剩余付款",
-        "created_at": "2023-06-03T14:20:00Z",
-        "updated_at": "2023-06-03T14:20:00Z"
+        "amount": 100.00,
+        "payment_method": "cash",
+        "payment_datetime": "2023-06-01T10:30:00",
+        "operator_id": 1,
+        "remark": "备注信息",
+        "created_at": "2023-06-01T10:30:00",
+        "updated_at": "2023-06-01T10:30:00"
       },
-      {
-        "id": 56,
-        "payment_id": "P20230601002",
-        "customer_id": 1,
-        "customer_name": "客户A",
-        "payment_date": "2023-06-01",
-        "amount": 300.00,
-        "payment_method": "微信支付",
-        "remark": "部分付款",
-        "created_at": "2023-06-01T11:00:00Z",
-        "updated_at": "2023-06-01T11:00:00Z"
-      }
-      // 更多付款记录...
+      // ...更多记录
     ]
   }
 }
@@ -2042,31 +2033,19 @@
 
 ```json
 {
-  "code": 200,
-  "message": "获取成功",
+  "code": 0,
+  "message": "",
   "data": {
-    "id": 60,
-    "payment_id": "P20230603001",
+    "id": 1,
+    "payment_id": "P20230601001",
     "customer_id": 1,
-    "customer_name": "客户A",
-    "customer_phone": "13800138000",
-    "payment_date": "2023-06-03",
-    "amount": 540.00,
-    "payment_method": "银行转账",
-    "remark": "剩余付款",
-    "created_by": "admin",
-    "created_at": "2023-06-03T14:20:00Z",
-    "updated_at": "2023-06-03T14:20:00Z",
-    "related_sales": [
-      {
-        "id": 102,
-        "record_id": "S20230602001",
-        "sale_date": "2023-06-02",
-        "fruit_name": "橙子",
-        "amount": 840.00,
-        "applied_amount": 540.00
-      }
-    ]
+    "amount": 100.00,
+    "payment_method": "cash",
+    "payment_datetime": "2023-06-01T10:30:00",
+    "operator_id": 1,
+    "remark": "备注信息",
+    "created_at": "2023-06-01T10:30:00",
+    "updated_at": "2023-06-01T10:30:00"
   }
 }
 ```
@@ -2080,12 +2059,12 @@
 
 ```json
 {
-  "customer_id": 2,
-  "payment_date": "2023-06-04",
-  "amount": 320.00,
-  "payment_method": "支付宝",
-  "remark": "全额付款",
-  "related_sales": [100]  // 关联的销售记录ID数组（可选）
+  "customer_id": "1",             // 客户ID（必填）
+  "amount": 100.00,               // 付款金额（必填）
+  "payment_method": "cash",       // 付款方式（必填）：cash(现金)、wechat(微信)、alipay(支付宝)、bank_transfer(银行转账)、other(其他)
+  "operator_id": "1",             // 操作员ID（必填）
+  "remark": "备注信息",           // 备注（可选）
+  "related_sales": ["1", "2", "3"] // 关联的销售记录ID列表（可选）
 }
 ```
 
@@ -2093,29 +2072,19 @@
 
 ```json
 {
-  "code": 200,
+  "code": 0,
   "message": "创建成功",
   "data": {
-    "id": 61,
-    "payment_id": "P20230604001",
-    "customer_id": 2,
-    "customer_name": "客户B",
-    "payment_date": "2023-06-04",
-    "amount": 320.00,
-    "payment_method": "支付宝",
-    "remark": "全额付款",
-    "created_at": "2023-06-04T09:15:00Z",
-    "updated_at": "2023-06-04T09:15:00Z",
-    "related_sales": [
-      {
-        "id": 100,
-        "record_id": "S20230531005",
-        "sale_date": "2023-05-31",
-        "fruit_name": "香蕉",
-        "amount": 320.00,
-        "applied_amount": 320.00
-      }
-    ]
+    "id": 1,
+    "payment_id": "P20230601001",
+    "customer_id": 1,
+    "amount": 100.00,
+    "payment_method": "cash",
+    "payment_datetime": "2023-06-01T10:30:00",
+    "operator_id": 1,
+    "remark": "备注信息",
+    "created_at": "2023-06-01T10:30:00",
+    "updated_at": "2023-06-01T10:30:00"
   }
 }
 ```
@@ -2129,11 +2098,13 @@
 
 ```json
 {
-  "customer_id": 2,
-  "payment_date": "2023-06-04",
-  "amount": 320.00,
-  "payment_method": "微信支付",
-  "remark": "全额付款-已修改"
+  "payment_id": "P20230601001",    // 付款编号（必填）
+  "customer_id": "1",             // 客户ID（必填）
+  "amount": 100.00,               // 付款金额（必填）
+  "payment_method": "cash",       // 付款方式（必填）
+  "payment_datetime": "2023-06-01T10:30:00", // 付款时间（必填）
+  "operator_id": "1",             // 操作员ID（必填）
+  "remark": "备注信息"            // 备注（可选）
 }
 ```
 
@@ -2141,19 +2112,19 @@
 
 ```json
 {
-  "code": 200,
+  "code": 0,
   "message": "更新成功",
   "data": {
-    "id": 61,
-    "payment_id": "P20230604001",
-    "customer_id": 2,
-    "customer_name": "客户B",
-    "payment_date": "2023-06-04",
-    "amount": 320.00,
-    "payment_method": "微信支付",
-    "remark": "全额付款-已修改",
-    "created_at": "2023-06-04T09:15:00Z",
-    "updated_at": "2023-06-04T10:30:00Z"
+    "id": 1,
+    "payment_id": "P20230601001",
+    "customer_id": 1,
+    "amount": 100.00,
+    "payment_method": "cash",
+    "payment_datetime": "2023-06-01T10:30:00",
+    "operator_id": 1,
+    "remark": "备注信息",
+    "created_at": "2023-06-01T10:30:00",
+    "updated_at": "2023-06-01T10:30:00"
   }
 }
 ```
@@ -2186,31 +2157,26 @@
 
 ```json
 {
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "total": 1,
-    "pages": 1,
-    "current": 1,
-    "limit": 20,
-    "items": [
-      {
-        "id": 102,
-        "record_id": "S20230602001",
-        "customer_id": 1,
-        "customer_name": "客户A",
-        "sale_date": "2023-06-02",
-        "fruit_name": "橙子",
-        "quantity": 20,
-        "unit_price": 42.00,
-        "amount": 840.00,
-        "applied_amount": 540.00,
-        "payment_status": 2,
-        "created_at": "2023-06-02T09:15:00Z",
-        "updated_at": "2023-06-03T14:20:00Z"
-      }
-    ]
-  }
+  "code": 0,
+  "message": "",
+  "data": [
+    {
+      "id": 1,
+      "payment_id": 1,
+      "sale_id": 1,
+      "sale_record_id": "S20230601001",
+      "amount": 50.00,
+      "created_at": "2023-06-01T10:30:00"
+    },
+    {
+      "id": 2,
+      "payment_id": 1,
+      "sale_id": 2,
+      "sale_record_id": "S20230601002",
+      "amount": 50.00,
+      "created_at": "2023-06-01T10:30:00"
+    }
+  ]
 }
 ```
 

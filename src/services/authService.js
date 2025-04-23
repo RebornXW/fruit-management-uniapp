@@ -70,52 +70,37 @@ export function changePassword(oldPassword, newPassword, confirmPassword) {
 }
 
 /**
- * 获取用户头像上传地址
- * @returns {Promise} 上传地址
- */
-export function getAvatarUploadUrl() {
-  return http.request({
-    url: '/auth/avatar-upload-url',
-    method: 'GET'
-  });
-}
-
-/**
  * 上传用户头像
  * @param {string} filePath 文件路径
  * @returns {Promise} 上传结果
  */
 export function uploadAvatar(filePath) {
   return new Promise((resolve, reject) => {
-    getAvatarUploadUrl().then(uploadUrl => {
-      uni.uploadFile({
-        url: uploadUrl,
-        filePath: filePath,
-        name: 'avatar',
-        header: {
-          'Authorization': `Bearer ${uni.getStorageSync('token') || ''}`
-        },
-        success: (res) => {
-          try {
-            const data = JSON.parse(res.data);
-            if (data.code === 200) {
-              resolve(data.data);
-            } else {
-              uni.showToast({ title: data.message || '上传失败', icon: 'none' });
-              reject(data);
-            }
-          } catch (e) {
-            uni.showToast({ title: '上传失败', icon: 'none' });
-            reject(e);
+    uni.uploadFile({
+      url: http.BASE_URL + '/auth/avatar',
+      filePath: filePath,
+      name: 'avatar',
+      header: {
+        'Authorization': `Bearer ${uni.getStorageSync('token') || ''}`
+      },
+      success: (res) => {
+        try {
+          const data = JSON.parse(res.data);
+          if (data.code === 200) {
+            resolve(data.data);
+          } else {
+            uni.showToast({ title: data.message || '上传失败', icon: 'none' });
+            reject(data);
           }
-        },
-        fail: (err) => {
-          uni.showToast({ title: '网络错误', icon: 'none' });
-          reject(err);
+        } catch (e) {
+          uni.showToast({ title: '上传失败', icon: 'none' });
+          reject(e);
         }
-      });
-    }).catch(err => {
-      reject(err);
+      },
+      fail: (err) => {
+        uni.showToast({ title: '网络错误', icon: 'none' });
+        reject(err);
+      }
     });
   });
 }
@@ -126,6 +111,5 @@ export default {
   getUserProfile,
   updateUserProfile,
   changePassword,
-  getAvatarUploadUrl,
   uploadAvatar
 };
