@@ -71,15 +71,7 @@
 			<view class="data-summary">
 				<view class="summary-item">
 					<text class="summary-label">总计:</text>
-					<text class="summary-value">{{filteredRecords.length}} 条</text>
-				</view>
-				<view class="summary-item" v-if="showTotal">
-					<text class="summary-label">{{totalLabel}}:</text>
-					<text class="summary-value">¥{{totalValue}}</text>
-				</view>
-				<view class="summary-item" v-if="showCount">
-					<text class="summary-label">{{countLabel}}:</text>
-					<text class="summary-value">{{totalCount}}{{countUnit}}</text>
+					<text class="summary-value">{{filteredRecords.length}} 条记录</text>
 				</view>
 			</view>
 
@@ -321,6 +313,9 @@ import { ref, computed, watch, nextTick } from 'vue';
 import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
 import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
 
+// 定义事件
+const emit = defineEmits(['search', 'status-filter', 'date-filter', 'page-change', 'refresh']);
+
 // Props定义
 const props = defineProps({
 	// 基本配置
@@ -359,14 +354,7 @@ const props = defineProps({
 	statusMap: { type: Object, default: () => ({}) },
 	customGetStatusLabel: { type: Function, default: null }, // 自定义状态标签函数
 
-	// 汇总配置
-	showTotal: { type: Boolean, default: true },
-	totalLabel: { type: String, default: '总金额' },
-	totalField: { type: String, default: 'amount' },
-	showCount: { type: Boolean, default: true },
-	countLabel: { type: String, default: '总数量' },
-	countField: { type: String, default: 'quantity' },
-	countUnit: { type: String, default: '箱' }
+	// 汇总配置 - 简化为只显示总计
 });
 
 // 视图状态
@@ -398,25 +386,7 @@ const currentPageRecords = computed(() => {
 	return filteredRecords.value.slice(start, end);
 });
 
-// 计算属性：总金额
-const totalValue = computed(() => {
-	return filteredRecords.value.reduce((sum, record) => {
-		const amount = typeof record[props.totalField] === 'string'
-			? parseFloat(record[props.totalField].replace(/,/g, ''))
-			: record[props.totalField];
-		return sum + (isNaN(amount) ? 0 : amount);
-	}, 0).toLocaleString();
-});
-
-// 计算属性：总数量
-const totalCount = computed(() => {
-	return filteredRecords.value.reduce((sum, record) => {
-		const quantity = typeof record[props.countField] === 'number'
-			? record[props.countField]
-			: parseFloat(record[props.countField] || 0);
-		return sum + (isNaN(quantity) ? 0 : quantity);
-	}, 0);
-});
+// 简化为只显示总计数量
 
 // 列的可见性状态
 const columnVisibility = ref(new Map());
@@ -446,7 +416,7 @@ watch(() => props.records, (newRecords) => {
 	filterRecords();
 }, { deep: true, immediate: true });
 
-// 过滤记录的方法
+// 过滤记录的方法 - 同时发射事件通知父组件
 function filterRecords() {
 	let filtered = [...props.records];
 	console.log('原始记录数:', filtered.length);
@@ -454,9 +424,13 @@ function filterRecords() {
 	// 关键词筛选
 	if (searchKeyword.value) {
 		const keyword = searchKeyword.value.toLowerCase();
+
+		// 发射搜索事件
+		emit('search', searchKeyword.value);
+
 		filtered = filtered.filter(record => {
 			// 搜索所有字符串类型的字段
-			return Object.entries(record).some(([key, value]) => {
+			return Object.entries(record).some(([_, value]) => {
 				return typeof value === 'string' && value.toLowerCase().includes(keyword);
 			});
 		});
@@ -562,8 +536,7 @@ function filterRecords() {
 	nextTick(() => {
 		console.log('总页数:', totalPages.value);
 		console.log('当前页记录数:', currentPageRecords.value.length);
-		console.log('总金额:', totalValue.value);
-		console.log('总数量:', totalCount.value);
+		console.log('总记录数:', filteredRecords.value.length);
 	});
 }
 
@@ -585,13 +558,72 @@ function setDateRange(range) {
 	} else {
 		dateRange.value = range;
 	}
+
+	// 准备日期范围数据
+	let dateRangeData = null;
+
+	if (dateRange.value !== 'all') {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+
+		if (dateRange.value === 'today') {
+			const todayStr = today.toISOString().split('T')[0];
+			dateRangeData = {
+				startDate: todayStr,
+				endDate: todayStr
+			};
+		} else if (dateRange.value === 'week') {
+			// 计算本周一的日期
+			const weekStart = new Date(today);
+			const currentDay = today.getDay();
+			const daysToSubtract = currentDay === 0 ? 6 : currentDay - 1;
+			weekStart.setDate(today.getDate() - daysToSubtract);
+			const weekStartStr = weekStart.toISOString().split('T')[0];
+			const todayStr = today.toISOString().split('T')[0];
+
+			dateRangeData = {
+				startDate: weekStartStr,
+				endDate: todayStr
+			};
+		} else if (dateRange.value === 'month') {
+			// 计算本月初的日期
+			const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+			const monthStartStr = monthStart.toISOString().split('T')[0];
+			const todayStr = today.toISOString().split('T')[0];
+
+			dateRangeData = {
+				startDate: monthStartStr,
+				endDate: todayStr
+			};
+		}
+	}
+
+	// 发射日期筛选事件
+	emit('date-filter', dateRangeData);
+
+	// 本地筛选
 	filterRecords();
 }
 
 // 设置状态筛选
 function setStatusFilter(status) {
 	statusFilter.value = status;
+
+	// 查找匹配的状态选项
+	let statusData = null;
+	if (status !== 'all') {
+		const statusOption = props.statusOptions.find(option => option.value === status);
+		if (statusOption) {
+			statusData = statusOption;
+		}
+	}
+
+	// 发射状态筛选事件
+	emit('status-filter', statusData);
+
+	// 本地筛选
 	filterRecords();
+
 	// 选择选项后自动关闭下拉框
 	showStatusDropdown.value = false;
 }
@@ -607,12 +639,16 @@ function showAdvancedFilter() {
 function prevPage() {
 	if (currentPage.value > 1) {
 		currentPage.value--;
+		// 发射分页事件
+		emit('page-change', currentPage.value);
 	}
 }
 
 function nextPage() {
 	if (currentPage.value < totalPages.value) {
 		currentPage.value++;
+		// 发射分页事件
+		emit('page-change', currentPage.value);
 	}
 }
 
@@ -1038,9 +1074,9 @@ function handleSort(field) {
 
 .data-summary {
 	display: flex;
-	justify-content: space-between;
+	justify-content: center;
 	align-items: center;
-	padding: 16rpx 40rpx;
+	padding: 20rpx 40rpx;
 	background-color: #ffffff;
 	border-bottom: 1px solid #f0f0f0;
 	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.03);
@@ -1052,13 +1088,13 @@ function handleSort(field) {
 }
 
 .summary-label {
-	font-size: 24rpx;
+	font-size: 28rpx;
 	color: #6b7280;
 	margin-right: 8rpx;
 }
 
 .summary-value {
-	font-size: 24rpx;
+	font-size: 28rpx;
 	font-weight: 600;
 	color: #4f46e5;
 }

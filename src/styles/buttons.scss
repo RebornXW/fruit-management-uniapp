@@ -1,0 +1,80 @@
+/* 统一按钮样式 */
+
+/* 新增按钮样式 */
+.app-add-btn {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(13, 148, 136, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(13, 148, 136, 0.3);
+  transition: all 0.2s ease;
+  
+  &:active {
+    transform: scale(0.95);
+    background: rgba(13, 148, 136, 1);
+  }
+  
+  .iconfont {
+    font-size: 40rpx;
+    color: #FFFFFF;
+  }
+}
+
+/* 小尺寸新增按钮 */
+.app-add-btn-small {
+  width: 64rpx;
+  height: 64rpx;
+  
+  .iconfont {
+    font-size: 32rpx;
+  }
+}
+
+/* 大尺寸新增按钮 */
+.app-add-btn-large {
+  width: 100rpx;
+  height: 100rpx;
+  
+  .iconfont {
+    font-size: 48rpx;
+  }
+}
+
+/* 浮动新增按钮（固定在右下角） */
+.app-add-btn-float {
+  position: fixed;
+  right: 40rpx;
+  bottom: 120rpx;
+  z-index: 100;
+}
+
+/* 不同颜色变体 */
+.app-add-btn-blue {
+  background: rgba(37, 99, 235, 0.9);
+  box-shadow: 0 4rpx 12rpx rgba(37, 99, 235, 0.3);
+  
+  &:active {
+    background: rgba(37, 99, 235, 1);
+  }
+}
+
+.app-add-btn-purple {
+  background: rgba(147, 51, 234, 0.9);
+  box-shadow: 0 4rpx 12rpx rgba(147, 51, 234, 0.3);
+  
+  &:active {
+    background: rgba(147, 51, 234, 1);
+  }
+}
+
+.app-add-btn-red {
+  background: rgba(220, 38, 38, 0.9);
+  box-shadow: 0 4rpx 12rpx rgba(220, 38, 38, 0.3);
+  
+  &:active {
+    background: rgba(220, 38, 38, 1);
+  }
+}

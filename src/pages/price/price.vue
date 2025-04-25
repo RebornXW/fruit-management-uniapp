@@ -12,9 +12,10 @@
 
 			<!-- 搜索框 -->
 			<view class="price-search-container">
-				<view class="price-search-box">
-					<input v-model="searchText" type="text" placeholder="搜索水果..." class="price-search-input" />
-					<text class="iconfont icon-search price-search-icon"></text>
+				<view class="app-search-box app-search-box-header">
+					<text class="iconfont icon-search app-search-icon"></text>
+					<input v-model="searchText" type="text" placeholder="搜索水果..." class="app-search-input" />
+					<text v-if="searchText" class="app-search-clear" @tap="searchText = ''">×</text>
 				</view>
 			</view>
 		</view>
@@ -137,14 +138,12 @@
 			</view>
 		</uni-popup>
 
-		<!-- 底部TabBar -->
-		<custom-tab-bar></custom-tab-bar>
+		<!-- 使用系统原生TabBar，无需自定义组件 -->
 	</view>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import CustomTabBar from '@/components/CustomTabBar.vue';
 import fruitService from '@/services/fruitService.js';
 
 // 数据
@@ -324,13 +323,34 @@ uni.$on('beforeDestroy', () => {
 	uni.$off('onShow');
 });
 
+// 上次加载时间
+const lastLoadTime = ref(0);
+const isLoading = ref(false);
+
 // 加载水果数据
 function loadFruitData() {
+	// 防止重复加载，如果正在加载中，直接返回
+	if (isLoading.value) {
+		console.log('数据正在加载中，跳过重复请求');
+		return;
+	}
+
+	// 防止短时间内重复加载，如果距离上次加载不足 2 秒，直接返回
+	const now = Date.now();
+	if (now - lastLoadTime.value < 2000) { // 2秒内不重复加载
+		console.log('距离上次加载时间太短，跳过重复请求');
+		return;
+	}
+
+	// 设置加载状态和时间
+	isLoading.value = true;
+	lastLoadTime.value = now;
+
 	// 显示加载中提示
 	uni.showLoading({ title: '加载中...' });
 
-	// 从后端API获取水果数据
-	fruitService.getFruits()
+	// 从后端API获取水果数据，使用缓存机制
+	fruitService.getFruits({}, false) // 不强制刷新，使用缓存
 		.then(res => {
 			uni.hideLoading();
 			console.log('从后端获取到的水果数据:', res);
@@ -408,6 +428,10 @@ function loadFruitData() {
 			fruitData.value = [];
 			// 即使没有数据也要更新分类标签
 			updateCategories();
+		})
+		.finally(() => {
+			// 无论成功失败，都重置加载状态
+			isLoading.value = false;
 		});
 }
 </script>
@@ -456,30 +480,7 @@ page {
 	padding: 0 4rpx;
 }
 
-.price-search-box {
-	position: relative;
-	background-color: rgba(255, 255, 255, 0.95);
-	border-radius: 35rpx;
-	height: 70rpx;
-	display: flex;
-	align-items: center;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
-}
-
-.price-search-input {
-	height: 100%;
-	width: 100%;
-	padding: 0 40rpx 0 80rpx;
-	font-size: 28rpx;
-	color: #1F2937;
-}
-
-.price-search-icon {
-	position: absolute;
-	left: 28rpx;
-	font-size: 28rpx;
-	color: #9CA3AF;
-}
+/* 使用统一搜索框样式 */
 
 .price-category-container {
 	background-color: #FFFFFF;

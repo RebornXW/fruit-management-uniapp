@@ -94,4 +94,102 @@ statisticsService.getInventoryStatistics = function(params = {}) {
     });
 };
 
+/**
+ * 获取销售总额摘要
+ * @returns {Promise} 销售总额摘要数据，包含今日、本周、本月、今年的销售总额
+ */
+statisticsService.getSalesSummary = function() {
+    return http.request({
+        url: '/statistics/sales-summary',
+        method: 'GET'
+    })
+    .then(res => {
+        console.log('获取销售总额摘要成功:', res);
+
+        // 处理返回的数据，兼容不同的响应格式
+        let data = res;
+
+        // 打印原始响应数据，便于调试
+        console.log('原始销售总额摘要数据:', res);
+
+        // 如果是对象，并且有data属性
+        if (res && typeof res === 'object' && res.data) {
+            data = res.data;
+            console.log('使用res.data作为数据源');
+        }
+
+        // 确保返回的数据包含所需字段
+        const result = {
+            today: {
+                sales: 0,
+                count: 0
+            },
+            this_week: {
+                sales: 0,
+                count: 0
+            },
+            this_month: {
+                sales: 0,
+                count: 0
+            },
+            this_year: {
+                sales: 0,
+                count: 0
+            }
+        };
+
+        // 根据API文档中的销售总额摘要响应格式解析数据
+        if (data) {
+            // 今日销售额
+            if (data.today) {
+                result.today.sales = parseFloat(data.today.sales) || 0;
+                result.today.count = parseInt(data.today.count) || 0;
+            }
+
+            // 本周销售额
+            if (data.this_week) {
+                result.this_week.sales = parseFloat(data.this_week.sales) || 0;
+                result.this_week.count = parseInt(data.this_week.count) || 0;
+            }
+
+            // 本月销售额
+            if (data.this_month) {
+                result.this_month.sales = parseFloat(data.this_month.sales) || 0;
+                result.this_month.count = parseInt(data.this_month.count) || 0;
+            }
+
+            // 今年销售额
+            if (data.this_year) {
+                result.this_year.sales = parseFloat(data.this_year.sales) || 0;
+                result.this_year.count = parseInt(data.this_year.count) || 0;
+            }
+        }
+
+        console.log('处理后的销售总额摘要数据:', result);
+        return result;
+    })
+    .catch(err => {
+        console.error('获取销售总额摘要失败:', err);
+        // 失败时返回默认值
+        return {
+            today: {
+                sales: 0,
+                count: 0
+            },
+            this_week: {
+                sales: 0,
+                count: 0
+            },
+            this_month: {
+                sales: 0,
+                count: 0
+            },
+            this_year: {
+                sales: 0,
+                count: 0
+            }
+        };
+    });
+};
+
 export default statisticsService;

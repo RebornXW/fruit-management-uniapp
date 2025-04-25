@@ -15,11 +15,12 @@
 
 		<!-- 搜索框 - 替代原分类标签 -->
 		<view class="search-container">
-			<view class="search-box">
-				<uni-icons type="search" size="18" color="#9CA3AF"></uni-icons>
-				<input v-model="searchText" type="text" placeholder="搜索客户名称、联系方式或地址..." class="search-input" @input="filterCustomers" />
+			<view class="app-search-box app-search-box-content">
+				<text class="iconfont icon-search app-search-icon"></text>
+				<input v-model="searchText" type="text" placeholder="搜索客户名称、联系方式或地址..." class="app-search-input" @input="filterCustomers" />
+				<text v-if="searchText" class="app-search-clear" @tap="searchText = ''">×</text>
 			</view>
-			<button class="add-customer-btn" @tap="resetAndOpenAddCustomerPopup()">
+			<button class="app-add-btn" @tap="resetAndOpenAddCustomerPopup()">
 				<text class="iconfont icon-add"></text>
 			</button>
 		</view>
@@ -203,31 +204,31 @@
 
 		<!-- 新增客户弹窗 -->
 		<uni-popup ref="addCustomerPopup" type="bottom">
-			<view class="customer-popup-bg">
-				<view class="popup-header">
-					<text class="popup-title">新增客户</text>
-					<view class="close-btn" @tap="addCustomerPopup.close()">
+			<view class="app-popup-container">
+				<view class="app-popup-header">
+					<text class="app-popup-title">新增客户</text>
+					<view class="app-popup-close" @tap="addCustomerPopup.close()">
 						<custom-icon type="close" size="20" color="#9CA3AF"></custom-icon>
 					</view>
 				</view>
-				<view class="popup-content">
-					<view class="form-item">
-						<text class="form-label">客户名称 <text class="required">*</text></text>
-						<input v-model="newCustomer.name" type="text" placeholder="请输入客户名称" class="form-input" />
+				<view class="app-popup-content">
+					<view class="app-form-item">
+						<text class="app-form-label">客户名称 <text class="app-required">*</text></text>
+						<input v-model="newCustomer.name" type="text" placeholder="请输入客户名称" class="app-input" />
 					</view>
-					<view class="form-item">
-						<text class="form-label">联系方式 <text class="required">*</text></text>
-						<input v-model="newCustomer.phone" type="text" placeholder="请输入联系方式" class="form-input" />
+					<view class="app-form-item">
+						<text class="app-form-label">联系方式 <text class="app-required">*</text></text>
+						<input v-model="newCustomer.phone" type="text" placeholder="请输入联系方式" class="app-input" />
 					</view>
-					<view class="form-item">
-						<text class="form-label">地址</text>
-						<input v-model="newCustomer.address" type="text" placeholder="请输入地址" class="form-input" />
+					<view class="app-form-item">
+						<text class="app-form-label">地址</text>
+						<input v-model="newCustomer.address" type="text" placeholder="请输入地址" class="app-input" />
 					</view>
-					<view class="form-item">
-						<text class="form-label">备注</text>
-						<textarea v-model="newCustomer.remark" placeholder="请输入备注信息" class="form-textarea"></textarea>
+					<view class="app-form-item">
+						<text class="app-form-label">备注</text>
+						<textarea v-model="newCustomer.remark" placeholder="请输入备注信息" class="app-textarea"></textarea>
 					</view>
-					<button class="confirm-btn" @tap="confirmAddCustomer">确认添加</button>
+					<button class="app-confirm-btn" @tap="confirmAddCustomer">确认添加</button>
 				</view>
 			</view>
 		</uni-popup>
@@ -242,14 +243,12 @@
 			@confirm="onPaymentConfirm"
 		></payment-popup>
 
-		<!-- 底部TabBar -->
-		<custom-tab-bar></custom-tab-bar>
+		<!-- 使用系统原生TabBar，无需自定义组件 -->
 	</view>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import CustomTabBar from '@/components/CustomTabBar.vue';
 import CustomIcon from '@/components/CustomIcon.vue';
 import PaymentPopup from './PaymentPopup.vue';
 import { processPayment } from '@/services/paymentService.js';
@@ -1187,46 +1186,9 @@ function loadCustomersData() {
 	align-items: center;
 }
 
-.search-box {
-	display: flex;
-	align-items: center;
-	background-color: #F3F4F6;
-	border-radius: 32rpx;
-	padding: 0 16rpx;
-	height: 70rpx;
-	flex: 1;
-	margin-right: 16rpx;
-}
+/* 使用统一搜索框样式 */
 
-.search-input {
-	flex: 1;
-	height: 70rpx;
-	font-size: 28rpx;
-	padding-left: 12rpx;
-	color: #374151;
-}
-
-.add-customer-btn {
-	width: 70rpx;
-	height: 70rpx;
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background-color: #0D9488;
-	border: none;
-	padding: 0;
-	box-shadow: 0 2rpx 8rpx rgba(13, 148, 136, 0.2);
-}
-
-.add-customer-btn::after {
-	border: none;
-}
-
-.add-customer-btn .iconfont {
-	font-size: 32rpx;
-	color: #FFFFFF;
-}
+/* 使用统一新增按钮样式 */
 
 /* 客户卡片样式优化 */
 .customer-list-container {
@@ -1805,83 +1767,6 @@ function loadCustomersData() {
 	color: #4B5563;
 }
 
-/* 表单样式 */
-.form-item {
-	margin-bottom: 24rpx;
-	width: 100%;
-	box-sizing: border-box;
-}
-
-.form-label {
-	font-size: 28rpx;
-	color: #4B5563;
-	font-weight: 500;
-	margin-bottom: 12rpx;
-	display: block;
-}
-
-.form-input {
-	width: 100%;
-	height: 80rpx;
-	border: 1rpx solid #E5E7EB;
-	border-radius: 12rpx;
-	padding: 0 24rpx;
-	font-size: 28rpx;
-	color: #1F2937;
-	box-sizing: border-box;
-}
-
-.form-textarea {
-	width: 100%;
-	height: 160rpx;
-	border: 1rpx solid #E5E7EB;
-	border-radius: 12rpx;
-	padding: 16rpx 24rpx;
-	font-size: 28rpx;
-	color: #1F2937;
-	box-sizing: border-box;
-}
-
-.confirm-btn {
-	height: 90rpx;
-	border-radius: 45rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 30rpx;
-	font-weight: 500;
-	margin-top: 24rpx;
-	color: white;
-	width: 100%;
-	background: linear-gradient(135deg, #0D9488, #0F766E);
-	box-shadow: 0 4rpx 12rpx rgba(13, 148, 136, 0.2);
-	position: relative;
-	overflow: hidden;
-}
-
-.confirm-btn::after {
-	border: none;
-}
-
-.confirm-btn:active {
-	transform: scale(0.98);
-	opacity: 0.9;
-}
-
-.confirm-btn::before {
-	content: '';
-	position: absolute;
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background: linear-gradient(to right, rgba(255,255,255,0.1), rgba(255,255,255,0));
-	z-index: 1;
-}
-
-.required {
-	color: #EF4444;
-	margin-left: 4rpx;
-}
+/* 使用统一表单样式 */
 </style>
 

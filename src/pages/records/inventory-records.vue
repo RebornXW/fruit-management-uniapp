@@ -21,77 +21,83 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import RecordViewer from '@/components/RecordViewer.vue';
-import inventoryRecordService from '@/services/inventoryRecordService.js';
+import { getInventoryRecords } from '@/services/inventoryRecordService.js';
 
-// 获取库存记录数据
-const inventoryRecords = inventoryRecordService.getInventoryRecords();
+// 格式化数据以符合列表需要的形式
+const inventoryRecords = ref([]);
 
-/* 以下是模拟数据，仅在没有真实数据时使用
-const mockRecords = [
-	{
-		recordId: 'I20240501001',
-		operatorName: '张库管',
-		productName: '明牌阿克苏苹果',
-		spec: '10kg/箱',
-		unitPrice: '180',
-		quantity: 50,
-		amount: '9,000',
-		date: '2024-05-01',
-		time: '09:15',
-		operationType: '入库',
-		source: '供应商A',
-		remark: '新鲜到货，品质优良'
-	},
-	{
-		recordId: 'I20240501002',
-		operatorName: '李库管',
-		productName: '砀山梨',
-		spec: '15kg/箱',
-		unitPrice: '100',
-		quantity: 30,
-		amount: '3,000',
-		date: '2024-05-01',
-		time: '11:30',
-		operationType: '入库',
-		source: '供应商B',
-		remark: '常规进货'
-	},
-	{
-		recordId: 'I20240430001',
-		operatorName: '张库管',
-		productName: '新鲜橘子',
-		spec: '12kg/箱',
-		unitPrice: '60',
-		quantity: -8,
-		amount: '-480',
-		date: '2024-04-30',
-		time: '16:45',
-		operationType: '出库',
-		destination: '老李水果批发',
-		remark: '销售出库'
-	},
-	{
-		recordId: 'I20240429001',
-		operatorName: '李库管',
-		productName: '进口香蕉',
-		spec: '15kg/箱',
-		unitPrice: '80',
-		quantity: 40,
-		amount: '3,200',
-		date: '2024-04-29',
-		time: '10:10',
-		operationType: '入库',
-		source: '供应商C',
-		remark: '采购入库'
-	}
-];
-*/
-
-onMounted(() => {
+onMounted(async () => {
 	console.log('库存记录页面已加载');
-	console.log('库存记录数据条数:', inventoryRecords.value.length);
+
+	// 显示加载中
+	uni.showLoading({ title: '加载中...' });
+
+	try {
+		// 从服务中获取库存记录
+		const data = await getInventoryRecords();
+		console.log('从服务中获取的库存记录:', data);
+
+		// 如果没有记录，显示空数组
+		if (!data || !data.items || data.items.length === 0) {
+			console.log('没有找到库存记录数据');
+			inventoryRecords.value = [];
+			uni.hideLoading();
+			return;
+		}
+
+		console.log('找到库存记录数据:', data.items.length, '条');
+
+		// 如果有记录，格式化数据
+		// 先打印第一条记录的完整数据结构
+		if (data.items.length > 0) {
+			console.log('第一条记录数据结构:', JSON.stringify(data.items[0], null, 2));
+		}
+
+		inventoryRecords.value = data.items.map(record => {
+			// 处理日期和时间
+			let datePart = '';
+			let timePart = '';
+			if (record.operation_datetime) {
+				const parts = record.operation_datetime.split('T');
+				datePart = parts[0] || '';
+				timePart = parts[1] ? parts[1].split('.')[0].split('Z')[0] : '';
+			} else if (record.operation_date) {
+				datePart = record.operation_date;
+			}
+
+			// 处理操作类型
+			let operationTypeText = record.operation_type === 'in' ? '入库' : '出库';
+
+			return {
+				id: record.id,
+				recordId: record.record_id,
+				date: datePart,
+				time: timePart,
+				operatorName: record.operator_name || '',
+				productName: record.fruit_name || '',
+				spec: record.spec || '',
+				operationType: operationTypeText,
+				quantity: record.quantity || 0,
+				currentStock: record.current_stock || 0,
+				remark: record.remark || '',
+				source: record.source || '',
+				destination: record.destination || ''
+			};
+		});
+
+		console.log('格式化后的库存记录数量:', inventoryRecords.value.length);
+	} catch (error) {
+		console.error('获取库存记录失败:', error);
+		uni.showToast({
+			title: '获取库存记录失败',
+			icon: 'none'
+		});
+	} finally {
+		// 隐藏加载中
+		uni.hideLoading();
+	}
 
 	// 检查页面栈情况
 	const pages = getCurrentPages();
@@ -107,14 +113,15 @@ onMounted(() => {
 
 // 列表视图列配置
 const columns = [
-	{ title: '日期', field: 'date', type: 'date', width: '160rpx' },
-	{ title: '时间', field: 'time', type: 'text', width: '100rpx' },
-	{ title: '操作员', field: 'operatorName', type: 'text', width: '120rpx' },
-	{ title: '品牌', field: 'brand', type: 'text', width: '120rpx' },
-	{ title: '水果品种', field: 'productName', type: 'text', width: '160rpx' },
-	{ title: '规格', field: 'spec', type: 'text', width: '140rpx' },
-	{ title: '操作类型', field: 'operationType', type: 'status', width: '120rpx' },
-	{ title: '数量', field: 'quantity', unit: '箱', type: 'number', width: '100rpx' }
+	{ title: '库存记录ID', field: 'recordId', type: 'text', width: '150rpx' },
+	{ title: '时间', field: 'date', type: 'datetime', timeField: 'time', width: '180rpx' },
+	{ title: '用户名', field: 'operatorName', type: 'text', width: '120rpx' },
+	{ title: '水果名称', field: 'productName', type: 'text', width: '150rpx' },
+	{ title: '规格', field: 'spec', type: 'text', width: '120rpx' },
+	{ title: '操作', field: 'operationType', type: 'status', width: '100rpx' },
+	{ title: '数量', field: 'quantity', type: 'number', width: '80rpx' },
+	{ title: '当前库存', field: 'currentStock', type: 'number', width: '100rpx' },
+	{ title: '备注', field: 'remark', type: 'text', width: '150rpx' }
 ];
 
 // 状态配置
@@ -130,7 +137,7 @@ const statusMap = {
 };
 
 // 自定义状态标签函数
-function getInventoryStatusLabel(statusValue) {
+function getInventoryStatusLabel() {
 	// 始终返回全部操作，作为下拉菜单的标题
 	return '全部操作';
 }
@@ -140,19 +147,19 @@ const detailSections = [
 	{
 		title: '基本信息',
 		fields: [
+			{ label: '库存记录ID', field: 'recordId', type: 'text' },
 			{ label: '操作时间', field: 'date', timeField: 'time', type: 'date' },
-			{ label: '操作类型', field: 'operationType', type: 'status' },
-			{ label: '操作员', field: 'operatorName', type: 'text' }
+			{ label: '用户名', field: 'operatorName', type: 'text' }
 		]
 	},
 	{
 		title: '商品信息',
 		fields: [
-			{ label: '品牌', field: 'brand', type: 'text' },
-			{ label: '水果品类', field: 'fruitCategory', type: 'text' },
-			{ label: '水果品种', field: 'productName', type: 'text' },
-			{ label: '规格型号', field: 'spec', type: 'text' },
-			{ label: '变更数量', field: 'quantity', unit: '箱', type: 'number' }
+			{ label: '水果名称', field: 'productName', type: 'text' },
+			{ label: '规格', field: 'spec', type: 'text' },
+			{ label: '操作', field: 'operationType', type: 'status' },
+			{ label: '数量', field: 'quantity', type: 'number' },
+			{ label: '当前库存', field: 'currentStock', type: 'number' }
 		]
 	},
 	{

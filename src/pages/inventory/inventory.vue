@@ -11,15 +11,16 @@
 
 			<!-- 搜索框和操作按钮并排 -->
 			<view class="header-tools">
-				<view class="search-box">
-					<text class="iconfont icon-search search-icon"></text>
-					<input v-model="searchText" type="text" placeholder="搜索水果..." class="search-input" />
+				<view class="app-search-box app-search-box-header">
+					<text class="iconfont icon-search app-search-icon"></text>
+					<input v-model="searchText" type="text" placeholder="搜索水果..." class="app-search-input" />
+					<text v-if="searchText" class="app-search-clear" @tap="searchText = ''">×</text>
 				</view>
 				<view class="header-actions">
-					<button class="header-btn record-btn" @tap="showAddRecord">
+					<button class="app-add-btn" @tap="showAddRecord">
 						<text class="iconfont icon-clipboard"></text>
 					</button>
-					<button class="header-btn add-btn" @tap="showAddFruit">
+					<button class="app-add-btn" @tap="showAddFruit">
 						<text class="iconfont icon-add"></text>
 					</button>
 				</view>
@@ -127,12 +128,17 @@
 						<view class="fruit-details">
 							<view class="fruit-header">
 								<text class="fruit-name">{{fruit.name}}</text>
-								<view class="fruit-stock-tag">
-									<text class="stock-text">库存: {{fruit.stock}}箱</text>
-								</view>
 							</view>
 							<view class="fruit-info-row">
 								<text class="fruit-spec">{{fruit.spec}}</text>
+								<view class="fruit-stock-card" :class="getStockLevelClass(fruit.stock)">
+									<view class="stock-card-glow"></view>
+									<view class="stock-card-content">
+										<text class="stock-value">{{fruit.stock}}</text>
+										<text class="stock-unit">箱</text>
+										<text class="iconfont icon-warehouse stock-icon"></text>
+									</view>
+								</view>
 							</view>
 						</view>
 					</view>
@@ -167,12 +173,12 @@
 
 		<!-- 入库/出库操作弹窗 -->
 		<uni-popup ref="inventoryPopup" type="bottom" :mask-click="true" :animation="true">
-			<view class="popup-container">
-				<view class="popup-header">
-					<text class="popup-title">{{operationType === 'in' ? '入库操作' : '出库操作'}}</text>
-					<text class="popup-close" @tap="closePopup('inventory')">✕</text>
+			<view class="app-popup-container">
+				<view class="app-popup-header">
+					<text class="app-popup-title">{{operationType === 'in' ? '入库操作' : '出库操作'}}</text>
+					<text class="app-popup-close" @tap="closePopup('inventory')">✕</text>
 				</view>
-				<view class="popup-content">
+				<view class="app-popup-content">
 					<view class="selected-fruit">
 						<text class="selected-name">{{currentFruit.name}}</text>
 						<text class="selected-spec">{{currentFruit.spec}}</text>
@@ -180,25 +186,25 @@
 							<text class="current-stock">当前库存: {{currentFruit.stock}}箱</text>
 						</view>
 					</view>
-					<view class="form-item">
-						<text class="form-label">操作数量 (箱)</text>
-						<view class="quantity-control">
-							<button class="quantity-btn" @tap="decrementQuantity">-</button>
+					<view class="app-form-item">
+						<text class="app-form-label">操作数量 (箱)</text>
+						<view class="app-quantity-control">
+							<button class="app-quantity-btn app-quantity-btn-minus" @tap="decrementQuantity">-</button>
 							<input
 								type="number"
 								v-model="operationQuantity"
-								class="quantity-input"
+								class="app-quantity-input"
 								:class="operationType === 'in' ? 'in-text' : 'out-text'"
 							/>
-							<button class="quantity-btn" @tap="incrementQuantity">+</button>
+							<button class="app-quantity-btn app-quantity-btn-plus" @tap="incrementQuantity">+</button>
 						</view>
 					</view>
-					<view class="form-item">
-						<text class="form-label">备注</text>
-						<textarea v-model="operationRemark" placeholder="添加备注信息" class="remark-input"></textarea>
+					<view class="app-form-item">
+						<text class="app-form-label">备注</text>
+						<textarea v-model="operationRemark" placeholder="添加备注信息" class="app-textarea"></textarea>
 					</view>
 					<button
-						class="confirm-btn"
+						class="app-confirm-btn"
 						:class="operationType === 'in' ? 'in-confirm' : 'out-confirm'"
 						@tap="confirmOperation"
 					>
@@ -210,63 +216,63 @@
 
 		<!-- 编辑水果弹窗 -->
 		<uni-popup ref="editFruitPopup" type="bottom">
-			<view class="popup-container">
-				<view class="popup-header">
-					<text class="popup-title">{{isAddingFruit ? '新增水果' : '编辑水果'}}</text>
-					<text class="popup-close" @tap="closePopup('edit')">✕</text>
+			<view class="app-popup-container">
+				<view class="app-popup-header">
+					<text class="app-popup-title">{{isAddingFruit ? '新增水果' : '编辑水果'}}</text>
+					<text class="app-popup-close" @tap="closePopup('edit')">✕</text>
 				</view>
-				<scroll-view scroll-y class="popup-content" :style="{ height: '75vh' }">
+				<scroll-view scroll-y class="app-popup-content" :style="{ height: '75vh' }">
 					<view class="form-content">
-						<view class="form-item">
-							<text class="form-label">品牌 <text class="required">*</text></text>
-							<input v-model="editForm.brand" placeholder="请输入品牌" class="text-input" :disabled="!isAddingFruit" />
-							<text v-if="!isAddingFruit" class="form-tip">品牌不可修改</text>
+						<view class="app-form-item">
+							<text class="app-form-label">品牌 <text class="app-required">*</text></text>
+							<input v-model="editForm.brand" placeholder="请输入品牌" class="app-input" :disabled="!isAddingFruit" />
+							<text v-if="!isAddingFruit" class="app-form-tip">品牌不可修改</text>
 						</view>
-						<view class="form-item">
-							<text class="form-label">水果品类 <text class="required">*</text></text>
-							<picker @change="onCategoryChange" :value="categoryIndex" :range="fruitCategories" class="picker" :disabled="!isAddingFruit">
-								<view class="picker-text" :class="{'disabled-picker': !isAddingFruit}">{{fruitCategories[categoryIndex]}}</view>
+						<view class="app-form-item">
+							<text class="app-form-label">水果品类 <text class="app-required">*</text></text>
+							<picker @change="onCategoryChange" :value="categoryIndex" :range="fruitCategories" class="app-picker" :disabled="!isAddingFruit">
+								<view class="app-picker-text" :class="{'app-picker-disabled': !isAddingFruit}">{{fruitCategories[categoryIndex]}}</view>
 							</picker>
-							<text v-if="!isAddingFruit" class="form-tip">水果品类不可修改</text>
+							<text v-if="!isAddingFruit" class="app-form-tip">水果品类不可修改</text>
 						</view>
-						<view class="form-item">
-							<text class="form-label">水果品种 <text class="required">*</text></text>
-							<picker @change="onVarietyChange" :value="varietyIndex" :range="fruitVarieties" class="picker" :disabled="!isAddingFruit">
-								<view class="picker-text" :class="{'disabled-picker': !isAddingFruit}">{{fruitVarieties[varietyIndex]}}</view>
+						<view class="app-form-item">
+							<text class="app-form-label">水果品种 <text class="app-required">*</text></text>
+							<picker @change="onVarietyChange" :value="varietyIndex" :range="fruitVarieties" class="app-picker" :disabled="!isAddingFruit">
+								<view class="app-picker-text" :class="{'app-picker-disabled': !isAddingFruit}">{{fruitVarieties[varietyIndex]}}</view>
 							</picker>
-							<text v-if="!isAddingFruit" class="form-tip">水果品种不可修改</text>
+							<text v-if="!isAddingFruit" class="app-form-tip">水果品种不可修改</text>
 						</view>
-						<view class="form-item">
-							<text class="form-label">规格型号 <text class="required">*</text></text>
-							<input v-model="editForm.spec" placeholder="请输入规格型号" class="text-input" :disabled="!isAddingFruit" />
-							<text v-if="!isAddingFruit" class="form-tip">规格型号不可修改</text>
+						<view class="app-form-item">
+							<text class="app-form-label">规格型号 <text class="app-required">*</text></text>
+							<input v-model="editForm.spec" placeholder="请输入规格型号" class="app-input" :disabled="!isAddingFruit" />
+							<text v-if="!isAddingFruit" class="app-form-tip">规格型号不可修改</text>
 						</view>
-						<view class="form-item">
-							<text class="form-label">包装类型</text>
-							<picker @change="onPackageTypeChange" :value="packageTypeIndex" :range="packageTypes" class="picker">
-								<view class="picker-text">{{packageTypes[packageTypeIndex]}}</view>
+						<view class="app-form-item">
+							<text class="app-form-label">包装类型</text>
+							<picker @change="onPackageTypeChange" :value="packageTypeIndex" :range="packageTypes" class="app-picker">
+								<view class="app-picker-text">{{packageTypes[packageTypeIndex]}}</view>
 							</picker>
 						</view>
-						<view class="form-item">
-							<text class="form-label">重量 (斤)</text>
-							<input type="number" v-model="editForm.weight" placeholder="请输入重量" class="text-input" />
+						<view class="app-form-item">
+							<text class="app-form-label">重量 (斤)</text>
+							<input type="number" v-model="editForm.weight" placeholder="请输入重量" class="app-input" />
 						</view>
-						<view class="form-item">
-							<text class="form-label">参考价格区间</text>
-							<view class="price-range-container">
-								<input type="number" v-model="editForm.minPrice" placeholder="最低价" class="price-input" />
-								<text class="price-separator">-</text>
-								<input type="number" v-model="editForm.maxPrice" placeholder="最高价" class="price-input" />
-								<text class="price-unit">元</text>
+						<view class="app-form-item">
+							<text class="app-form-label">参考价格区间</text>
+							<view class="app-price-range">
+								<input type="number" v-model="editForm.minPrice" placeholder="最低价" class="app-price-input" />
+								<text class="app-price-separator">-</text>
+								<input type="number" v-model="editForm.maxPrice" placeholder="最高价" class="app-price-input" />
+								<text class="app-price-unit">元</text>
 							</view>
-							<text class="price-tip">不填则默认为0</text>
+							<text class="app-form-tip">不填则默认为0</text>
 						</view>
-						<view class="form-item" v-if="isAddingFruit">
-							<text class="form-label">初始库存</text>
-							<input type="number" v-model="editForm.stock" placeholder="请输入初始库存" class="text-input" />
+						<view class="app-form-item" v-if="isAddingFruit">
+							<text class="app-form-label">初始库存</text>
+							<input type="number" v-model="editForm.stock" placeholder="请输入初始库存" class="app-input" />
 						</view>
-						<view class="form-item">
-							<text class="form-label">上传图片</text>
+						<view class="app-form-item">
+							<text class="app-form-label">上传图片</text>
 							<view class="upload-container">
 								<view class="image-preview" v-if="editForm.image">
 									<image :src="editForm.image" mode="aspectFill" class="preview-image"></image>
@@ -279,7 +285,7 @@
 							</view>
 						</view>
 						<view class="button-container">
-							<button class="confirm-btn primary-btn" @tap="confirmEditFruit">
+							<button class="app-confirm-btn" @tap="confirmEditFruit">
 								确认{{isAddingFruit ? '添加' : '编辑'}}
 							</button>
 						</view>
@@ -300,17 +306,15 @@
 			></uni-popup-dialog>
 		</uni-popup>
 
-		<!-- 底部TabBar -->
-		<custom-tab-bar></custom-tab-bar>
+		<!-- 使用系统原生TabBar，无需自定义组件 -->
 	</view>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import CustomTabBar from '@/components/CustomTabBar.vue';
 import fruitService from '@/services/fruitService.js';
 import inventoryRecordService from '@/services/inventoryRecordService.js';
-import operationRecordService from '@/services/operationRecordService.js';
+
 import statisticsService from '@/services/statisticsService.js';
 
 // 数据
@@ -406,6 +410,19 @@ const filteredFruits = computed(() => {
 
 	return result;
 });
+
+// 根据库存量返回不同的样式类
+function getStockLevelClass(stock) {
+	if (stock <= 0) {
+		return 'stock-empty';
+	} else if (stock <= 10) {
+		return 'stock-low';
+	} else if (stock <= 50) {
+		return 'stock-medium';
+	} else {
+		return 'stock-high';
+	}
+}
 
 // 获取弹窗组件引用
 const inventoryPopup = ref(null);
@@ -554,8 +571,7 @@ function confirmOperation() {
 		return;
 	}
 
-	// 获取操作人信息
-	const operator = uni.getStorageSync('loginUser')?.name || '系统管理员';
+
 	const operatorId = uni.getStorageSync('loginUser')?.id;
 	const operationTypeText = operationType.value === 'in' ? '入库' : '出库';
 
@@ -649,9 +665,12 @@ function confirmEditFruit() {
 		status: 1
 	};
 
-	// 获取操作人信息
-	const loginUser = uni.getStorageSync('loginUser');
-	const operator = loginUser ? loginUser.name : '系统管理员';
+	// 如果是新增水果且有初始库存，添加到payload
+	if (isAddingFruit.value && editForm.value.stock > 0) {
+		payload.stock = parseInt(editForm.value.stock);
+	}
+
+
 
 	if (isAddingFruit.value) {
 		// 新增水果
@@ -662,8 +681,7 @@ function confirmEditFruit() {
 				closePopup('edit');
 				loadFruitData();
 
-				// 记录操作
-				operationRecordService.addOperationRecord('新增水果', {}, payload, operator);
+
 
 				// 通知其他页面刷新
 				uni.$emit('pageRefresh');
@@ -678,15 +696,8 @@ function confirmEditFruit() {
 			});
 	} else {
 		// 编辑水果
-		// 先获取原始数据以便记录操作
-		fruitService.getFruitById(editForm.value.id)
-			.then(originalFruit => {
-				// 记录操作
-				operationRecordService.addOperationRecord('编辑水果', originalFruit, payload, operator);
-
-				// 更新水果信息
-				return fruitService.updateFruit(editForm.value.id, payload);
-			})
+		// 更新水果信息
+		fruitService.updateFruit(editForm.value.id, payload)
 			.then(() => {
 				uni.hideLoading();
 				uni.showToast({ title: '编辑成功', icon: 'success' });
@@ -774,6 +785,13 @@ onMounted(() => {
 		// 触发tabChange事件
 		uni.$emit('tabChange');
 	});
+
+	// 监听分类数据加载完成事件
+	uni.$on('categoriesDataLoaded', (data) => {
+		console.log('收到分类数据加载完成事件');
+		// 处理分类数据
+		processCategoriesData(data);
+	});
 });
 
 // 监听页面刷新事件
@@ -801,11 +819,30 @@ uni.$on('pageRefresh', () => {
 uni.$on('beforeDestroy', () => {
 	uni.$off('pageRefresh');
 	uni.$off('onShow');
+	uni.$off('categoriesDataLoaded');
 });
+
+// 库存统计数据缓存
+const statisticsCache = {
+	data: null,
+	timestamp: 0,
+	expirationTime: 5 * 60 * 1000 // 5分钟缓存过期时间
+};
 
 // 加载库存统计数据
 function loadInventoryStatistics() {
 	console.log('加载库存统计数据');
+
+	// 检查缓存是否有效
+	const now = Date.now();
+	if (statisticsCache.data && (now - statisticsCache.timestamp) < statisticsCache.expirationTime) {
+		console.log('使用缓存的库存统计数据');
+		// 使用缓存数据
+		totalStock.value = statisticsCache.data.totalStock;
+		todayIn.value = statisticsCache.data.todayIn;
+		todayOut.value = statisticsCache.data.todayOut;
+		return Promise.resolve(statisticsCache.data);
+	}
 
 	// 使用API 9.2 获取库存统计数据
 	// 可以添加查询参数，如当前日期等
@@ -821,14 +858,20 @@ function loadInventoryStatistics() {
 		period: 'day'
 	};
 
-	statisticsService.getInventoryStatistics(params)
+	return statisticsService.getInventoryStatistics(params)
 		.then(data => {
 			console.log('获取库存统计数据成功:', data);
+
+			// 更新缓存
+			statisticsCache.data = data;
+			statisticsCache.timestamp = now;
 
 			// 更新库存统计数据
 			totalStock.value = data.totalStock;
 			todayIn.value = data.todayIn;
 			todayOut.value = data.todayOut;
+
+			return data;
 		})
 		.catch(err => {
 			console.error('获取库存统计数据失败:', err);
@@ -861,7 +904,8 @@ function loadFruitData() {
 	loadInventoryStatistics();
 
 	// 根据API文档，水果列表默认包含库存数量
-	fruitService.getFruits()
+	// 使用缓存机制，不强制刷新
+	fruitService.getFruits({}, false)
 		.then(res => {
 			uni.hideLoading();
 			// 打印原始响应数据，便于调试
@@ -934,63 +978,21 @@ function loadCategoriesWithVarieties() {
 	// 显示加载中提示
 	uni.showLoading({ title: '加载分类数据...' });
 
-	// 使用新的API 3.17获取分类及其品种数据
+	// 首先检查全局变量中是否有数据
+	const app = getApp();
+	if (app && app.globalData && app.globalData.categoriesWithVarieties) {
+		console.log('使用全局变量中的分类及品种数据');
+		processCategoriesData(app.globalData.categoriesWithVarieties);
+		uni.hideLoading();
+		return;
+	}
+
+	// 使用API 3.17获取分类及其品种数据
 	// 使用缓存数据，不强制刷新，减少请求次数
 	fruitService.getCategoriesWithVarieties(false)
 		.then(res => {
 			uni.hideLoading();
-			console.log('获取到的分类及品种数据:', res);
-
-			// 处理返回的数据，兼容不同的响应格式
-			let categoriesData = [];
-
-			// 如果是数组，直接使用
-			if (Array.isArray(res)) {
-				categoriesData = res;
-			}
-			// 如果是对象，并且有data属性
-			else if (res && typeof res === 'object' && res.data) {
-				// 如果data是数组，直接使用
-				if (Array.isArray(res.data)) {
-					categoriesData = res.data;
-				}
-				// 如果data是对象，并且有items属性
-				else if (typeof res.data === 'object' && res.data.items) {
-					categoriesData = res.data.items;
-				}
-			}
-
-			console.log('处理后的分类数据:', categoriesData);
-
-			// 确保分类数据是数组
-			if (!Array.isArray(categoriesData)) {
-				console.error('处理后的分类数据仍然不是数组:', categoriesData);
-				categoriesData = [];
-			}
-
-			// 存储完整的分类及品种数据，便于后续使用
-			categoryVarietyData.value = categoriesData;
-
-			// 提取品类名称列表
-			const categories = categoriesData.map(item => {
-				// 如果是字符串，直接使用
-				if (typeof item === 'string') {
-					return item;
-				}
-				// 如果是对象，使用name属性
-				else if (typeof item === 'object' && item !== null) {
-					return item.name || item.category_name || '';
-				}
-				return '';
-			}).filter(name => name); // 过滤掉空值
-
-			console.log('提取后的品类名称列表:', categories);
-
-			// 更新品类列表
-			fruitCategories.value = ['全部', ...categories];
-
-			// 更新品种列表
-			updateVarietiesByCategory(fruitCategories.value[filterCategoryIndex.value]);
+			processCategoriesData(res);
 		})
 		.catch(err => {
 			uni.hideLoading();
@@ -1001,6 +1003,62 @@ function loadCategoriesWithVarieties() {
 			fruitCategories.value = ['全部', ...categories];
 			updateVarietiesByCategory(fruitCategories.value[filterCategoryIndex.value]);
 		});
+}
+
+// 处理分类数据的辅助函数
+function processCategoriesData(res) {
+	console.log('获取到的分类及品种数据:', res);
+
+	// 处理返回的数据，兼容不同的响应格式
+	let categoriesData = [];
+
+	// 如果是数组，直接使用
+	if (Array.isArray(res)) {
+		categoriesData = res;
+	}
+	// 如果是对象，并且有data属性
+	else if (res && typeof res === 'object' && res.data) {
+		// 如果data是数组，直接使用
+		if (Array.isArray(res.data)) {
+			categoriesData = res.data;
+		}
+		// 如果data是对象，并且有items属性
+		else if (typeof res.data === 'object' && res.data.items) {
+			categoriesData = res.data.items;
+		}
+	}
+
+	console.log('处理后的分类数据:', categoriesData);
+
+	// 确保分类数据是数组
+	if (!Array.isArray(categoriesData)) {
+		console.error('处理后的分类数据仍然不是数组:', categoriesData);
+		categoriesData = [];
+	}
+
+	// 存储完整的分类及品种数据，便于后续使用
+	categoryVarietyData.value = categoriesData;
+
+	// 提取品类名称列表
+	const categories = categoriesData.map(item => {
+		// 如果是字符串，直接使用
+		if (typeof item === 'string') {
+			return item;
+		}
+		// 如果是对象，使用name属性
+		else if (typeof item === 'object' && item !== null) {
+			return item.name || item.category_name || '';
+		}
+		return '';
+	}).filter(name => name); // 过滤掉空值
+
+	console.log('提取后的品类名称列表:', categories);
+
+	// 更新品类列表
+	fruitCategories.value = ['全部', ...categories];
+
+	// 更新品种列表
+	updateVarietiesByCategory(fruitCategories.value[filterCategoryIndex.value]);
 }
 
 // 添加盘库功能函数
@@ -1233,18 +1291,8 @@ function confirmDeleteFruit() {
 	// 显示加载中提示
 	uni.showLoading({ title: '处理中...' });
 
-	// 获取操作人信息
-	const operator = uni.getStorageSync('loginUser')?.name || '系统管理员';
-
-	// 先获取要删除的水果信息，以便记录操作
-	fruitService.getFruitById(currentFruit.value.id)
-		.then(originalFruit => {
-			// 记录删除操作
-			operationRecordService.addOperationRecord('删除水果', originalFruit, {}, operator);
-
-			// 执行删除操作
-			return fruitService.deleteFruit(currentFruit.value.id);
-		})
+	// 直接执行删除操作
+	fruitService.deleteFruit(currentFruit.value.id)
 		.then(() => {
 			uni.hideLoading();
 			uni.showToast({ title: '删除成功', icon: 'success' });
@@ -1334,30 +1382,9 @@ page {
 	gap: 15rpx;
 }
 
-.search-box {
-	flex: 1;
-	position: relative;
-	height: 70rpx;
-	background-color: rgba(255, 255, 255, 0.9);
-	border-radius: 35rpx;
-	display: flex;
-	align-items: center;
-}
+/* 使用统一搜索框样式 */
 
-.search-icon {
-	position: absolute;
-	left: 25rpx;
-	font-size: 28rpx;
-	color: #9CA3AF;
-}
 
-.search-input {
-	flex: 1;
-	height: 100%;
-	padding: 0 20rpx 0 65rpx;
-	font-size: 26rpx;
-	color: #333;
-}
 
 .header-actions {
 	display: flex;
@@ -1393,9 +1420,7 @@ page {
 	background-color: rgba(255, 255, 255, 0.15);
 }
 
-.add-btn {
-	background-color: rgba(255, 255, 255, 0.25);
-}
+/* 使用统一新增按钮样式 */
 
 /* 数据统计面板样式 */
 .dashboard-container {
@@ -1598,11 +1623,14 @@ page {
 .fruit-spec {
 	font-size: 24rpx;
 	color: #6B7280;
-	margin-bottom: 8rpx;
 	background-color: #F9FAFB;
 	padding: 6rpx 14rpx;
 	border-radius: 8rpx;
 	display: inline-block;
+	max-width: 60%;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .fruit-stock-tag {
@@ -1719,51 +1747,7 @@ page {
 	color: #374151;
 }
 
-/* 弹窗样式 */
-.popup-container {
-	background-color: white;
-	border-top-left-radius: 24rpx;
-	border-top-right-radius: 24rpx;
-	overflow: hidden;
-	padding-bottom: env(safe-area-inset-bottom);
-	max-height: 80vh;
-	display: flex;
-	flex-direction: column;
-	position: relative;
-	width: 100% !important; /* 确保宽度始终为100% */
-	left: 0 !important; /* 确保左边距为0 */
-	right: 0 !important; /* 确保右边距为0 */
-}
-
-.popup-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding: 30rpx;
-	border-bottom: 1rpx solid #F3F4F6;
-	flex-shrink: 0;
-}
-
-.popup-title {
-	font-size: 32rpx;
-	font-weight: bold;
-	color: #1F2937;
-}
-
-.popup-close {
-	font-size: 32rpx;
-	color: #9CA3AF;
-	padding: 10rpx;
-}
-
-.popup-content {
-	padding: 30rpx 30rpx 100rpx;
-	box-sizing: border-box;
-	width: 100% !important;
-	overflow-y: auto;
-	max-height: 70vh;
-	margin: 0 auto;
-}
+/* 使用统一弹窗样式 */
 
 .form-content {
 	padding-bottom: 50rpx;
@@ -1806,54 +1790,7 @@ page {
 	display: inline-block;
 }
 
-.form-item {
-	margin-bottom: 24rpx;
-}
-
-.form-label {
-	font-size: 28rpx;
-	color: #4B5563;
-	font-weight: 500;
-	margin-bottom: 12rpx;
-	display: block;
-}
-
-.quantity-control {
-	display: flex;
-	border: 1rpx solid #E5E7EB;
-	border-radius: 12rpx;
-	overflow: hidden;
-	height: 80rpx;
-	box-sizing: border-box;
-	align-items: center;
-}
-
-.quantity-btn {
-	width: 80rpx;
-	height: 80rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background-color: #F9FAFB;
-	font-size: 36rpx;
-	color: #4B5563;
-	line-height: 1;
-	padding: 0;
-	margin: 0;
-	border: none;
-}
-
-.quantity-input {
-	flex: 1;
-	text-align: center;
-	font-size: 32rpx;
-	font-weight: bold;
-	height: 80rpx;
-	line-height: 80rpx;
-	vertical-align: middle;
-	padding: 0;
-	margin: 0;
-}
+/* 使用统一表单样式 */
 
 .in-text {
 	color: #047857;
@@ -1863,43 +1800,7 @@ page {
 	color: #DC2626;
 }
 
-.text-input {
-	width: 100%;
-	height: 80rpx;
-	border: 1rpx solid #E5E7EB;
-	border-radius: 12rpx;
-	padding: 0 24rpx;
-	font-size: 28rpx;
-	color: #1F2937;
-	box-sizing: border-box;
-}
-
-.remark-input {
-	width: 100%;
-	height: 160rpx;
-	border: 1rpx solid #E5E7EB;
-	border-radius: 12rpx;
-	padding: 16rpx 24rpx;
-	font-size: 28rpx;
-	color: #1F2937;
-}
-
-.confirm-btn {
-	height: 90rpx;
-	border-radius: 45rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 30rpx;
-	font-weight: 500;
-	margin-top: 30rpx;
-	margin-bottom: 30rpx;
-	color: white;
-	width: 100% !important;
-	position: relative;
-	z-index: 10;
-	box-sizing: border-box;
-}
+/* 使用统一按钮样式 */
 
 .in-confirm {
 	background: linear-gradient(135deg, #059669, #047857);
@@ -1916,22 +1817,7 @@ page {
 	box-shadow: 0 4rpx 12rpx rgba(13, 148, 136, 0.2);
 }
 
-/* 表单样式 */
-.picker {
-	width: 100%;
-	height: 80rpx;
-	background-color: #F9FAFB;
-	border-radius: 12rpx;
-	padding: 0 20rpx;
-	display: flex;
-	align-items: center;
-	box-sizing: border-box;
-}
-
-.picker-text {
-	font-size: 28rpx;
-	color: #374151;
-}
+/* 使用统一表单样式 */
 
 .upload-container {
 	width: 100%;
@@ -1982,11 +1868,6 @@ page {
 	font-size: 24rpx;
 	color: #6B7280;
 	margin-top: 8rpx;
-}
-
-.required {
-	color: #EF4444;
-	margin-left: 4rpx;
 }
 
 /* 筛选弹窗样式 */
@@ -2120,7 +2001,9 @@ page {
 .fruit-info-row {
 	display: flex;
 	align-items: center;
+	justify-content: space-between;
 	margin-bottom: 12rpx;
+	margin-top: 8rpx;
 }
 
 /* 禁用状态的样式 */
@@ -2139,5 +2022,87 @@ page {
 	color: #9CA3AF;
 	margin-top: 6rpx;
 	padding-left: 4rpx;
+}
+
+/* 新的库存卡片样式 */
+.fruit-stock-card {
+	position: relative;
+	width: 120rpx;
+	height: 60rpx;
+	border-radius: 30rpx;
+	overflow: hidden;
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.stock-card-glow {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 1;
+	opacity: 0.7;
+}
+
+.stock-card-content {
+	position: relative;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+	padding: 0 16rpx;
+}
+
+.stock-value {
+	font-size: 32rpx;
+	font-weight: bold;
+	color: white;
+	margin-right: 4rpx;
+}
+
+.stock-unit {
+	font-size: 22rpx;
+	color: rgba(255, 255, 255, 0.9);
+}
+
+.stock-icon {
+	position: absolute;
+	right: 10rpx;
+	font-size: 24rpx;
+	color: rgba(255, 255, 255, 0.7);
+}
+
+/* 不同库存级别的样式 */
+.stock-high {
+	background: linear-gradient(135deg, rgba(16, 185, 129, 0.8), rgba(5, 150, 105, 0.8));
+}
+
+.stock-high .stock-card-glow {
+	background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.3), transparent 50%);
+}
+
+.stock-medium {
+	background: linear-gradient(135deg, rgba(245, 158, 11, 0.8), rgba(217, 119, 6, 0.8));
+}
+
+.stock-medium .stock-card-glow {
+	background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.3), transparent 50%);
+}
+
+.stock-low {
+	background: linear-gradient(135deg, rgba(239, 68, 68, 0.8), rgba(220, 38, 38, 0.8));
+}
+
+.stock-low .stock-card-glow {
+	background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.3), transparent 50%);
+}
+
+.stock-empty {
+	background: linear-gradient(135deg, rgba(107, 114, 128, 0.8), rgba(75, 85, 99, 0.8));
+}
+
+.stock-empty .stock-card-glow {
+	background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.2), transparent 50%);
 }
 </style>

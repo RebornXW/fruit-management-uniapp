@@ -172,33 +172,33 @@
 				<view class="function-menu">
 					<view class="function-item" @tap="navigateTo('/pages/records/sales-records')">
 						<view class="function-icon bg-emerald-100">
-							<uni-icons type="list" size="24" color="#059669"></uni-icons>
+							<image src="/static/icons/sales-records.png" style="width: 24px; height: 24px;"></image>
 						</view>
 						<text class="function-text text-emerald-600">销售记录</text>
 					</view>
 					<view class="function-item" @tap="navigateTo('/pages/records/inventory-records')">
 						<view class="function-icon bg-sky-100">
-							<uni-icons type="shop" size="24" color="#0284C7"></uni-icons>
+							<image src="/static/icons/inventory-records.png" style="width: 24px; height: 24px;"></image>
 						</view>
 						<text class="function-text text-sky-600">库存记录</text>
 					</view>
-					<view class="function-item" @tap="navigateTo('/pages/records/operation-records')">
+					<view class="function-item" @tap="navigateTo('/pages/records/system-log')">
 						<view class="function-icon bg-violet-100">
-							<uni-icons type="bars" size="24" color="#7C3AED"></uni-icons>
+							<image src="/static/icons/operation-records.png" style="width: 24px; height: 24px;"></image>
 						</view>
-						<text class="function-text text-violet-600">操作记录</text>
+						<text class="function-text text-violet-600">系统日志</text>
 					</view>
 					<view class="function-item" @tap="showFunction('reconciliation')">
 						<view class="function-icon bg-indigo-100">
-							<uni-icons type="wallet" size="24" color="#4F46E5"></uni-icons>
+							<image src="/static/icons/payment-records.png" style="width: 24px; height: 24px;"></image>
 						</view>
-						<text class="function-text text-indigo-600">财务管理</text>
+						<text class="function-text text-indigo-600">付款记录</text>
 					</view>
 				</view>
 			</view>
 		</view>
 
-		<!-- 数据摘要卡片 -->
+		<!-- 数据摘要卡片 - 高科技感设计 -->
 		<view class="px-4 mb-20">
 			<view class="flex items-center mb-3">
 				<view class="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg flex items-center justify-center mr-2 shadow-sm">
@@ -206,100 +206,83 @@
 				</view>
 				<text class="text-base font-bold">业务数据摘要</text>
 			</view>
-			<view class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-50">
-				<!-- 客户数据 -->
-				<view class="p-4 border-b border-gray-100">
-					<view class="flex items-center justify-between mb-3">
-						<view class="flex items-center">
-							<view class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-sm">
-								<uni-icons type="person" size="20" color="#FFFFFF"></uni-icons>
-							</view>
-							<text class="font-medium text-base">客户数据</text>
-						</view>
-						<view class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-medium">本月</view>
-					</view>
-					<view class="flex justify-between items-center mt-3">
-						<view class="data-item-inline bg-blue-50 rounded-xl flex-1 mr-2 p-3">
-							<view class="flex items-center justify-between">
-								<text class="text-xs text-blue-600 font-medium">活跃客户</text>
-								<view class="flex items-center">
-									<text class="text-xl font-bold text-blue-700">{{dashboardData.activeCustomers || 12}}</text>
-									<text class="text-xs text-blue-500 ml-1">位</text>
-								</view>
-							</view>
-						</view>
-						<view class="data-item-inline bg-indigo-50 rounded-xl flex-1 ml-2 p-3">
-							<view class="flex items-center justify-between">
-								<text class="text-xs text-indigo-600 font-medium">新增客户</text>
-								<view class="flex items-center">
-									<text class="text-xl font-bold text-indigo-700">{{dashboardData.newCustomers || 3}}</text>
-									<text class="text-xs text-indigo-500 ml-1">位</text>
-								</view>
-							</view>
-						</view>
-					</view>
-				</view>
 
-				<!-- 库存数据 -->
-				<view class="p-4 border-b border-gray-100">
-					<view class="flex items-center justify-between mb-3">
-						<view class="flex items-center">
-							<view class="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center mr-3 shadow-sm">
+			<!-- 卡片网格布局 -->
+			<view class="business-summary-grid">
+				<!-- 在售水果卡片 -->
+				<view class="business-summary-card card-amber" @tap="navigateTo('/pages/price/price')">
+					<view class="card-glow amber-glow"></view>
+					<view class="card-content">
+						<view class="card-header">
+							<text class="card-title">在售水果</text>
+							<view class="card-icon">
 								<uni-icons type="shop" size="20" color="#FFFFFF"></uni-icons>
 							</view>
-							<text class="font-medium text-base">库存状态</text>
 						</view>
-						<view class="text-xs bg-amber-50 text-amber-600 px-2 py-1 rounded-full font-medium">实时</view>
+						<view class="card-body">
+							<text class="card-value">{{activeFruitsCount}}</text>
+							<text class="card-unit">种</text>
+						</view>
 					</view>
-					<view class="flex justify-between items-center mt-3">
-						<view class="data-item-inline bg-amber-50 rounded-xl flex-1 mr-2 p-3">
-							<view class="flex items-center justify-between">
-								<text class="text-xs text-amber-600 font-medium">在售水果</text>
-								<view class="flex items-center">
-									<text class="text-xl font-bold text-amber-700">{{dashboardData.activeFruits || 15}}</text>
-									<text class="text-xs text-amber-500 ml-1">种</text>
-								</view>
+				</view>
+
+				<!-- 库存预警卡片 -->
+				<view class="business-summary-card card-orange" @tap="navigateTo('/pages/inventory/inventory')">
+					<view class="card-glow orange-glow"></view>
+					<view class="card-content">
+						<view class="card-header">
+							<text class="card-title">库存预警</text>
+							<view class="card-icon">
+								<uni-icons type="notification" size="20" color="#FFFFFF"></uni-icons>
 							</view>
 						</view>
-						<view class="data-item-inline bg-orange-50 rounded-xl flex-1 ml-2 p-3">
-							<view class="flex items-center justify-between">
-								<text class="text-xs text-orange-600 font-medium">库存预警</text>
-								<view class="flex items-center">
-									<text class="text-xl font-bold text-orange-600">{{dashboardData.lowStockCount || 2}}</text>
-									<text class="text-xs text-orange-500 ml-1">种</text>
+						<view class="card-body">
+							<text class="card-value">{{lowStockCount}}</text>
+							<text class="card-unit">种</text>
+						</view>
+					</view>
+				</view>
+
+				<!-- 欠款客户卡片 -->
+				<view class="business-summary-card card-red" @tap="navigateTo('/pages/customer/customer')">
+					<view class="card-glow red-glow"></view>
+					<view class="card-content">
+						<view class="card-header">
+							<text class="card-title">欠款客户</text>
+							<view class="card-icon">
+								<uni-icons type="wallet" size="20" color="#FFFFFF"></uni-icons>
+							</view>
+						</view>
+						<view class="card-body">
+							<text class="card-value">{{unpaidCustomersCount}}</text>
+							<text class="card-unit">位</text>
+						</view>
+					</view>
+				</view>
+
+				<!-- 热销水果卡片 -->
+				<view class="business-summary-card card-emerald" @tap="viewFullRanking">
+					<view class="card-glow emerald-glow"></view>
+					<view class="card-content">
+						<view class="card-header">
+							<text class="card-title">热销水果</text>
+							<view class="card-icon">
+								<uni-icons type="star" size="20" color="#FFFFFF"></uni-icons>
+							</view>
+						</view>
+						<view class="card-body hot-selling-container">
+							<view class="hot-selling-preview">
+								<view class="hot-selling-item" v-for="(fruit, index) in topSales.slice(0, 3)" :key="index">
+									<view class="hot-selling-rank">{{index + 1}}</view>
+									<image :src="fruit.image" class="hot-selling-image" mode="aspectFill"></image>
+									<text class="hot-selling-name">{{fruit.name}}</text>
 								</view>
 							</view>
 						</view>
 					</view>
 				</view>
 
-				<!-- 热销水果 -->
-				<view class="p-4">
-					<view class="flex items-center justify-between mb-3">
-						<view class="flex items-center">
-							<view class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-sm">
-								<uni-icons type="star" size="20" color="#FFFFFF"></uni-icons>
-							</view>
-							<text class="font-medium text-base">热销水果</text>
-						</view>
-						<view @tap="viewFullRanking" class="text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full font-medium flex items-center">
-							查看更多
-							<uni-icons type="right" size="12" color="#10B981" class="ml-1"></uni-icons>
-						</view>
-					</view>
-					<view class="flex items-center justify-between mt-3 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl shadow-sm">
-						<view class="flex items-center">
-							<view class="w-12 h-12 bg-white rounded-xl overflow-hidden mr-3 shadow-sm border border-emerald-100">
-								<image :src="topSales[0].image" :alt="topSales[0].name" class="w-full h-full object-cover"></image>
-							</view>
-							<view>
-								<text class="font-medium text-gray-800">{{topSales[0].name}}</text>
-								<text class="text-xs text-emerald-600 block mt-1">销量：{{topSales[0].quantity}}箱</text>
-							</view>
-						</view>
-						<text class="text-lg text-emerald-600 font-bold">¥{{topSales[0].amount}}</text>
-					</view>
-				</view>
+
 			</view>
 		</view>
 
@@ -402,9 +385,10 @@
 								<uni-icons type="grid" size="14" color="#4B5563"></uni-icons>
 							</view>
 						</view>
-						<view class="search-box">
-							<uni-icons type="search" size="16" color="#9CA3AF"></uni-icons>
-							<input type="text" placeholder="搜索客户/商品" class="search-input" v-model="searchKeyword" @input="filterSalesRecords" />
+						<view class="app-search-box app-search-box-content app-search-box-small">
+							<text class="iconfont icon-search app-search-icon"></text>
+							<input type="text" placeholder="搜索客户/商品" class="app-search-input" v-model="searchKeyword" @input="filterSalesRecords" />
+							<text v-if="searchKeyword" class="app-search-clear" @tap="searchKeyword = ''">×</text>
 						</view>
 						<view class="filter-btn" @tap="showFilterOptions">
 							<uni-icons type="funnel" size="16" color="#9CA3AF"></uni-icons>
@@ -731,8 +715,40 @@
 			</view>
 		</uni-popup>
 
-		<!-- 底部TabBar -->
-		<custom-tab-bar></custom-tab-bar>
+		<!-- 设置目标销售额和提成比例弹窗 -->
+		<uni-popup ref="targetSettingPopup" type="dialog">
+			<view class="target-setting-popup">
+				<view class="target-popup-title">设置{{getReportTypeText()}}目标</view>
+				<view class="target-popup-content">
+					<view class="target-input-group">
+						<text class="target-input-label">目标销售额（元）</text>
+						<input type="digit" v-model="targetSalesAmount" class="target-input-field" placeholder="请输入目标销售额" />
+					</view>
+					<view class="target-input-group">
+						<text class="target-input-label">提成比例（%）</text>
+						<input type="digit" v-model="commissionRate" class="target-input-field" placeholder="请输入提成比例" />
+					</view>
+					<view class="target-input-group">
+						<text class="target-input-label">当前销售额（元）</text>
+						<text class="target-input-value">¥{{getCurrentData().amount}}</text>
+					</view>
+					<view class="target-input-group">
+						<text class="target-input-label">完成率</text>
+						<text class="target-input-value target-completion-rate">{{calculateCompletionRate()}}%</text>
+					</view>
+					<view class="target-input-group">
+						<text class="target-input-label">预计提成收入（元）</text>
+						<text class="target-input-value target-commission-rate">¥{{calculateCommission()}}</text>
+					</view>
+				</view>
+				<view class="target-popup-footer">
+					<button class="target-btn target-btn-cancel" @click="cancelTargetSetting">取消</button>
+					<button class="target-btn target-btn-confirm" @click="confirmTargetSetting">确定</button>
+				</view>
+			</view>
+		</uni-popup>
+
+		<!-- 使用系统原生TabBar，无需自定义组件 -->
 	</view>
 </template>
 
@@ -740,8 +756,10 @@
 import { ref, reactive, onMounted, computed, onUnmounted } from 'vue';
 import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
 import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
-import CustomTabBar from '@/components/CustomTabBar.vue';
 import { getUserProfile, updateUserProfile, uploadAvatar, logout } from '@/services/authService.js';
+import statisticsService from '@/services/statisticsService.js';
+import fruitService from '@/services/fruitService.js';
+import customerService from '@/services/customerService.js';
 
 // 用户数据
 const userData = ref({
@@ -768,6 +786,25 @@ const functionPopup = ref(null);
 const settingsPopup = ref(null);
 const timeRangePopup = ref(null);
 const salesRecordPopup = ref(null);
+const targetSettingPopup = ref(null);
+
+// 目标销售额和提成比例设置
+const targetSalesAmount = ref('');
+const commissionRate = ref('');
+
+// 目标销售额数据
+const targetSalesData = reactive({
+	daily: uni.getStorageSync('targetSales_daily') || 0,
+	monthly: uni.getStorageSync('targetSales_monthly') || 0,
+	yearly: uni.getStorageSync('targetSales_yearly') || 0
+});
+
+// 提成比例数据
+const commissionRateData = reactive({
+	daily: uni.getStorageSync('commissionRate_daily') || 0,
+	monthly: uni.getStorageSync('commissionRate_monthly') || 0,
+	yearly: uni.getStorageSync('commissionRate_yearly') || 0
+});
 const searchKeyword = ref('');
 const salesRecords = ref([
 	{
@@ -864,6 +901,7 @@ const reportTypeIndex = ref(0);
 
 // 销售数据面板
 const dashboardData = reactive({
+	// 销售报表数据
 	daily: {
 		amount: '8,356',
 		amountTrend: 12.5,
@@ -890,14 +928,58 @@ const dashboardData = reactive({
 		commissionTrend: 25.6,
 		topProduct: '阿克苏苹果',
 		topProductQuantity: 3850
-	}
+	},
+	// 业务数据摘要
+	activeFruits: 15,         // 在售水果数量
+	lowStockCount: 2,         // 库存预警数量
+	unpaidCustomers: 5,       // 欠款客户数量
 });
+
+
+	// 水果和客户数据
+const fruitData = ref([]);
+const customerData = ref([]);
+
+// 计算属性：在售水果数量（库存大于0的水果种类数量）
+const activeFruitsCount = computed(() => {
+	console.log('计算在售水果数量，水果数据:', fruitData.value);
+	return fruitData.value.filter(fruit => {
+		// 处理不同的数据结构
+		const stock = fruit.stock !== undefined ? fruit.stock :
+			(fruit.inventory !== undefined ? fruit.inventory : 0);
+		return stock > 0;
+	}).length;
+});
+
+// 计算属性：库存预警数量（库存大于0但小于50的水果种类数量）
+const lowStockCount = computed(() => {
+	console.log('计算库存预警数量，水果数据:', fruitData.value);
+	return fruitData.value.filter(fruit => {
+		// 处理不同的数据结构
+		const stock = fruit.stock !== undefined ? fruit.stock :
+			(fruit.inventory !== undefined ? fruit.inventory : 0);
+		return stock > 0 && stock < 50;
+	}).length;
+});
+
+// 计算属性：欠款客户数量（付款状态为未付款或部分付款的客户数量）
+const unpaidCustomersCount = computed(() => {
+	console.log('计算欠款客户数量，客户数据:', customerData.value);
+	return customerData.value.filter(customer => {
+		// 处理不同的数据结构
+		const unpaidAmount = customer.unpaidAmount !== undefined ? customer.unpaidAmount :
+			(customer.unpaid_amount !== undefined ? customer.unpaid_amount : 0);
+		return unpaidAmount > 0;
+	}).length;
+});
+
+
 
 // 热销水果排行
 const topSales = ref([
-	{ name: '明牌阿克苏苹果', quantity: 52, amount: '2,860', image: 'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=300' },
-	{ name: '砀山梨', quantity: 38, amount: '1,216', image: 'https://images.unsplash.com/photo-1594502184342-2349ffc9ead3?q=80&w=300' },
-	{ name: '新鲜橘子', quantity: 25, amount: '750', image: 'https://images.unsplash.com/photo-1519096989031-2aee4ffe17c6?q=80&w=300' }
+	{ name: '阿克苏苹果', quantity: 52, amount: '2,860', image: '/static/fruit/apple.png' },
+	{ name: '砀山梨', quantity: 38, amount: '1,216', image: '/static/fruit/pear.png' },
+	{ name: '新鲜橘子', quantity: 25, amount: '750', image: '/static/fruit/grape.png' }
 ]);
 
 // 当前功能
@@ -917,6 +999,12 @@ const editProfilePopup = ref(null);
 onMounted(() => {
 	// 首先检查登录状态
 	checkLoginStatus();
+
+	// 初始化时刷新面板数据，获取最新的销售总额数据
+	// 加载水果和客户数据
+	loadFruitData();
+	loadCustomerData();
+	refreshDashboardData();
 
 	// 监听页面显示事件
 	uni.$on('onShow', checkLoginStatus);
@@ -1074,13 +1162,50 @@ function onSwiperChange(e) {
 
 // 刷新面板数据
 function refreshDashboardData() {
-	// 这里可以根据选择的业务员和报表类型加载不同的数据
-	uni.showToast({
-		title: `${reportTypes[reportTypeIndex.value]}，${staffList.value[staffIndex.value].name}`,
-		icon: 'none'
-	});
-	// 模拟数据刷新
-	// 实际应用中应该调用API获取数据
+	// 获取当前报表类型
+	const reportType = getReportTypeKey();
+
+	// 计算目标完成率
+	const completionRate = calculateCompletionRate();
+
+	// 计算预计提成收入
+	const commission = calculateCommission();
+
+	// 更新面板数据
+	dashboardData[reportType].targetCompletion = completionRate;
+	dashboardData[reportType].commission = commission;
+
+	// 调用API获取销售总额摘要数据
+	statisticsService.getSalesSummary()
+		.then(res => {
+			console.log('获取销售总额摘要成功:', res);
+
+			// 更新销售数据
+			if (res) {
+				// 更新日报数据
+				if (res.today) {
+					dashboardData.daily.amount = formatNumber(res.today.sales);
+				}
+
+				// 更新月报数据
+				if (res.this_month) {
+					dashboardData.monthly.amount = formatNumber(res.this_month.sales);
+				}
+
+				// 更新年报数据
+				if (res.this_year) {
+					dashboardData.yearly.amount = formatNumber(res.this_year.sales);
+				}
+
+				// 重新计算目标完成率和提成收入
+				const reportType = getReportTypeKey();
+				dashboardData[reportType].targetCompletion = calculateCompletionRate();
+				dashboardData[reportType].commission = calculateCommission();
+			}
+		})
+		.catch(err => {
+			console.error('获取销售总额摘要失败:', err);
+		});
 }
 
 // 获取当前选择的报表类型的数据
@@ -1098,12 +1223,7 @@ function getCurrentData() {
 // 显示功能弹窗
 function showFunction(type) {
 	switch(type) {
-		case 'operationRecord':
-			currentFunction.value = {
-				title: '操作记录',
-				content: '这里将提供操作记录功能，包括库存操作、系统操作等各类操作的记录。'
-			};
-			break;
+
 		case 'reconciliation':
 			currentFunction.value = {
 				title: '还没想好',
@@ -1113,6 +1233,97 @@ function showFunction(type) {
 	}
 
 	functionPopup.value.open();
+}
+
+// 获取当前报表类型文本
+function getReportTypeText() {
+	const index = reportTypeIndex.value;
+	return reportTypes[index];
+}
+
+// 显示目标设置弹窗
+function showTargetSetting() {
+	// 获取当前报表类型
+	const reportType = getReportTypeKey();
+
+	// 设置当前值
+	targetSalesAmount.value = targetSalesData[reportType].toString();
+	commissionRate.value = commissionRateData[reportType].toString();
+
+	// 打开弹窗
+	targetSettingPopup.value.open();
+}
+
+// 获取当前报表类型的key
+function getReportTypeKey() {
+	const index = reportTypeIndex.value;
+	if (index === 0) {
+		return 'daily';
+	} else if (index === 1) {
+		return 'monthly';
+	} else {
+		return 'yearly';
+	}
+}
+
+// 计算完成率
+function calculateCompletionRate() {
+	const reportType = getReportTypeKey();
+	const target = parseFloat(targetSalesData[reportType]) || 0;
+	// 处理可能包含千位分隔符的金额字符串
+	const amountStr = getCurrentData().amount || '0';
+	const current = parseFloat(amountStr.toString().replace(/,/g, '')) || 0;
+
+	if (target <= 0) return 0;
+
+	const rate = Math.min(Math.round((current / target) * 100), 100);
+	return rate;
+}
+
+// 计算预计提成收入
+function calculateCommission() {
+	const reportType = getReportTypeKey();
+	const rate = parseFloat(commissionRateData[reportType]) || 0;
+	// 处理可能包含千位分隔符的金额字符串
+	const amountStr = getCurrentData().amount || '0';
+	const current = parseFloat(amountStr.toString().replace(/,/g, '')) || 0;
+
+	const commission = (current * rate / 100).toFixed(2);
+	return commission;
+}
+
+// 取消目标设置
+function cancelTargetSetting() {
+	targetSettingPopup.value.close();
+}
+
+// 确认目标设置
+function confirmTargetSetting() {
+	const reportType = getReportTypeKey();
+
+	// 将输入值转为数字
+	const targetAmount = parseFloat(targetSalesAmount.value) || 0;
+	const commRate = parseFloat(commissionRate.value) || 0;
+
+	// 更新数据
+	targetSalesData[reportType] = targetAmount;
+	commissionRateData[reportType] = commRate;
+
+	// 存储到本地
+	uni.setStorageSync(`targetSales_${reportType}`, targetAmount);
+	uni.setStorageSync(`commissionRate_${reportType}`, commRate);
+
+	// 关闭弹窗
+	targetSettingPopup.value.close();
+
+	// 显示成功提示
+	uni.showToast({
+		title: '设置成功',
+		icon: 'success'
+	});
+
+	// 刷新数据
+	refreshDashboardData();
 }
 
 // 编辑个人信息
@@ -1242,11 +1453,51 @@ function submitProfileData(profileData) {
 
 // 查看完整排行
 function viewFullRanking() {
+	// 构建热销水果排行榜内容
+	let rankingContent = '<div style="padding: 10px 0;">';
+
+	// 添加排行榜标题
+	rankingContent += '<div style="margin-bottom: 20px; text-align: center; font-weight: bold; color: #10B981;">本月热销水果排行榜</div>';
+
+	// 添加排行榜列表
+	topSales.value.forEach((fruit, index) => {
+		rankingContent += `
+			<div style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; background-color: ${index < 3 ? '#F0FDF4' : '#F9FAFB'}; border-radius: 8px;">
+				<div style="width: 30px; height: 30px; background-color: ${getTopRankColor(index)}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: bold;">${index + 1}</div>
+				<div style="width: 40px; height: 40px; border-radius: 8px; overflow: hidden; margin-right: 15px;">
+					<img src="${fruit.image}" style="width: 100%; height: 100%; object-fit: cover;" />
+				</div>
+				<div style="flex: 1;">
+					<div style="font-weight: bold; color: #1F2937;">${fruit.name}</div>
+					<div style="font-size: 12px; color: #6B7280;">销量: ${fruit.quantity}箱</div>
+				</div>
+				<div style="font-weight: bold; color: #10B981;">¥${fruit.amount}</div>
+			</div>
+		`;
+	});
+
+	rankingContent += '</div>';
+
+	// 设置弹窗内容
 	currentFunction.value = {
 		title: '热销水果排行榜',
-		content: '这里将显示所有水果的销售排行信息。'
+		content: rankingContent
 	};
+
+	// 打开弹窗
 	functionPopup.value.open();
+}
+
+// 获取排名颜色
+function getTopRankColor(index) {
+	const colors = [
+		'#F59E0B', // 金色 - 第一名
+		'#6B7280', // 银色 - 第二名
+		'#B45309', // 铜色 - 第三名
+		'#9CA3AF'  // 灰色 - 其他名次
+	];
+
+	return index < 3 ? colors[index] : colors[3];
 }
 
 // 显示设置
@@ -1323,6 +1574,15 @@ function closeTimeRange() {
 function selectTimeRange(range) {
 	timeRange.value = range;
 	closeTimeRange();
+}
+
+// 格式化数字，添加千位分隔符
+function formatNumber(num) {
+	if (num === undefined || num === null) return '0';
+	return parseFloat(num).toLocaleString('en-US', {
+		maximumFractionDigits: 2,
+		minimumFractionDigits: 0
+	});
 }
 
 // 在 script setup 部分添加视图和筛选相关数据
@@ -1486,7 +1746,15 @@ function navigateTo(url) {
 	if (tabBarPages.includes(url)) {
 		// 如果是 tabBar 页面，使用 switchTab
 		uni.switchTab({
-			url: url
+			url: url,
+			success: () => {
+				// 延迟触发tabChange事件，确保页面已经完成切换
+				setTimeout(() => {
+					// 触发tabChange事件，更新底部tab栏状态
+					uni.$emit('tabChange');
+					console.log('从个人中心跳转后触发tabChange事件');
+				}, 100);
+			}
 		});
 	} else {
 		// 如果不是 tabBar 页面，使用 navigateTo
@@ -1499,6 +1767,130 @@ function navigateTo(url) {
 // 关闭功能弹窗
 function closePopup() {
 	functionPopup.value.close();
+}
+
+// 加载水果数据
+function loadFruitData() {
+	console.log('开始加载水果数据');
+
+	// 使用缓存机制加载水果数据
+	fruitService.getFruits({}, false)
+		.then(res => {
+			console.log('获取水果数据成功', res);
+
+			// 处理返回的数据
+			let fruitsArray = [];
+
+			// 如果是数组，直接使用
+			if (Array.isArray(res)) {
+				fruitsArray = res;
+			}
+			// 如果是对象，并且有items属性
+			else if (res && typeof res === 'object' && res.items) {
+				fruitsArray = res.items;
+			}
+			// 如果是对象，并且有data属性
+			else if (res && typeof res === 'object' && res.data) {
+				// 如果data是数组，直接使用
+				if (Array.isArray(res.data)) {
+					fruitsArray = res.data;
+				}
+				// 如果data是对象，并且有items属性
+				else if (typeof res.data === 'object' && res.data.items) {
+					fruitsArray = res.data.items;
+				}
+			}
+
+			// 确保每个水果对象都有正确的库存字段
+			fruitsArray = fruitsArray.map(fruit => {
+				// 如果没有stock字段，但有inventory字段，则使用inventory作为stock
+				if (fruit.stock === undefined && fruit.inventory !== undefined) {
+					fruit.stock = fruit.inventory;
+				}
+				// 确保stock是数字类型
+				if (fruit.stock !== undefined) {
+					fruit.stock = parseFloat(fruit.stock);
+				} else {
+					fruit.stock = 0;
+				}
+				return fruit;
+			});
+
+			// 更新水果数据
+			fruitData.value = fruitsArray;
+			console.log('水果数据加载成功，共', fruitData.value.length, '条');
+			console.log('水果数据示例:', fruitData.value.length > 0 ? JSON.stringify(fruitData.value[0], null, 2) : '无数据');
+		})
+		.catch(err => {
+			console.error('加载水果数据失败:', err);
+		});
+}
+
+// 加载客户数据
+function loadCustomerData() {
+	console.log('开始加载客户数据');
+
+	customerService.getCustomers()
+		.then(res => {
+			console.log('获取客户数据成功', res);
+
+			// 处理返回的数据
+			let customersArray = [];
+
+			// 如果是数组，直接使用
+			if (Array.isArray(res)) {
+				customersArray = res;
+			}
+			// 如果是对象，并且有items属性
+			else if (res && typeof res === 'object' && res.items) {
+				customersArray = res.items;
+			}
+			// 如果是对象，并且有data属性
+			else if (res && typeof res === 'object' && res.data) {
+				// 如果data是数组，直接使用
+				if (Array.isArray(res.data)) {
+					customersArray = res.data;
+				}
+				// 如果data是对象，并且有items属性
+				else if (typeof res.data === 'object' && res.data.items) {
+					customersArray = res.data.items;
+				}
+			}
+
+			// 处理客户数据，确保欠款字段正确映射
+			customerData.value = customersArray.map(customer => {
+				// 确保欠款金额是数字类型
+				let unpaidAmount = 0;
+				if (customer.unpaid_amount !== undefined) {
+					unpaidAmount = parseFloat(customer.unpaid_amount);
+				} else if (customer.unpaidAmount !== undefined) {
+					unpaidAmount = parseFloat(customer.unpaidAmount);
+				} else if (customer.totalSales !== undefined && customer.paidAmount !== undefined) {
+					// 如果有总销售额和已付款金额，计算欠款金额
+					const totalSales = parseFloat(customer.totalSales);
+					const paidAmount = parseFloat(customer.paidAmount);
+					unpaidAmount = totalSales - paidAmount;
+				} else if (customer.total_sales !== undefined && customer.paid_amount !== undefined) {
+					// 如果有总销售额和已付款金额（下划线命名），计算欠款金额
+					const totalSales = parseFloat(customer.total_sales);
+					const paidAmount = parseFloat(customer.paid_amount);
+					unpaidAmount = totalSales - paidAmount;
+				}
+
+				// 返回处理后的客户对象
+				return {
+					...customer,
+					// 将下划线命名转换为驼峰命名
+					unpaidAmount: unpaidAmount
+				};
+			});
+
+			console.log('客户数据加载成功，共', customerData.value.length, '条');
+			console.log('客户数据示例:', customerData.value.length > 0 ? JSON.stringify(customerData.value[0], null, 2) : '无数据');
+		})
+		.catch(err => {
+			console.error('加载客户数据失败:', err);
+		});
 }
 </script>
 
@@ -2208,18 +2600,196 @@ function closePopup() {
 
 
 
-/* 数据摘要卡片样式优化 */
-.data-item {
-	background-color: #F9FAFB;
-	border-radius: 12rpx;
-	padding: 16rpx;
-	border: 1rpx solid rgba(0, 0, 0, 0.05);
+/* 业务数据摘要高科技感样式 */
+.business-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 20rpx;
 }
 
-.data-item-inline {
-	background-color: #F9FAFB;
+.business-summary-card {
+	background-color: rgba(255, 255, 255, 0.08);
+	backdrop-filter: blur(20px);
+	border-radius: 20rpx;
+	padding: 24rpx;
+	box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	transition: all 0.3s ease;
+	position: relative;
+	overflow: hidden;
+	height: 160rpx;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.business-summary-card:active {
+	transform: scale(0.98);
+	box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.2);
+}
+
+/* 卡片发光效果 */
+.card-glow {
+	position: absolute;
+	width: 150rpx;
+	height: 150rpx;
+	border-radius: 50%;
+	filter: blur(30rpx);
+	opacity: 0.5;
+	top: -50rpx;
+	right: -50rpx;
+	z-index: 0;
+}
+
+/* 不同卡片的发光颜色 */
+.amber-glow {
+	background: rgba(245, 158, 11, 0.6);
+}
+
+.orange-glow {
+	background: rgba(249, 115, 22, 0.6);
+}
+
+.red-glow {
+	background: rgba(239, 68, 68, 0.6);
+}
+
+.emerald-glow {
+	background: rgba(16, 185, 129, 0.6);
+}
+
+
+
+/* 卡片颜色主题 - 移除左侧竖线 */
+.card-amber {
+	/* 苹果风格玻璃效果 */
+}
+
+.card-orange {
+	/* 苹果风格玻璃效果 */
+}
+
+.card-red {
+	/* 苹果风格玻璃效果 */
+}
+
+.card-emerald {
+	/* 苹果风格玻璃效果 */
+}
+
+
+
+.card-content {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 16rpx;
+}
+
+.card-title {
+	font-size: 28rpx;
+	color: rgba(0, 0, 0, 0.8);
+	font-weight: 500;
+	letter-spacing: 1rpx;
+}
+
+.card-icon {
+	width: 40rpx;
+	height: 40rpx;
+	border-radius: 8rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0.7;
+}
+
+.card-body {
+	flex: 1;
+	display: flex;
+	align-items: flex-end;
+}
+
+.card-value {
+	font-size: 72rpx;
+	font-weight: bold;
+	color: rgba(0, 0, 0, 0.9);
+	line-height: 1;
+	letter-spacing: -1rpx;
+}
+
+.card-unit {
+	font-size: 28rpx;
+	color: rgba(0, 0, 0, 0.6);
+	margin-left: 8rpx;
+	font-weight: normal;
+	align-self: flex-end;
+	margin-bottom: 12rpx;
+}
+
+/* 热销水果预览样式 */
+.hot-selling-container {
+	width: 100%;
+}
+
+.hot-selling-preview {
+	display: flex;
+	justify-content: space-between;
+	width: 100%;
+	gap: 16rpx;
+}
+
+.hot-selling-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	position: relative;
+	width: 33.33%;
+}
+
+.hot-selling-rank {
+	position: absolute;
+	top: -8rpx;
+	left: -8rpx;
+	width: 28rpx;
+	height: 28rpx;
+	border-radius: 50%;
+	background-color: rgba(16, 185, 129, 0.9);
+	color: white;
+	font-size: 20rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 2;
+	font-weight: bold;
+	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+}
+
+.hot-selling-image {
+	width: 64rpx;
+	height: 64rpx;
 	border-radius: 12rpx;
-	border: 1rpx solid rgba(0, 0, 0, 0.05);
+	object-fit: cover;
+	border: 1rpx solid rgba(255, 255, 255, 0.2);
+	background-color: rgba(255, 255, 255, 0.1);
+	box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.2);
+}
+
+.hot-selling-name {
+	font-size: 20rpx;
+	color: rgba(0, 0, 0, 0.7);
+	margin-top: 8rpx;
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	width: 100%;
 }
 
 .card-divider {
@@ -2492,13 +3062,142 @@ function closePopup() {
 	letter-spacing: 0.5rpx;
 }
 
-.popup-footer {
+/* 通用弹窗底部样式 */
+.profile-popup-footer {
 	display: flex;
 	border-top: 1rpx solid #F3F4F6;
 	box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.03);
 }
 
-.popup-btn {
+/* 目标设置弹窗样式 */
+.target-setting-popup {
+	width: 650rpx;
+	background-color: #FFFFFF;
+	border-radius: 28rpx;
+	overflow: hidden;
+	box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.15), 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+	border: 1rpx solid rgba(255, 255, 255, 0.8);
+}
+
+.target-popup-title {
+	font-size: 36rpx;
+	font-weight: bold;
+	color: #1F2937;
+	padding: 36rpx 30rpx;
+	border-bottom: 1rpx solid #F3F4F6;
+	text-align: center;
+	background: linear-gradient(to right, #F0F9FF, #E0F2FE, #F0F9FF);
+	text-shadow: 0 1rpx 2rpx rgba(255, 255, 255, 0.8);
+}
+
+.target-popup-content {
+	padding: 40rpx 30rpx;
+	background-color: #FFFFFF;
+}
+
+.target-input-group {
+	margin-bottom: 30rpx;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	position: relative;
+}
+
+.target-input-group:last-child {
+	margin-bottom: 10rpx;
+}
+
+.target-input-label {
+	font-size: 28rpx;
+	color: #4B5563;
+	font-weight: 500;
+}
+
+.target-input-field {
+	width: 300rpx;
+	height: 80rpx;
+	border: 1rpx solid #E5E7EB;
+	border-radius: 16rpx;
+	padding: 0 20rpx;
+	font-size: 28rpx;
+	background-color: #F9FAFB;
+	transition: all 0.3s ease;
+	box-shadow: inset 0 2rpx 5rpx rgba(0, 0, 0, 0.05);
+}
+
+.target-input-field:focus {
+	border-color: #38BDF8;
+	box-shadow: 0 0 0 3rpx rgba(56, 189, 248, 0.2);
+	outline: none;
+}
+
+.target-input-value {
+	font-size: 30rpx;
+	color: #1F2937;
+	font-weight: 600;
+	padding: 10rpx 20rpx;
+	background-color: #F9FAFB;
+	border-radius: 12rpx;
+	min-width: 200rpx;
+	text-align: right;
+}
+
+.target-completion-rate {
+	color: #0EA5E9;
+	font-weight: bold;
+	background: linear-gradient(to right, #E0F2FE, #BAE6FD);
+}
+
+.target-commission-rate {
+	color: #8B5CF6;
+	font-weight: bold;
+	background: linear-gradient(to right, #EDE9FE, #DDD6FE);
+}
+
+.target-popup-footer {
+	display: flex;
+	padding: 30rpx;
+	justify-content: space-between;
+	border-top: 1rpx solid #F3F4F6;
+	background-color: #FAFAFA;
+}
+
+.target-btn {
+	flex: 0.48;
+	height: 90rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 32rpx;
+	font-weight: 500;
+	border-radius: 45rpx;
+	transition: all 0.3s ease;
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08);
+}
+
+.target-btn-cancel {
+	background: linear-gradient(to right, #F9FAFB, #F3F4F6);
+	color: #4B5563;
+	border: 1rpx solid #E5E7EB;
+}
+
+.target-btn-cancel:active {
+	transform: scale(0.98);
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.target-btn-confirm {
+	background: linear-gradient(135deg, #38BDF8, #0EA5E9, #0284C7);
+	color: #FFFFFF;
+	border: none;
+}
+
+.target-btn-confirm:active {
+	transform: scale(0.98);
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.profile-popup-btn {
 	flex: 1;
 	height: 110rpx;
 	display: flex;
@@ -2508,26 +3207,5 @@ function closePopup() {
 	font-weight: 600;
 	transition: all 0.3s ease;
 	letter-spacing: 1rpx;
-}
-
-.btn-cancel {
-	background-color: #F9FAFB;
-	color: #4B5563;
-	border-right: 1rpx solid #F3F4F6;
-}
-
-.btn-confirm {
-	background: linear-gradient(135deg, #10B981 0%, #0D9488 100%);
-	color: #FFFFFF;
-}
-
-.btn-cancel:active {
-	background-color: #F3F4F6;
-	color: #374151;
-}
-
-.btn-confirm:active {
-	background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
-	transform: scale(0.98);
 }
 </style>

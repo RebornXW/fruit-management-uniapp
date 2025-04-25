@@ -65,9 +65,9 @@
 			}
 		},
 		{
-			"path": "pages/records/operation-records",
+			"path": "pages/records/system-log",
 			"style": {
-				"navigationBarTitleText": "操作记录",
+				"navigationBarTitleText": "系统日志",
 				"navigationStyle": "custom"
 			}
 		},

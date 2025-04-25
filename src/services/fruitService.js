@@ -2,19 +2,63 @@
 import http from './http.js';
 
 // 缓存对象
-const cache = {
+export const cache = {
     categoriesWithVarieties: null,
     lastFetchTime: 0,
-    expirationTime: 5 * 60 * 1000 // 5分钟缓存过期时间
+    expirationTime: 5 * 60 * 1000, // 5分钟缓存过期时间
+
+    // 清除缓存
+    clear() {
+        this.categoriesWithVarieties = null;
+        this.lastFetchTime = 0;
+    }
+};
+
+// 水果数据缓存
+export const fruitsCache = {
+    data: null,
+    lastFetchTime: 0,
+    expirationTime: 2 * 60 * 1000, // 2分钟缓存过期时间
+
+    // 清除缓存
+    clear() {
+        this.data = null;
+        this.lastFetchTime = 0;
+    }
 };
 
 /**
  * 获取水果列表，可传递查询参数
  * @param {Object} params 查询参数
+ * @param {boolean} forceRefresh 是否强制刷新缓存
  */
-export function getFruits(params = {}) {
-    // 根据API文档，水果列表默认包含库存数量
-    return http.request({ url: '/fruits', method: 'GET', data: params });
+export function getFruits(params = {}, forceRefresh = false) {
+    const now = Date.now();
+
+    // 检查是否已登录
+    const token = uni.getStorageSync('token');
+    if (!token) {
+        console.log('用户未登录，无法获取水果数据');
+        return Promise.reject(new Error('用户未登录，请先登录'));
+    }
+
+    // 如果缓存有效且不强制刷新，直接返回缓存数据
+    if (!forceRefresh &&
+        fruitsCache.data &&
+        (now - fruitsCache.lastFetchTime) < fruitsCache.expirationTime) {
+        console.log('使用缓存的水果数据');
+        return Promise.resolve(fruitsCache.data);
+    }
+
+    // 缓存无效或强制刷新，从服务器获取数据
+    console.log('从服务器获取水果数据');
+    return http.request({ url: '/fruits', method: 'GET', data: params })
+        .then(res => {
+            // 更新缓存
+            fruitsCache.data = res;
+            fruitsCache.lastFetchTime = now;
+            return res;
+        });
 }
 
 /**
@@ -34,7 +78,7 @@ export function createFruit(data) {
     return getCategoryAndVarietyIds(data.category, data.variety)
         .then(({ categoryId, varietyId }) => {
             // 创建一个新的数据对象，替换category和variety为对应的ID
-            // 同时将packageType、minPrice、maxPrice转换为package_type、min_price、max_price
+            // 同时将驼峰命名转换为下划线命名
             const newData = {
                 ...data,
                 category_id: categoryId,
@@ -44,12 +88,18 @@ export function createFruit(data) {
                 max_price: data.maxPrice
             };
 
+            // 如果有初始库存，添加initial_inventory字段
+            if (data.stock && data.stock > 0) {
+                newData.initial_inventory = data.stock;
+            }
+
             // 删除原始的category、variety、packageType、minPrice、maxPrice字段
             delete newData.category;
             delete newData.variety;
             delete newData.packageType;
             delete newData.minPrice;
             delete newData.maxPrice;
+            delete newData.stock; // 删除stock字段，使用initial_inventory代替
 
             // 发送请求
             return http.request({ url: '/fruits', method: 'POST', data: newData });
@@ -176,11 +226,31 @@ export function getVarietyById(id) {
 export function getCategoriesWithVarieties(forceRefresh = false) {
     const now = Date.now();
 
+    // 检查是否已登录
+    const token = uni.getStorageSync('token');
+    if (!token) {
+        console.log('用户未登录，无法获取分类及品种数据');
+        return Promise.reject(new Error('用户未登录，请先登录'));
+    }
+
+    // 首先检查全局变量中是否有数据
+    const app = getApp();
+    if (app && app.globalData && app.globalData.categoriesWithVarieties && !forceRefresh) {
+        console.log('使用全局变量中的分类及品种数据');
+        return Promise.resolve(app.globalData.categoriesWithVarieties);
+    }
+
     // 如果缓存有效且不强制刷新，直接返回缓存数据
     if (!forceRefresh &&
         cache.categoriesWithVarieties &&
         (now - cache.lastFetchTime) < cache.expirationTime) {
         console.log('使用缓存的分类及品种数据');
+
+        // 同时更新全局变量
+        if (app && app.globalData) {
+            app.globalData.categoriesWithVarieties = cache.categoriesWithVarieties;
+        }
+
         return Promise.resolve(cache.categoriesWithVarieties);
     }
 
@@ -191,6 +261,12 @@ export function getCategoriesWithVarieties(forceRefresh = false) {
             // 更新缓存
             cache.categoriesWithVarieties = res;
             cache.lastFetchTime = now;
+
+            // 同时更新全局变量
+            if (app && app.globalData) {
+                app.globalData.categoriesWithVarieties = res;
+            }
+
             return res;
         });
 }

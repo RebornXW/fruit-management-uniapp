@@ -69,8 +69,9 @@
   - [8.2 获取系统日志详情](#82-获取系统日志详情)
 - [9. 统计分析](#9-统计分析)
   - [9.1 销售统计](#91-销售统计)
-  - [9.2 库存统计](#92-库存统计)
-  - [9.3 客户统计](#93-客户统计)
+  - [9.2 销售总额摘要](#92-销售总额摘要)
+  - [9.3 库存统计](#93-库存统计)
+  - [9.4 客户统计](#94-客户统计)
 - [10. 系统码表](#10-系统码表)
   - [10.1 获取指定类型的码值](#101-获取指定类型的码值)
   - [10.2 获取所有码值类型](#102-获取所有码值类型)
@@ -563,7 +564,8 @@
   "min_price": 40.0,
   "max_price": 45.0,
   "image": "https://example.com/banana.jpg",
-  "status": 1
+  "status": 1,
+  "initial_inventory": 100  // 初始库存数量（可选）
 }
 ```
 
@@ -571,7 +573,7 @@
 
 ```json
 {
-  "code": 200,
+  "code": 0,
   "message": "创建成功",
   "data": {
     "id": 2,
@@ -587,7 +589,8 @@
     "image": "https://example.com/banana.jpg",
     "created_at": "2023-06-10T14:30:00Z",
     "updated_at": "2023-06-10T14:30:00Z",
-    "status": 1
+    "status": 1,
+    "inventory": 100  // 当前库存数量，反映初始库存设置
   }
 }
 ```
@@ -1347,14 +1350,18 @@
       {
         "id": 101,
         "record_id": "S20230601001",
+        "user_id": 1,
+        "user_name": "张三",
         "customer_id": 1,
         "customer_name": "客户A",
         "sale_date": "2023-06-01",
         "fruit_id": 1,
         "fruit_name": "红富士苹果",
+        "spec": "特级 80mm+",
         "quantity": 10,
         "unit_price": 50.00,
         "amount": 500.00,
+        "paid_amount": 500.00,
         "payment_status": 1,
         "remark": "",
         "created_at": "2023-06-01T10:30:00Z",
@@ -1363,14 +1370,18 @@
       {
         "id": 100,
         "record_id": "S20230531005",
+        "user_id": 2,
+        "user_name": "李四",
         "customer_id": 2,
         "customer_name": "客户B",
         "sale_date": "2023-05-31",
         "fruit_id": 2,
         "fruit_name": "香蕉",
+        "spec": "一级品",
         "quantity": 8,
         "unit_price": 40.00,
         "amount": 320.00,
+        "paid_amount": 0.00,
         "payment_status": 0,
         "remark": "",
         "created_at": "2023-05-31T16:20:00Z",
@@ -1397,16 +1408,19 @@
   "data": {
     "id": 101,
     "record_id": "S20230601001",
+    "user_id": 1,
+    "user_name": "张三",
     "customer_id": 1,
     "customer_name": "客户A",
     "customer_phone": "13800138000",
     "sale_date": "2023-06-01",
     "fruit_id": 1,
     "fruit_name": "红富士苹果",
-    "fruit_spec": "10kg/箱",
+    "spec": "特级 80mm+",
     "quantity": 10,
     "unit_price": 50.00,
     "amount": 500.00,
+    "paid_amount": 500.00,
     "payment_status": 1,
     "remark": "",
     "created_by": "admin",
@@ -1648,12 +1662,14 @@
         "record_id": "I20230605001",
         "fruit_id": 1,
         "fruit_name": "红富士苹果",
-        "type": 1,
+        "spec": "特级 80mm+",
+        "operation_type": "in",
         "quantity": 100,
-        "unit_price": 40.00,
-        "amount": 4000.00,
+        "operator_id": 1,
+        "operator_name": "张三",
+        "operation_datetime": "2023-06-05T09:00:00Z",
         "operation_date": "2023-06-05",
-        "supplier": "供应商A",
+        "source": "供应商A",
         "remark": "批量入库",
         "created_at": "2023-06-05T09:00:00Z",
         "updated_at": "2023-06-05T09:00:00Z"
@@ -1663,12 +1679,14 @@
         "record_id": "I20230604002",
         "fruit_id": 2,
         "fruit_name": "香蕉",
-        "type": 1,
+        "spec": "一级品",
+        "operation_type": "in",
         "quantity": 50,
-        "unit_price": 30.00,
-        "amount": 1500.00,
+        "operator_id": 2,
+        "operator_name": "李四",
+        "operation_datetime": "2023-06-04T14:30:00Z",
         "operation_date": "2023-06-04",
-        "supplier": "供应商B",
+        "source": "供应商B",
         "remark": "常规入库",
         "created_at": "2023-06-04T14:30:00Z",
         "updated_at": "2023-06-04T14:30:00Z"
@@ -1696,18 +1714,18 @@
     "record_id": "I20230605001",
     "fruit_id": 1,
     "fruit_name": "红富士苹果",
-    "fruit_spec": "10kg/箱",
-    "type": 1,
+    "spec": "特级 80mm+",
+    "operation_type": "in",
     "quantity": 100,
-    "unit_price": 40.00,
-    "amount": 4000.00,
+    "operator_id": 1,
+    "operator_name": "张三",
+    "operation_datetime": "2023-06-05T09:00:00Z",
     "operation_date": "2023-06-05",
-    "supplier": "供应商A",
+    "source": "供应商A",
     "remark": "批量入库",
-    "created_by": "admin",
     "created_at": "2023-06-05T09:00:00Z",
     "updated_at": "2023-06-05T09:00:00Z",
-    "related_sales": [],
+    "snapshot": "{}",
     "current_stock": 85  // 当前库存数量
   }
 }
@@ -2321,14 +2339,19 @@
   - `limit`: 每页记录数
   - `keyword`: 搜索关键词（可选）
   - `user_id`: 用户ID筛选（可选）
-  - `type`: 日志类型筛选（可选）
+  - `log_type`: 日志类型筛选（BUSINESS_OPERATION/SYSTEM_TECHNICAL/SECURITY_AUDIT，可选）
+  - `module`: 模块筛选（用户/水果/客户/销售/库存/财务，可选）
+  - `action`: 动作筛选（创建/更新/删除/查询/导出，可选）
+  - `target_type`: 目标类型筛选（水果/客户/用户/销售记录/库存记录/付款记录，可选）
+  - `target_id`: 目标ID筛选（可选）
+  - `record_id`: 记录编号筛选（可选）
   - `start_date`: 开始日期（可选）
   - `end_date`: 结束日期（可选）
 - **响应示例**:
 
 ```json
 {
-  "code": 200,
+  "code": 0,
   "message": "获取成功",
   "data": {
     "total": 500,
@@ -2338,28 +2361,40 @@
     "items": [
       {
         "id": 1001,
+        "log_type": "SECURITY_AUDIT",
+        "module": "用户",
+        "action": "登录",
         "user_id": 1,
-        "username": "admin",
-        "type": "login",
-        "action": "用户登录",
-        "ip": "192.168.1.100",
+        "business_description": "用户登录成功",
+        "ip_address": "192.168.1.100",
         "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "created_at": "2023-06-10T08:00:00Z"
+        "log_datetime": "2023-06-10T08:00:00Z"
       },
       {
         "id": 1000,
+        "log_type": "BUSINESS_OPERATION",
+        "module": "销售",
+        "action": "创建",
         "user_id": 1,
-        "username": "admin",
-        "type": "operation",
-        "action": "创建销售记录",
-        "details": {
-          "record_id": "S20230610001",
-          "customer_id": 1,
-          "amount": 500.00
-        },
-        "ip": "192.168.1.100",
-        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "created_at": "2023-06-10T08:15:00Z"
+        "target_type": "销售记录",
+        "target_id": 101,
+        "record_id": "S20230610001",
+        "business_description": "创建销售记录: S20230610001, 客户: 客户A, 水果: 红富士苹果, 数量: 10, 金额: 500.00",
+        "data_after": "{\"销售记录ID\":101,\"销售记录编号\":\"S20230610001\",\"客户ID\":1,\"客户名称\":\"客户A\",\"水果ID\":1,\"水果名称\":\"红富士苹果\",\"数量\":10,\"金额\":500.00}",
+        "ip_address": "192.168.1.100",
+        "log_datetime": "2023-06-10T08:15:00Z"
+      },
+      {
+        "id": 999,
+        "log_type": "SYSTEM_TECHNICAL",
+        "module": "系统",
+        "action": "异常",
+        "user_id": 1,
+        "request_url": "/api/v1/sales",
+        "request_method": "POST",
+        "response_code": 500,
+        "execution_time": 150,
+        "log_datetime": "2023-06-10T08:14:50Z"
       }
       // 更多日志...
     ]
@@ -2377,28 +2412,26 @@
 
 ```json
 {
-  "code": 200,
+  "code": 0,
   "message": "获取成功",
   "data": {
     "id": 1000,
+    "log_type": "BUSINESS_OPERATION",
+    "module": "销售",
+    "action": "创建",
     "user_id": 1,
-    "username": "admin",
-    "type": "operation",
-    "action": "创建销售记录",
-    "details": {
-      "record_id": "S20230610001",
-      "customer_id": 1,
-      "customer_name": "客户A",
-      "fruit_id": 1,
-      "fruit_name": "红富士苹果",
-      "quantity": 10,
-      "unit_price": 50.00,
-      "amount": 500.00,
-      "payment_status": 0
-    },
-    "ip": "192.168.1.100",
+    "target_type": "销售记录",
+    "target_id": 101,
+    "record_id": "S20230610001",
+    "business_description": "创建销售记录: S20230610001, 客户: 客户A, 水果: 红富士苹果, 数量: 10, 金额: 500.00",
+    "data_before": "{}",
+    "data_after": "{\"销售记录ID\":101,\"销售记录编号\":\"S20230610001\",\"客户ID\":1,\"客户名称\":\"客户A\",\"水果ID\":1,\"水果名称\":\"红富士苹果\",\"数量\":10,\"金额\":500.00,\"付款状态\":0}",
+    "ip_address": "192.168.1.100",
     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    "created_at": "2023-06-10T08:15:00Z"
+    "request_url": "/api/v1/sales",
+    "request_method": "POST",
+    "response_code": 200,
+    "log_datetime": "2023-06-10T08:15:00Z"
   }
 }
 ```
@@ -2412,7 +2445,10 @@
   - `format`: 导出格式（csv/excel，默认excel）
   - `keyword`: 搜索关键词（可选）
   - `user_id`: 用户ID筛选（可选）
-  - `type`: 日志类型筛选（可选）
+  - `log_type`: 日志类型筛选（BUSINESS_OPERATION/SYSTEM_TECHNICAL/SECURITY_AUDIT，可选）
+  - `module`: 模块筛选（用户/水果/客户/销售/库存/财务，可选）
+  - `action`: 动作筛选（创建/更新/删除/查询/导出，可选）
+  - `target_type`: 目标类型筛选（水果/客户/用户/销售记录/库存记录/付款记录，可选）
   - `start_date`: 开始日期（可选）
   - `end_date`: 结束日期（可选）
 - **响应**: 文件下载
@@ -2532,7 +2568,41 @@
 }
 ```
 
-### 9.2 库存统计
+### 9.2 销售总额摘要
+
+- **URL**: `/statistics/sales-summary`
+- **方法**: GET
+- **描述**: 获取今日、本周、本月、今年的销售总额摘要
+- **权限**: 需要登录认证，销售员只能查看自己的销售额，管理员、档口老板等查询全部的销售额
+- **请求参数**: 无
+- **响应示例**:
+
+```json
+{
+  "code": 0,
+  "message": "获取成功",
+  "data": {
+    "today": {
+      "sales": 5000.00,
+      "count": 20
+    },
+    "this_week": {
+      "sales": 25000.00,
+      "count": 120
+    },
+    "this_month": {
+      "sales": 100000.00,
+      "count": 450
+    },
+    "this_year": {
+      "sales": 1200000.00,
+      "count": 5200
+    }
+  }
+}
+```
+
+### 9.3 库存统计
 
 - **URL**: `/statistics/inventory`
 - **方法**: GET
@@ -2660,7 +2730,7 @@
 }
 ```
 
-### 9.3 客户统计
+### 9.4 客户统计
 
 - **URL**: `/statistics/customers`
 - **方法**: GET

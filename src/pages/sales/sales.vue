@@ -49,9 +49,10 @@
 
 				<!-- 搜索框 -->
 				<view class="sales-search-container">
-					<input v-model="searchText" type="text" placeholder="搜索水果名称..." class="sales-search-input" />
-					<view class="sales-search-icon-container">
-						<uni-icons type="search" size="18" color="#9CA3AF"></uni-icons>
+					<view class="app-search-box app-search-box-content app-search-box-small">
+						<text class="iconfont icon-search app-search-icon"></text>
+						<input v-model="searchText" type="text" placeholder="搜索水果名称..." class="app-search-input" />
+						<text v-if="searchText" class="app-search-clear" @tap="searchText = ''">×</text>
 					</view>
 				</view>
 
@@ -186,16 +187,16 @@
 				<view class="sales-popup-form-item">
 					<text class="sales-popup-label">销售数量</text>
 					<view class="sales-popup-quantity-wrapper">
-						<button class="sales-popup-quantity-btn" @tap="decrementQuantity">
+						<button class="app-quantity-btn app-quantity-btn-minus" @tap="decrementQuantity">
 							<text class="iconfont icon-minus"></text>
 						</button>
 						<input
 							type="number"
 							v-model="saleQuantity"
-							class="sales-popup-quantity-input"
+							class="app-quantity-input"
 							@input="validateQuantity"
 						/>
-						<button class="sales-popup-quantity-btn" @tap="incrementQuantity">
+						<button class="app-quantity-btn app-quantity-btn-plus" @tap="incrementQuantity">
 							<text class="iconfont icon-add"></text>
 						</button>
 					</view>
@@ -372,8 +373,7 @@
 			</view>
 		</uni-popup>
 
-		<!-- 底部TabBar -->
-		<custom-tab-bar></custom-tab-bar>
+		<!-- 使用系统原生TabBar，无需自定义组件 -->
 	</view>
 </template>
 
@@ -381,7 +381,6 @@
 import { ref, computed, onMounted } from 'vue';
 import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
 import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
-import CustomTabBar from '@/components/CustomTabBar.vue';
 import { createSalesRecord, getSalesRecords } from '@/services/salesRecordService.js';
 import { getCustomers } from '@/services/customerService.js';
 import { getFruits, getDefaultFruitImage } from '@/services/fruitService.js';
@@ -1337,26 +1336,6 @@ function loadCustomersData() {
 	margin-bottom: 24rpx;
 	width: 100%;
 	box-sizing: border-box;
-}
-
-.sales-search-input {
-	width: 100%;
-	height: 80rpx;
-	padding: 0 16rpx 0 60rpx;
-	background-color: #F9FAFB;
-	border: 1rpx solid #E5E7EB;
-	border-radius: 40rpx;
-	font-size: 26rpx;
-	color: #1F2937;
-	box-sizing: border-box;
-}
-
-.sales-search-icon-container {
-	position: absolute;
-	left: 20rpx;
-	top: 50%;
-	transform: translateY(-50%);
-	z-index: 1;
 }
 
 /* 水果列表样式 */

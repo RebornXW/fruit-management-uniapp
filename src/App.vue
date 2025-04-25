@@ -1,22 +1,51 @@
 <script>
+import fruitService from '@/services/fruitService.js';
+
 export default {
   onLaunch: function () {
-    console.log('App Launch')
+    console.log('App Launch');
+
+    /* 初始化全局数据 */
+    getApp().globalData = getApp().globalData || {};
   },
   onShow: function () {
-    console.log('App Show')
-    // 触发全局onShow事件，让各页面响应
-    uni.$emit('onShow')
+    console.log('App Show');
+    /* 触发全局onShow事件，让各页面响应 */
+    uni.$emit('onShow');
   },
   onHide: function () {
-    console.log('App Hide')
+    console.log('App Hide');
   },
+  methods: {
+    /* 预加载水果分类及品种数据（在登录成功后调用） */
+    preloadCategoriesWithVarieties() {
+      console.log('预加载水果分类及品种数据...');
+
+      /* 强制刷新缓存，确保获取最新数据 */
+      fruitService.getCategoriesWithVarieties(true)
+        .then(res => {
+          console.log('水果分类及品种数据预加载成功');
+          /* 将数据存储到全局变量，方便在任何地方访问 */
+          getApp().globalData = getApp().globalData || {};
+          getApp().globalData.categoriesWithVarieties = res;
+
+          /* 触发全局事件，通知各页面数据已加载完成 */
+          uni.$emit('categoriesDataLoaded', res);
+        })
+        .catch(err => {
+          console.error('水果分类及品种数据预加载失败:', err);
+        });
+    }
+  }
 }
 </script>
 
 <style>
-/*每个页面公共css */
+/* 每个页面公共css */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
+@import './styles/form.scss';
+@import './styles/search-box.scss';
+@import './styles/buttons.scss';
 
 page {
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -568,21 +597,22 @@ page {
 	bottom: 0;
 }
 
-.top-1\/2 {
+.top-half {
 	top: 50%;
 }
 
-.space-x-2 > view:not(:first-child),
-.space-x-2 > text:not(:first-child) {
+/* 间距工具类 */
+.space-x-2 > view + view,
+.space-x-2 > text + text {
 	margin-left: 8px;
 }
 
-.space-x-3 > view:not(:first-child),
-.space-x-3 > text:not(:first-child) {
+.space-x-3 > view + view,
+.space-x-3 > text + text {
 	margin-left: 12px;
 }
 
-.space-y-2 > view:not(:first-child) {
+.space-y-2 > view + view {
 	margin-top: 8px;
 }
 

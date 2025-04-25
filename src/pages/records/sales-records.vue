@@ -21,23 +21,82 @@ import { getSalesRecords } from '@/services/salesRecordService.js';
 // 格式化数据以符合列表需要的形式
 const salesRecords = ref([]);
 
-onMounted(() => {
+onMounted(async () => {
 	console.log('销售记录页面已加载');
 
-	// 从服务中获取销售记录
-	const records = getSalesRecords();
-	console.log('从服务中获取的销售记录数量:', records.length);
+	// 显示加载中
+	uni.showLoading({ title: '加载中...' });
 
-	// 如果没有记录，显示空数组
-	if (records.length === 0) {
-		salesRecords.value = [];
-		return;
+	try {
+		// 从服务中获取销售记录
+		const data = await getSalesRecords();
+		console.log('从服务中获取的销售记录:', data);
+
+		// 如果没有记录，显示空数组
+		if (!data || !data.items || data.items.length === 0) {
+			console.log('没有找到销售记录数据');
+			salesRecords.value = [];
+			uni.hideLoading();
+			return;
+		}
+
+		console.log('找到销售记录数据:', data.items.length, '条');
+
+		// 先打印第一条记录的完整数据结构
+		if (data.items.length > 0) {
+			console.log('第一条记录数据结构:', JSON.stringify(data.items[0], null, 2));
+		}
+
+		// 如果有记录，格式化数据
+		salesRecords.value = data.items.map(record => {
+			// 处理日期和时间
+			let datePart = '';
+			let timePart = '';
+			if (record.sale_date) {
+				const parts = record.sale_date.split(' ');
+				datePart = parts[0] || '';
+				timePart = parts[1] || '';
+			}
+
+			// 处理付款状态
+			let statusText = '未付款';
+			if (record.payment_status === 1) {
+				statusText = '已付款';
+			} else if (record.payment_status === 2) {
+				statusText = '部分付款';
+			}
+
+			return {
+				id: record.id,
+				orderNo: record.id.toString(),
+				date: datePart,
+				time: timePart,
+				salesPerson: record.user_name || '',
+				customerName: record.customer_name || '',
+				brand: record.brand || '',
+				fruitCategory: record.fruit_category || '',
+				productName: record.fruit_name || '',
+				spec: record.spec || '',
+				unitPrice: (record.unit_price || 0).toString(),
+				quantity: record.quantity || 0,
+				amount: (record.total_price || 0).toString(),
+				paidAmount: (record.paid_amount || 0).toString(),
+				status: statusText,
+				remark: record.remarks || ''
+			};
+		});
+
+		console.log('格式化后的销售记录数量:', salesRecords.value.length);
+	} catch (error) {
+		console.error('获取销售记录失败:', error);
+		uni.showToast({
+			title: '获取销售记录失败',
+			icon: 'none'
+		});
+	} finally {
+		// 隐藏加载中
+		uni.hideLoading();
 	}
-
-	// 如果有记录，直接使用
-	salesRecords.value = records;
-
-
 
 	// 检查页面栈情况
 	const pages = getCurrentPages();
@@ -53,19 +112,18 @@ onMounted(() => {
 
 // 列表视图列配置
 const columns = [
-	{ title: '日期', field: 'date', type: 'date', width: '180rpx' },
-	{ title: '时间', field: 'time', type: 'text', width: '100rpx' },
-	{ title: '单号', field: 'orderNo', type: 'text', width: '200rpx' },
-	{ title: '客户', field: 'customerName', type: 'text', width: '180rpx' },
-	{ title: '业务员', field: 'salesPerson', type: 'text', width: '120rpx' },
-	{ title: '品牌', field: 'brand', type: 'text', width: '120rpx' },
-	{ title: '水果品类', field: 'fruitCategory', type: 'text', width: '120rpx' },
-	{ title: '水果品种', field: 'productName', type: 'text', width: '160rpx' },
-	{ title: '规格', field: 'spec', type: 'text', width: '140rpx' },
-	{ title: '数量', field: 'quantity', unit: '箱', type: 'number', width: '100rpx' },
-	{ title: '单价', field: 'unitPrice', unit: '/箱', type: 'price', width: '120rpx' },
-	{ title: '金额', field: 'amount', type: 'price', width: '140rpx' },
-	{ title: '状态', field: 'status', type: 'status', width: '120rpx' }
+	{ title: '记录编号', field: 'orderNo', type: 'text', width: '120rpx' },
+	{ title: '销售时间', field: 'date', type: 'datetime', timeField: 'time', width: '180rpx' },
+	{ title: '用户名称', field: 'salesPerson', type: 'text', width: '120rpx' },
+	{ title: '客户名称', field: 'customerName', type: 'text', width: '150rpx' },
+	{ title: '水果名称', field: 'productName', type: 'text', width: '150rpx' },
+	{ title: '规格', field: 'spec', type: 'text', width: '120rpx' },
+	{ title: '单价', field: 'unitPrice', type: 'price', width: '100rpx' },
+	{ title: '数量', field: 'quantity', type: 'number', width: '80rpx' },
+	{ title: '总价', field: 'amount', type: 'price', width: '120rpx' },
+	{ title: '已付金额', field: 'paidAmount', type: 'price', width: '120rpx' },
+	{ title: '付款状态', field: 'status', type: 'status', width: '120rpx' },
+	{ title: '备注', field: 'remark', type: 'text', width: '150rpx' }
 ];
 
 // 状态配置
@@ -82,7 +140,7 @@ const statusMap = {
 };
 
 // 自定义状态标签函数
-function getSalesStatusLabel(statusValue) {
+function getSalesStatusLabel() {
 	// 始终返回全部状态，作为下拉菜单的标题
 	return '全部状态';
 }
@@ -92,30 +150,28 @@ const detailSections = [
 	{
 		title: '基本信息',
 		fields: [
-			{ label: '交易日期', field: 'date', type: 'date' },
-				{ label: '交易时间', field: 'time', type: 'text' },
-			{ label: '业务员', field: 'salesPerson', type: 'text' },
-			{ label: '客户', field: 'customerName', type: 'text' }
+			{ label: '记录编号', field: 'orderNo', type: 'text' },
+			{ label: '销售日期', field: 'date', type: 'date' },
+			{ label: '销售时间', field: 'time', type: 'text' },
+			{ label: '用户名称', field: 'salesPerson', type: 'text' },
+			{ label: '客户名称', field: 'customerName', type: 'text' }
 		]
 	},
 	{
 		title: '商品信息',
 		fields: [
-			{ label: '品牌', field: 'brand', type: 'text' },
-			{ label: '水果品类', field: 'fruitCategory', type: 'text' },
-			{ label: '水果品种', field: 'productName', type: 'text' },
+			{ label: '水果名称', field: 'productName', type: 'text' },
 			{ label: '规格', field: 'spec', type: 'text' },
-			{ label: '数量', field: 'quantity', unit: '箱', type: 'number' },
-			{ label: '单价', field: 'unitPrice', unit: '/箱', type: 'price' },
-			{ label: '总金额', field: 'amount', type: 'price' }
+			{ label: '单价', field: 'unitPrice', type: 'price' },
+			{ label: '数量', field: 'quantity', type: 'number' },
+			{ label: '总价', field: 'amount', type: 'price' }
 		]
 	},
 	{
 		title: '付款信息',
 		fields: [
-			{ label: '付款状态', field: 'status', type: 'status' },
-			{ label: '付款方式', field: 'paymentMethod', type: 'text', condition: { field: 'status', value: '已付款' } },
-			{ label: '付款时间', field: 'paymentTime', type: 'text', condition: { field: 'status', value: '已付款' } }
+			{ label: '已付金额', field: 'paidAmount', type: 'price' },
+			{ label: '付款状态', field: 'status', type: 'status' }
 		]
 	},
 	{
