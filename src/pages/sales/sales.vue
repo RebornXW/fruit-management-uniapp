@@ -1,8 +1,8 @@
 ﻿<template>
 	<view class="page-container">
-		<!-- 顶部白色栏 -->
+		<!-- 顶部白色栏 - 为状态栏和前置摄像头预留空间 -->
 		<view class="page-header">
-			<view class="page-title">水果销售</view>
+			<!-- 保留白色标题栏，但不显示标题文字 -->
 		</view>
 
 		<!-- 滚动内容区域 -->
@@ -1111,11 +1111,12 @@ page {
 	position: relative;
 }
 
-.sales-container {
+/* 页面容器 */
+.page-container {
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
-	padding-bottom: 150rpx;
+	padding-bottom: 120rpx; /* 增加底部导航栏留出空间 */
 	background-color: #F5F8FA;
 	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 	box-sizing: border-box;
@@ -1123,9 +1124,9 @@ page {
 }
 
 /* 滚动区域 */
-.sales-content-scroll {
+.page-scroll {
 	flex: 1;
-	height: calc(100vh - 100rpx);
+	height: calc(100vh - 30px - 120rpx); /* 减去顶部栏高度和底部导航栏高度 */
 	width: 100%;
 	box-sizing: border-box;
 }

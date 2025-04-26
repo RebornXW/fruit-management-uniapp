@@ -53,22 +53,22 @@ page {
 	height: 100%;
 }
 
-/* 全局顶部白色栏样式 */
+/* 全局顶部白色栏样式 - 保留空间但不显示标题 */
 .page-header {
 	background-color: #FFFFFF;
-	padding: 20rpx 30rpx;
+	padding: 0;
 	display: flex;
 	align-items: center;
-	justify-content: center;
+	justify-content: space-between;
 	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 	z-index: 10;
+	height: 30px; /* 减小高度，只为状态栏预留必要空间 */
+	width: 100%;
+	position: relative;
 }
 
 .page-title {
-	font-size: 36rpx;
-	font-weight: 600;
-	color: #333333;
-	letter-spacing: 1rpx;
+	display: none; /* 隐藏标题文本 */
 }
 
 /* iconfont样式 */

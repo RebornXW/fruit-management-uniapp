@@ -1,8 +1,8 @@
 <template>
 	<view class="page-container">
-		<!-- 顶部白色栏 -->
+		<!-- 顶部白色栏 - 为状态栏和前置摄像头预留空间 -->
 		<view class="page-header">
-			<view class="page-title">今日报价</view>
+			<!-- 保留白色标题栏，但不显示标题文字 -->
 		</view>
 
 		<!-- 搜索框 -->
@@ -459,11 +459,11 @@ page {
 	position: relative;
 }
 
-.price-container {
+.page-container {
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
-	padding-bottom: 100rpx;
+	padding-bottom: 50px; /* 使用底部tab栏的实际高度 */
 	background-color: #F8FAFC;
 	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 	overflow: hidden; /* 禁止整个页面滚动 */
@@ -730,7 +730,7 @@ page {
 	overflow: -moz-scrollbars-none; /* Firefox */
 	-ms-overflow-style: none; /* IE and Edge */
 	scrollbar-width: none; /* Firefox */
-	height: calc(100vh - 320rpx - 100rpx); /* 调整高度确保可滚动区域适合剩余空间，并为底部导航栏预留空间 */
+	height: calc(100vh - 320rpx - 50px); /* 调整高度确保可滚动区域适合剩余空间，并为底部tab栏预留空间 */
 }
 
 .price-fruit-list-container::-webkit-scrollbar {
@@ -744,7 +744,7 @@ page {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
-	padding-bottom: 100rpx; /* 添加底部边距，确保最后一个卡片不会被底部导航栏遮挡 */
+	padding-bottom: 60rpx; /* 减少底部内边距，使最后一个卡片与底部距离更合理 */
 }
 
 .price-fruit-card {

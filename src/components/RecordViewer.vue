@@ -1,7 +1,7 @@
 <template>
 	<view class="record-viewer" @tap="onPageClick">
 		<view class="record-viewer-fixed">
-			<!-- 顶部空白区域 - 为挖孔屏预留空间 -->
+			<!-- 顶部空白区域 - 为状态栏和前置摄像头预留空间 -->
 			<view class="page-header">
 				<!-- 保留白色标题栏，但不显示标题文字 -->
 			</view>
@@ -985,14 +985,15 @@ function handleSort(field) {
 	flex-direction: column;
 }
 
-/* 顶部空白区域样式 - 为挖孔屏预留空间 */
+/* 顶部空白区域样式 - 为状态栏和前置摄像头预留空间 */
 .page-header {
 	background-color: #FFFFFF;
-	padding: 20rpx 30rpx;
+	padding: 0;
 	position: relative;
 	overflow: hidden;
 	z-index: 10;
-	height: 44rpx; /* 为状态栏预留足够高度 */
+	height: 30px; /* 减小高度，只为状态栏预留必要空间 */
+	width: 100%;
 }
 
 /* 搜索框和按钮样式 */

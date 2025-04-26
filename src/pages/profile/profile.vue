@@ -1,8 +1,8 @@
 <template>
 	<view class="page-container">
-		<!-- 顶部白色栏 -->
+		<!-- 顶部白色栏 - 为状态栏和前置摄像头预留空间 -->
 		<view class="page-header">
-			<view class="page-title">个人中心</view>
+			<!-- 保留白色标题栏，但不显示标题文字 -->
 		</view>
 
 		<!-- 滚动内容区域 -->

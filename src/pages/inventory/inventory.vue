@@ -1,8 +1,8 @@
 <template>
 	<view class="page-container" @tap="handlePageClick">
-		<!-- 顶部白色栏 -->
+		<!-- 顶部白色栏 - 为状态栏和前置摄像头预留空间 -->
 		<view class="page-header">
-			<view class="page-title">库存管理</view>
+			<!-- 保留白色标题栏，但不显示标题文字 -->
 		</view>
 
 		<!-- 搜索框和操作按钮 -->
@@ -1421,7 +1421,7 @@ page {
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
-	padding-bottom: 120rpx; /* 增加底部导航栏留出空间 */
+	padding-bottom: 50px; /* 使用底部tab栏的实际高度 */
 	background: #F1F5F9; /* 统一使用这一种浅灰蓝色背景 */
 	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 	overflow: hidden; /* 防止整个页面滚动 */
@@ -1686,8 +1686,8 @@ page {
 /* 内容区 */
 .content-section {
 	flex: 1;
-	margin-bottom: 120rpx; /* 增加底部空间 */
-	height: calc(100vh - 420rpx); /* 设置固定高度，减去头部、统计面板、标题栏和底部导航的高度 */
+	margin-bottom: 0; /* 移除底部外边距 */
+	height: calc(100vh - 30px - 200rpx - 100rpx - 50px); /* 调整高度计算：减去顶部栏高度、统计面板高度、标题栏高度和底部tab栏高度 */
 	overflow: hidden; /* 防止内容溢出 */
 	background-color: #FFFFFF; /* 纯白色背景 */
 	margin-left: 20rpx;
@@ -1700,7 +1700,7 @@ page {
 }
 
 .fruit-list {
-	padding: 20rpx 10rpx 120rpx; /* 减少左右内边距 */
+	padding: 20rpx 10rpx 80rpx; /* 设置适当的底部内边距，确保最后一个卡片与底部有足够间距 */
 	display: flex;
 	flex-direction: column;
 	align-items: center; /* 水平居中 */

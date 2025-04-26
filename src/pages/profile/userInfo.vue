@@ -1,11 +1,11 @@
 <template>
 	<view class="page-container">
-		<!-- 顶部白色栏 -->
+		<!-- 顶部白色栏 - 为状态栏和前置摄像头预留空间 -->
 		<view class="page-header">
 			<view class="header-left" @tap="goBack">
 				<text class="iconfont icon-left"></text>
 			</view>
-			<view class="page-title">个人信息</view>
+			<!-- 保留白色标题栏，但不显示标题文字 -->
 			<view class="header-right"></view>
 		</view>
 
@@ -26,7 +26,6 @@
 					<text class="item-label">头像</text>
 					<view class="item-content">
 						<image class="avatar" :src="userInfo.avatar" mode="aspectFill"></image>
-						<text class="iconfont icon-camera edit-icon"></text>
 					</view>
 				</view>
 
@@ -38,19 +37,19 @@
 					</view>
 				</view>
 
-				<!-- 档口名称(只读) -->
-				<view class="info-item">
-					<text class="item-label">档口名称</text>
-					<view class="item-content">
-						<text class="item-value">{{userInfo.stallName}}</text>
-					</view>
-				</view>
-
 				<!-- 联系方式 -->
 				<view class="info-item">
 					<text class="item-label">联系方式</text>
 					<view class="item-content">
 						<input type="text" v-model="userInfo.phone" placeholder="请输入联系方式" class="app-input" maxlength="11" />
+					</view>
+				</view>
+
+				<!-- 档口名称(只读) -->
+				<view class="info-item">
+					<text class="item-label">档口名称</text>
+					<view class="item-content">
+						<text class="item-value">{{userInfo.stallName}}</text>
 					</view>
 				</view>
 
@@ -63,9 +62,12 @@
 				</view>
 			</view>
 
-			<!-- 底部保存按钮 -->
-			<view class="button-container">
-				<button class="app-confirm-btn" @tap="saveUserInfo">保存修改</button>
+			<!-- 底部按钮区域 -->
+			<view class="footer">
+				<view class="button-container">
+					<button class="app-confirm-btn" @tap="saveUserInfo">保存修改</button>
+					<button class="app-logout-btn" @tap="handleLogout">退出登录</button>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -73,7 +75,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { getUserProfile, updateUserProfile, uploadAvatar } from '@/services/authService.js';
+import { getUserProfile, updateUserProfile, uploadAvatar, logout } from '@/services/authService.js';
 
 export default {
 	setup() {
@@ -221,7 +223,9 @@ export default {
 					});
 				});
 			} else {
-				// 如果头像没有变化，直接提交个人信息
+				// 如果头像没有变化，也将当前头像URL添加到要提交的数据中
+				profileData.avatar = userInfo.value.avatar;
+				// 提交个人信息
 				submitProfileData(profileData);
 			}
 		};
@@ -285,11 +289,61 @@ export default {
 			});
 		};
 
+		// 退出登录
+		const handleLogout = () => {
+			// 显示确认对话框
+			uni.showModal({
+				title: '确认退出',
+				content: '确定要退出登录吗？',
+				confirmColor: '#EF4444',
+				success: (res) => {
+					if (res.confirm) {
+						// 显示加载中
+						uni.showLoading({ title: '正在退出...' });
+
+						// 调用退出登录API
+						logout().then(() => {
+							uni.hideLoading();
+
+							// 清除本地存储的登录信息
+							uni.removeStorageSync('token');
+							uni.removeStorageSync('loginUser');
+
+							// 显示成功提示
+							uni.showToast({
+								title: '已退出登录',
+								icon: 'success',
+								duration: 1500
+							});
+
+							// 延迟一下再跳转，让用户看到成功提示
+							setTimeout(() => {
+								// 跳转到登录页
+								uni.reLaunch({
+									url: '/pages/index/index'
+								});
+							}, 1500);
+						}).catch(err => {
+							uni.hideLoading();
+							console.error('退出登录失败', err);
+
+							// 显示错误提示
+							uni.showToast({
+								title: '退出失败，请重试',
+								icon: 'none'
+							});
+						});
+					}
+				}
+			});
+		};
+
 		return {
 			userInfo,
 			goBack,
 			editAvatar,
-			saveUserInfo
+			saveUserInfo,
+			handleLogout
 		};
 	}
 }
@@ -320,39 +374,35 @@ page {
 /* 顶部标题栏样式 */
 .page-header {
 	background-color: #FFFFFF;
-	padding: 20rpx 30rpx;
+	padding: 0 20rpx;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 	z-index: 10;
 	position: relative;
+	height: 30px; /* 与全局样式保持一致 */
 }
 
 .header-left {
-	width: 60rpx;
-	height: 60rpx;
+	width: 40rpx;
+	height: 30px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 }
 
 .header-left .iconfont {
-	font-size: 36rpx;
+	font-size: 32rpx;
 	color: #333333;
 }
 
 .page-title {
-	font-size: 36rpx;
-	font-weight: 600;
-	color: #333333;
-	letter-spacing: 1rpx;
-	flex: 1;
-	text-align: center;
+	display: none; /* 隐藏标题文本 */
 }
 
 .header-right {
-	width: 60rpx;
+	width: 40rpx;
 }
 
 /* 内容区域样式 */
@@ -430,6 +480,7 @@ page {
 .item-content {
 	display: flex;
 	align-items: center;
+	position: relative; /* 添加相对定位，作为编辑图标的定位父元素 */
 }
 
 .item-value {
@@ -446,29 +497,22 @@ page {
 	border: 2rpx solid #E5E7EB;
 	box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
 	object-fit: cover;
-	position: relative;
 }
 
-.edit-icon {
-	position: absolute;
-	right: 0;
-	bottom: 0;
-	width: 36rpx;
-	height: 36rpx;
-	background-color: #0D9488;
-	color: white;
-	border-radius: 50%;
-	font-size: 20rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	margin-left: 10rpx;
+
+
+/* 底部区域样式 */
+.footer {
+	margin-top: auto;
+	padding: 30rpx 0;
 }
 
 /* 按钮容器样式 */
 .button-container {
-	margin-top: 40rpx;
 	padding: 0 20rpx;
+	display: flex;
+	flex-direction: column;
+	gap: 30rpx;
 }
 
 /* 确认按钮样式 */
@@ -491,6 +535,27 @@ page {
 .app-confirm-btn:active {
 	transform: scale(0.98);
 	box-shadow: 0 2rpx 8rpx rgba(13, 148, 136, 0.15);
+}
+
+/* 退出登录按钮样式 */
+.app-logout-btn {
+	width: 100%;
+	height: 90rpx;
+	background: #FFFFFF;
+	color: #EF4444;
+	border: 1rpx solid #EF4444;
+	border-radius: 45rpx;
+	font-size: 32rpx;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.3s ease;
+}
+
+.app-logout-btn:active {
+	transform: scale(0.98);
+	background-color: #FEF2F2;
 }
 
 /* 输入框样式 */
