@@ -14,28 +14,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onShow } from 'vue';
+import { ref, onMounted } from 'vue';
 import RecordViewer from '@/components/RecordViewer.vue';
 import { getSalesRecords } from '@/services/salesRecordService.js';
 
 // 格式化数据以符合列表需要的形式
 const salesRecords = ref([]);
-// 添加加载状态标志
-const isLoading = ref(false);
-// 添加最后加载时间记录
-const lastLoadTime = ref(0);
 
-// 加载销售记录数据的函数
-async function loadSalesRecords() {
-	// 防止重复加载
-	if (isLoading.value) {
-		console.log('销售记录数据正在加载中，跳过重复请求');
-		return;
-	}
-
-	// 设置加载状态
-	isLoading.value = true;
-	lastLoadTime.value = Date.now();
+onMounted(async () => {
+	console.log('销售记录页面已加载');
 
 	// 显示加载中
 	uni.showLoading({ title: '加载中...' });
@@ -50,7 +37,6 @@ async function loadSalesRecords() {
 			console.log('没有找到销售记录数据');
 			salesRecords.value = [];
 			uni.hideLoading();
-			isLoading.value = false;
 			return;
 		}
 
@@ -110,13 +96,9 @@ async function loadSalesRecords() {
 	} finally {
 		// 隐藏加载中
 		uni.hideLoading();
-		// 重置加载状态
-		isLoading.value = false;
 	}
-}
 
-// 检查页面栈情况
-function checkPageStack() {
+	// 检查页面栈情况
 	const pages = getCurrentPages();
 	console.log('当前页面栈:', pages.length);
 
@@ -126,19 +108,6 @@ function checkPageStack() {
 		uni.setStorageSync('salesRecordPageSource', 'profile');
 		console.log('设置销售记录页面来源为个人中心');
 	}
-}
-
-// 页面首次加载
-onMounted(() => {
-	console.log('销售记录页面已加载');
-	loadSalesRecords();
-	checkPageStack();
-});
-
-// 每次页面显示时都重新加载数据
-onShow(() => {
-	console.log('销售记录页面显示');
-	loadSalesRecords();
 });
 
 // 列表视图列配置

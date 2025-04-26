@@ -76,6 +76,10 @@
 				<text class="list-title">库存水果列表</text>
 			</view>
 			<view class="list-actions">
+				<button class="warning-button" :class="{'warning-active': showWarningOnly}" @tap.stop="toggleWarningFilter">
+					<text class="iconfont icon-warning"></text>
+					<text class="filter-text">预警</text>
+				</button>
 				<button class="filter-button" @tap.stop="toggleFilterPopup">
 					<text class="iconfont icon-filter"></text>
 					<text class="filter-text">筛选</text>
@@ -364,6 +368,9 @@ const appliedFilters = ref({
 	variety: '全部'
 });
 
+// 预警筛选状态
+const showWarningOnly = ref(false);
+
 // 总库存、今日入库、今日出库数据从API获取，不再使用计算属性
 
 // 过滤后的水果数据
@@ -373,6 +380,7 @@ const filteredFruits = computed(() => {
 	// 打印原始数据以便调试
 	console.log('原始水果数据:', result.map(f => ({ id: f.id, name: f.name, category: f.category, variety: f.variety })));
 	console.log('当前筛选条件:', appliedFilters.value);
+	console.log('预警筛选状态:', showWarningOnly.value);
 
 	// 应用筛选条件
 	if (appliedFilters.value.category !== '全部') {
@@ -398,6 +406,14 @@ const filteredFruits = computed(() => {
 			);
 			console.log(`水果 ID: ${fruit.id}, 名称: ${fruit.name}, 品种: ${fruit.variety}, 筛选品种: ${appliedFilters.value.variety}, 匹配结果: ${match}`);
 			return match;
+		});
+	}
+
+	// 应用预警筛选 - 只显示库存大于0小于等于50的水果
+	if (showWarningOnly.value) {
+		result = result.filter(fruit => {
+			const stock = parseInt(fruit.stock) || 0;
+			return stock > 0 && stock <= 50;
 		});
 	}
 
@@ -1337,6 +1353,19 @@ function applyFilters() {
 	showFilter.value = false;
 }
 
+// 切换预警筛选
+function toggleWarningFilter() {
+	// 切换预警筛选状态
+	showWarningOnly.value = !showWarningOnly.value;
+
+	// 显示提示
+	uni.showToast({
+		title: showWarningOnly.value ? '已开启库存预警筛选' : '已关闭库存预警筛选',
+		icon: 'none',
+		duration: 1500
+	});
+}
+
 // 确认删除水果
 function confirmDeleteFruit() {
 	// 显示加载中提示
@@ -1601,9 +1630,10 @@ page {
 .list-actions {
 	display: flex;
 	align-items: center;
+	gap: 12rpx;
 }
 
-.filter-button {
+.filter-button, .warning-button {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -1617,12 +1647,12 @@ page {
 	line-height: 1;
 }
 
-.filter-button:active {
+.filter-button:active, .warning-button:active {
 	transform: scale(0.98);
 	background: linear-gradient(to bottom, #F8FAFC, #F1F5F9);
 }
 
-.filter-button::after {
+.filter-button::after, .warning-button::after {
 	border: none;
 }
 
@@ -1630,6 +1660,21 @@ page {
 	font-size: 24rpx;
 	color: #3B82F6;
 	margin-right: 8rpx;
+}
+
+.warning-button .iconfont {
+	font-size: 24rpx;
+	color: #F59E0B;
+	margin-right: 8rpx;
+}
+
+.warning-active {
+	background: linear-gradient(to bottom, #FEF3C7, #FBBF24);
+	border-color: #F59E0B;
+}
+
+.warning-active .filter-text {
+	color: #B45309;
 }
 
 .filter-text {

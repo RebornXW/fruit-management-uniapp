@@ -181,6 +181,14 @@ page {
   content: "\f005";
 }
 
+.icon-warning:before {
+  content: "\f071";
+}
+
+.icon-filter:before {
+  content: "\f0b0";
+}
+
 /* 隐藏所有滚动条 */
 ::-webkit-scrollbar {
 	display: none;
