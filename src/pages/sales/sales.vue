@@ -1,18 +1,18 @@
 ﻿<template>
-	<view class="sales-container">
-		<!-- 标题栏 -->
-		<view class="sales-header">
-			<view class="sales-header-content">
-				<text class="sales-title">水果销售</text>
-				<view class="sales-date-display">
-					<uni-icons type="calendar" size="20" color="#ffffff" class="sales-date-icon"></uni-icons>
-					<text class="sales-date-text">{{currentDate}}</text>
-				</view>
-			</view>
+	<view class="page-container">
+		<!-- 顶部白色栏 -->
+		<view class="page-header">
+			<view class="page-title">水果销售</view>
 		</view>
 
 		<!-- 滚动内容区域 -->
-		<scroll-view scroll-y class="sales-content-scroll">
+		<scroll-view
+			scroll-y
+			class="page-scroll"
+			:show-scrollbar="false"
+			:enhanced="true"
+			:bounces="false"
+		>
 			<!-- 销售统计卡片 -->
 			<view class="sales-stats-card">
 				<view class="sales-card-header">
@@ -381,6 +381,7 @@
 import { ref, computed, onMounted } from 'vue';
 import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
 import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
+import CustomNavBar from '@/components/CustomNavBar.vue';
 import { createSalesRecord, getSalesRecords } from '@/services/salesRecordService.js';
 import { getCustomers } from '@/services/customerService.js';
 import { getFruits, getDefaultFruitImage } from '@/services/fruitService.js';
@@ -1103,6 +1104,13 @@ function loadCustomersData() {
 </script>
 
 <style>
+/* 全局页面样式，防止整体滑动 */
+page {
+	height: 100%;
+	overflow: hidden;
+	position: relative;
+}
+
 .sales-container {
 	display: flex;
 	flex-direction: column;
@@ -1111,51 +1119,13 @@ function loadCustomersData() {
 	background-color: #F5F8FA;
 	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 	box-sizing: border-box;
-}
-
-/* 头部样式 */
-.sales-header {
-	background: linear-gradient(135deg, #0D9488, #0F766E);
-	padding: 40rpx 30rpx;
-	border-bottom-left-radius: 0;
-	border-bottom-right-radius: 0;
-	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-}
-
-.sales-header-content {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-}
-
-.sales-title {
-	font-size: 36rpx;
-	font-weight: bold;
-	color: white;
-	letter-spacing: 1rpx;
-}
-
-.sales-date-display {
-	display: flex;
-	align-items: center;
-	background-color: rgba(255, 255, 255, 0.2);
-	padding: 8rpx 16rpx;
-	border-radius: 30rpx;
-}
-
-.sales-date-icon {
-	margin-right: 8rpx;
-}
-
-.sales-date-text {
-	color: white;
-	font-size: 24rpx;
+	overflow: hidden; /* 禁止整个页面滚动 */
 }
 
 /* 滚动区域 */
 .sales-content-scroll {
 	flex: 1;
-	height: calc(100vh - 240rpx);
+	height: calc(100vh - 100rpx);
 	width: 100%;
 	box-sizing: border-box;
 }

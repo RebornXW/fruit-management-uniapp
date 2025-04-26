@@ -53,6 +53,24 @@ page {
 	height: 100%;
 }
 
+/* 全局顶部白色栏样式 */
+.page-header {
+	background-color: #FFFFFF;
+	padding: 20rpx 30rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+	z-index: 10;
+}
+
+.page-title {
+	font-size: 36rpx;
+	font-weight: 600;
+	color: #333333;
+	letter-spacing: 1rpx;
+}
+
 /* iconfont样式 */
 .iconfont {
   font-family: "FontAwesome" !important;
@@ -153,6 +171,14 @@ page {
 
 .icon-lock:before {
   content: "\f023";
+}
+
+.icon-warehouse:before {
+  content: "\f494";
+}
+
+.icon-star:before {
+  content: "\f005";
 }
 
 /* 通用样式 */

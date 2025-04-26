@@ -1,28 +1,25 @@
 <template>
-	<view class="price-container">
-		<!-- 头部 -->
-		<view class="price-header bg-teal-600 text-white p-4">
-			<view class="flex justify-between items-center">
-				<text class="text-xl font-bold">今日报价</text>
-				<view class="date-box">
-					<uni-icons type="calendar" size="16" color="#FFFFFF"></uni-icons>
-					<text class="date-text">{{currentDate}}</text>
-				</view>
-			</view>
+	<view class="page-container">
+		<!-- 顶部白色栏 -->
+		<view class="page-header">
+			<view class="page-title">今日报价</view>
+		</view>
 
-			<!-- 搜索框 -->
-			<view class="price-search-container">
-				<view class="app-search-box app-search-box-header">
-					<text class="iconfont icon-search app-search-icon"></text>
-					<input v-model="searchText" type="text" placeholder="搜索水果..." class="app-search-input" />
-					<text v-if="searchText" class="app-search-clear" @tap="searchText = ''">×</text>
-				</view>
+		<!-- 搜索框 -->
+		<view class="price-search-container">
+			<view class="app-search-box app-search-box-header">
+				<text class="iconfont icon-search app-search-icon"></text>
+				<input v-model="searchText" type="text" placeholder="搜索水果..." class="app-search-input" />
+				<text v-if="searchText" class="app-search-clear" @tap="searchText = ''">×</text>
 			</view>
 		</view>
 
-		<!-- 分类标签 - 固定在头部下方 -->
+		<!-- 分类标签 - 现代玻璃态设计 -->
 		<view class="price-category-container">
-			<scroll-view scroll-x class="price-category-scroll" :show-scrollbar="false" :enhanced="true" :bounces="true">
+			<!-- 背景装饰元素 -->
+			<view class="category-bg-decoration"></view>
+
+			<scroll-view scroll-x class="price-category-scroll hide-scrollbar" :show-scrollbar="false" :enhanced="true" :bounces="true">
 				<view class="price-category-list">
 					<view
 						v-for="(category, index) in categories"
@@ -31,8 +28,14 @@
 						:class="{ 'price-category-active': currentCategory === category.value }"
 						@tap="selectCategory(category.value)"
 					>
+						<!-- 内部光效 -->
+						<view class="category-item-glow"></view>
+
 						<text class="iconfont" :class="category.icon"></text>
 						<text class="price-category-text">{{category.label}}</text>
+
+						<!-- 活跃状态指示点 -->
+						<view v-if="currentCategory === category.value" class="active-indicator"></view>
 					</view>
 				</view>
 			</scroll-view>
@@ -144,6 +147,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import CustomNavBar from '@/components/CustomNavBar.vue';
 import fruitService from '@/services/fruitService.js';
 
 // 数据
@@ -477,34 +481,89 @@ page {
 }
 
 .price-search-container {
-	padding: 0 4rpx;
+	padding: 20rpx 30rpx;
+	background-color: rgba(255, 255, 255, 0.8);
+	backdrop-filter: blur(15px);
+	-webkit-backdrop-filter: blur(15px);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
 }
 
 /* 使用统一搜索框样式 */
 
 .price-category-container {
-	background-color: #FFFFFF;
-	padding: 20rpx 0;
-	border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+	background-color: rgba(255, 255, 255, 0.7);
+	padding: 24rpx 0 28rpx;
 	position: sticky;
 	top: 0;
 	z-index: 10;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+	position: relative;
+	overflow: hidden;
+}
+
+/* 背景装饰元素 */
+.category-bg-decoration {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	overflow: hidden;
+	z-index: -1;
+}
+
+.category-bg-decoration::before {
+	content: '';
+	position: absolute;
+	top: -100%;
+	left: -100%;
+	width: 300%;
+	height: 300%;
+	background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2), transparent 70%);
+	opacity: 0.8;
+	animation: rotate 20s linear infinite;
+}
+
+.category-bg-decoration::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background:
+		linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+		linear-gradient(0deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+	background-size: 20px 20px;
+	opacity: 0.3;
+}
+
+@keyframes rotate {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
 }
 
 .price-category-scroll {
 	width: 100%;
-	white-space: nowrap; /* 防止换行 */
-	overflow-x: auto; /* 允许水平滚动 */
-	-webkit-overflow-scrolling: touch; /* 流畅滚动效果 */
-	scrollbar-width: none; /* Firefox */
-	-ms-overflow-style: none; /* IE and Edge */
-	scroll-behavior: smooth; /* 平滑滚动 */
+	white-space: nowrap;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+	scroll-behavior: smooth;
 }
 
 /* 隐藏所有浏览器的滚动条 */
 .price-category-scroll::-webkit-scrollbar {
-	display: none; /* Chrome, Safari, Opera */
+	display: none;
 	width: 0;
 	height: 0;
 	background: transparent;
@@ -513,42 +572,128 @@ page {
 .price-category-list {
 	display: flex;
 	padding: 0 24rpx;
-	flex-wrap: nowrap; /* 防止换行 */
-	width: max-content; /* 确保宽度能容纳所有项 */
+	flex-wrap: nowrap;
+	width: max-content;
+	align-items: center;
 }
 
 .price-category-item {
-	padding: 16rpx 32rpx;
-	margin-right: 20rpx;
-	background: linear-gradient(145deg, #FFFFFF, #F8FAFC);
-	border-radius: 16rpx;
+	position: relative;
+	padding: 14rpx 28rpx;
+	margin-right: 24rpx;
 	font-size: 26rpx;
-	color: #4B5563;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+	color: rgba(75, 85, 99, 0.8);
 	transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-	border: 1rpx solid rgba(0, 0, 0, 0.05);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 120rpx; /* 确保最小宽度 */
-	flex-shrink: 0; /* 防止压缩 */
+	min-width: 120rpx;
+	flex-shrink: 0;
+	overflow: hidden;
+	border-radius: 40rpx;
+	background: rgba(255, 255, 255, 0.5);
+	backdrop-filter: blur(5px);
+	-webkit-backdrop-filter: blur(5px);
+	border: 1px solid rgba(255, 255, 255, 0.7);
+	box-shadow:
+		0 4rpx 10rpx rgba(0, 0, 0, 0.03),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+/* 内部光效元素 */
+.category-item-glow {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.3), transparent 70%);
+	opacity: 0;
+	z-index: 1;
+	transition: opacity 0.3s ease;
+	pointer-events: none;
+}
+
+.price-category-item:hover .category-item-glow {
+	opacity: 0.5;
+}
+
+.price-category-active .category-item-glow {
+	background: radial-gradient(circle at center, rgba(255, 255, 255, 0.4), transparent 70%);
+	opacity: 0.7;
+	animation: pulse-glow 3s infinite alternate;
+}
+
+@keyframes pulse-glow {
+	0% {
+		opacity: 0.3;
+	}
+	100% {
+		opacity: 0.7;
+	}
 }
 
 .price-category-item:active {
 	transform: scale(0.95);
-	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+	box-shadow:
+		0 2rpx 5rpx rgba(0, 0, 0, 0.05),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.price-category-item:active::before {
+	opacity: 1;
 }
 
 .price-category-active {
-	background: linear-gradient(135deg, #0D9488, #0F766E);
 	color: white;
-	border-color: rgba(255, 255, 255, 0.2);
-	box-shadow: 0 4rpx 12rpx rgba(13, 148, 136, 0.2);
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.9), rgba(15, 118, 110, 0.9));
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	box-shadow:
+		0 6rpx 15rpx rgba(13, 148, 136, 0.2),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+	transform: translateY(-4rpx);
+}
+
+/* 活跃状态指示点 */
+.active-indicator {
+	position: absolute;
+	bottom: -10rpx;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 8rpx;
+	height: 8rpx;
+	border-radius: 50%;
+	background: rgba(13, 148, 136, 0.8);
+	box-shadow: 0 0 10rpx 2rpx rgba(13, 148, 136, 0.5);
+	animation: pulse 1.5s infinite;
+	z-index: 3;
+}
+
+@keyframes pulse {
+	0% {
+		opacity: 0.6;
+		transform: translateX(-50%) scale(1);
+	}
+	50% {
+		opacity: 1;
+		transform: translateX(-50%) scale(1.5);
+	}
+	100% {
+		opacity: 0.6;
+		transform: translateX(-50%) scale(1);
+	}
 }
 
 .price-category-item .iconfont {
-	margin-right: 8rpx;
+	margin-right: 10rpx;
 	font-size: 28rpx;
+	position: relative;
+	z-index: 2;
+	transition: transform 0.3s ease;
+}
+
+.price-category-active .iconfont {
+	transform: scale(1.1);
 }
 
 .price-category-text {
@@ -558,6 +703,12 @@ page {
 	z-index: 2;
 	display: inline-block;
 	vertical-align: middle;
+	transition: all 0.3s ease;
+}
+
+.price-category-active .price-category-text {
+	font-weight: 600;
+	text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
 }
 
 .price-fruit-list-container {
@@ -816,14 +967,15 @@ page {
 .date-box {
 	display: flex;
 	align-items: center;
-	background-color: rgba(255, 255, 255, 0.1);
-	padding: 6rpx 16rpx;
-	border-radius: 30rpx;
+	background-color: rgba(255, 255, 255, 0.8);
+	padding: 8rpx 16rpx;
+	border-radius: 16rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .date-text {
 	font-size: 24rpx;
-	color: #FFFFFF;
+	color: #666;
 	margin-left: 8rpx;
 }
 </style>

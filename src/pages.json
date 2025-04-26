@@ -11,8 +11,7 @@
 			"path": "pages/price/price",
 			"style": {
 				"navigationBarTitleText": "今日报价",
-				"navigationBarBackgroundColor": "#0D9488",
-				"navigationBarTextStyle": "white",
+				"navigationBarTextStyle": "black",
 				"navigationStyle": "custom"
 			}
 		},
@@ -20,8 +19,7 @@
 			"path": "pages/inventory/inventory",
 			"style": {
 				"navigationBarTitleText": "库存管理",
-				"navigationBarBackgroundColor": "#0D9488",
-				"navigationBarTextStyle": "white",
+				"navigationBarTextStyle": "black",
 				"navigationStyle": "custom"
 			}
 		},
@@ -29,8 +27,7 @@
 			"path": "pages/sales/sales",
 			"style": {
 				"navigationBarTitleText": "水果销售",
-				"navigationBarBackgroundColor": "#0D9488",
-				"navigationBarTextStyle": "white",
+				"navigationBarTextStyle": "black",
 				"navigationStyle": "custom"
 			}
 		},
@@ -38,8 +35,7 @@
 			"path": "pages/profile/profile",
 			"style": {
 				"navigationBarTitleText": "个人中心",
-				"navigationBarBackgroundColor": "#0D9488",
-				"navigationBarTextStyle": "white",
+				"navigationBarTextStyle": "black",
 				"navigationStyle": "custom"
 			}
 		},
@@ -80,17 +76,18 @@
 		}
 	],
 	"globalStyle": {
+		"navigationStyle": "custom",
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "水果档口管理",
-		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F5F5F5"
 	},
 	"tabBar": {
 		"custom": false,
 		"color": "#7A7E83",
 		"selectedColor": "#0D9488",
-		"borderStyle": "black",
+		"borderStyle": "white",
 		"backgroundColor": "#ffffff",
+		"fontSize": "10px",
+		"height": "50px",
 		"list": [
 			{
 				"pagePath": "pages/price/price",

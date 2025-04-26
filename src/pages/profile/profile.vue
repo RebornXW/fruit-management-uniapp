@@ -1,41 +1,41 @@
 <template>
-	<view class="profile-container">
-		<!-- 用户信息头部 -->
-		<view class="bg-teal-600 text-white p-4 pb-12">
-			<view class="flex justify-between items-center mb-4">
-				<text class="text-xl font-bold">个人中心</text>
-				<view class="flex items-center space-x-3">
-					<uni-icons type="gear" size="24" color="#ffffff" @click="showSettings"></uni-icons>
-				</view>
-			</view>
+	<view class="page-container">
+		<!-- 顶部白色栏 -->
+		<view class="page-header">
+			<view class="page-title">个人中心</view>
+		</view>
 
-			<view class="flex items-center justify-between">
-				<view class="flex items-center">
-					<view class="relative mr-4">
-						<view class="w-16 h-16 bg-white rounded-full overflow-hidden border-2 border-white shadow-sm">
-							<image :src="userData.avatar" :alt="userData.name" class="w-full h-full object-cover" mode="aspectFill" style="width: 100%; height: 100%; display: block;"></image>
-						</view>
-						<view class="absolute bottom-0 right-0 w-5 h-5 bg-green-400 border-2 border-white rounded-full"></view>
+		<!-- 滚动内容区域 -->
+		<scroll-view
+			scroll-y
+			class="profile-scroll hide-scrollbar"
+			:show-scrollbar="false"
+			:enhanced="true"
+			:bounces="false"
+		>
+		<!-- 用户信息头部 - 现代简约风格 -->
+		<view class="user-profile-header">
+			<view class="user-profile-card">
+				<view class="user-avatar-container">
+					<view class="user-avatar">
+						<image :src="userData.avatar" :alt="userData.name" class="avatar-image" mode="aspectFill"></image>
 					</view>
-
-					<view>
-						<view class="flex items-center">
-							<text class="text-xl font-bold">{{userData.name}}</text>
-						</view>
-						<view class="flex items-center mt-1">
-							<text class="text-sm opacity-80">档口：{{userData.shopName}}</text>
-						</view>
-					</view>
+					<view class="user-status-indicator"></view>
 				</view>
 
-				<view @tap="editProfile">
-					<uni-icons type="compose" size="20" color="#ffffff"></uni-icons>
+				<view class="user-info">
+					<view class="user-name">{{userData.name}}</view>
+					<view class="user-shop">档口：{{userData.shopName}}</view>
+				</view>
+
+				<view class="edit-profile-btn" @tap="editProfile">
+					<uni-icons type="compose" size="20" color="#333333"></uni-icons>
 				</view>
 			</view>
 		</view>
 
 		<!-- 销售数据统计 - 创意简约版 -->
-		<view class="px-4 -mt-8 mb-4">
+		<view class="px-4 -mt-2 mb-4">
 			<view class="sales-dashboard bg-white rounded-2xl shadow-lg overflow-hidden">
 				<!-- 标题区域与时间选择器 -->
 				<view class="sales-dashboard-header">
@@ -166,40 +166,37 @@
 			</view>
 		</view>
 
-		<!-- 功能项 - 优化布局 -->
+		<!-- 功能项 - 整体质感背景设计 -->
 		<view class="px-4 mb-4">
-			<view class="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-200">
-				<view class="function-menu">
-					<view class="function-item" @tap="navigateTo('/pages/records/sales-records')">
-						<view class="function-icon bg-emerald-100">
-							<image src="/static/icons/sales-records.png" style="width: 24px; height: 24px;"></image>
-						</view>
-						<text class="function-text text-emerald-600">销售记录</text>
+			<view class="function-panel">
+				<!-- 背景纹理和光效 -->
+				<view class="function-panel-texture"></view>
+				<view class="function-panel-highlight"></view>
+
+				<!-- 功能按钮区 -->
+				<view class="function-menu-elegant">
+					<view class="function-item-elegant" @tap="navigateTo('/pages/records/sales-records')">
+						<image src="/static/icons/sales-records.png" style="width: 32px; height: 32px;"></image>
+						<text class="function-text-elegant">销售记录</text>
 					</view>
-					<view class="function-item" @tap="navigateTo('/pages/records/inventory-records')">
-						<view class="function-icon bg-sky-100">
-							<image src="/static/icons/inventory-records.png" style="width: 24px; height: 24px;"></image>
-						</view>
-						<text class="function-text text-sky-600">库存记录</text>
+					<view class="function-item-elegant" @tap="navigateTo('/pages/records/inventory-records')">
+						<image src="/static/icons/inventory-records.png" style="width: 32px; height: 32px;"></image>
+						<text class="function-text-elegant">库存记录</text>
 					</view>
-					<view class="function-item" @tap="navigateTo('/pages/records/system-log')">
-						<view class="function-icon bg-violet-100">
-							<image src="/static/icons/operation-records.png" style="width: 24px; height: 24px;"></image>
-						</view>
-						<text class="function-text text-violet-600">系统日志</text>
+					<view class="function-item-elegant" @tap="navigateTo('/pages/records/system-log')">
+						<image src="/static/icons/operation-records.png" style="width: 32px; height: 32px;"></image>
+						<text class="function-text-elegant">系统日志</text>
 					</view>
-					<view class="function-item" @tap="showFunction('reconciliation')">
-						<view class="function-icon bg-indigo-100">
-							<image src="/static/icons/payment-records.png" style="width: 24px; height: 24px;"></image>
-						</view>
-						<text class="function-text text-indigo-600">付款记录</text>
+					<view class="function-item-elegant" @tap="showFunction('reconciliation')">
+						<image src="/static/icons/payment-records.png" style="width: 32px; height: 32px;"></image>
+						<text class="function-text-elegant">付款记录</text>
 					</view>
 				</view>
 			</view>
 		</view>
 
 		<!-- 数据摘要卡片 - 高科技感设计 -->
-		<view class="px-4 mb-20">
+		<view class="px-4 mb-24">
 			<view class="flex items-center mb-3">
 				<view class="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg flex items-center justify-center mr-2 shadow-sm">
 					<uni-icons type="chart-pie" size="16" color="#FFFFFF"></uni-icons>
@@ -285,6 +282,7 @@
 
 			</view>
 		</view>
+	</scroll-view>
 
 		<!-- 功能模态弹窗 -->
 		<uni-popup ref="functionPopup" type="center">
@@ -1895,10 +1893,155 @@ function loadCustomerData() {
 </script>
 
 <style>
+/* 全局页面样式，防止整体滑动 */
+page {
+	height: 100%;
+	overflow: hidden;
+	position: relative;
+}
+
 .profile-container {
-	min-height: 100vh;
+	height: 100vh;
 	background-color: #F5F5F5;
-	padding-bottom: 100rpx; /* 为底部导航栏留出空间 */
+	display: flex;
+	flex-direction: column;
+	overflow: hidden; /* 禁止整个页面滚动 */
+}
+
+/* 顶部白色栏样式 */
+.profile-header {
+	background-color: #FFFFFF;
+	padding: 20rpx 30rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+	z-index: 10;
+}
+
+.profile-title {
+	font-size: 36rpx;
+	font-weight: 600;
+	color: #333333;
+	letter-spacing: 1rpx;
+}
+
+.profile-scroll {
+	flex: 1;
+	height: 100%;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+	display: none;
+	width: 0 !important;
+	height: 0 !important;
+	-webkit-appearance: none;
+	background: transparent;
+}
+
+/* 用户信息头部 - 现代简约风格 */
+.user-profile-header {
+	padding: 20rpx 30rpx 40rpx;
+	background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(250,250,252,0.85));
+	position: relative;
+}
+
+.user-profile-card {
+	display: flex;
+	align-items: center;
+	padding: 30rpx;
+	border-radius: 24rpx;
+	background: rgba(255, 255, 255, 0.7);
+	backdrop-filter: blur(15px);
+	-webkit-backdrop-filter: blur(15px);
+	box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.8);
+	position: relative;
+	overflow: hidden;
+}
+
+.user-profile-card::before {
+	content: '';
+	position: absolute;
+	top: -50%;
+	left: -50%;
+	width: 200%;
+	height: 200%;
+	background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent 70%);
+	z-index: 0;
+}
+
+.user-avatar-container {
+	position: relative;
+	margin-right: 30rpx;
+	z-index: 1;
+}
+
+.user-avatar {
+	width: 120rpx;
+	height: 120rpx;
+	border-radius: 50%;
+	overflow: hidden;
+	border: 3rpx solid rgba(255, 255, 255, 0.9);
+	box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.avatar-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.user-status-indicator {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	width: 24rpx;
+	height: 24rpx;
+	border-radius: 50%;
+	background-color: #10B981;
+	border: 3rpx solid #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+	flex: 1;
+	z-index: 1;
+}
+
+.user-name {
+	font-size: 36rpx;
+	font-weight: 600;
+	color: #333333;
+	margin-bottom: 8rpx;
+	letter-spacing: 0.5rpx;
+}
+
+.user-shop {
+	font-size: 26rpx;
+	color: #666666;
+	opacity: 0.9;
+}
+
+.edit-profile-btn {
+	width: 60rpx;
+	height: 60rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.5);
+	backdrop-filter: blur(5px);
+	-webkit-backdrop-filter: blur(5px);
+	border: 1px solid rgba(255, 255, 255, 0.7);
+	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.04);
+	z-index: 1;
+	transition: all 0.3s ease;
+}
+
+.edit-profile-btn:active {
+	transform: scale(0.95);
+	background: rgba(255, 255, 255, 0.7);
 }
 
 .bg-teal-600 {
@@ -2237,45 +2380,89 @@ function loadCustomerData() {
 	border: 1rpx solid rgba(0, 0, 0, 0.05);
 }
 
-/* 功能菜单样式 - 优化版 */
-.function-menu {
-	display: flex;
-	justify-content: space-around;
-	padding: 24rpx 16rpx;
-	border: 1px solid #E5E7EB;
-	border-radius: 12rpx;
+/* 功能面板整体样式 - 高质感设计 */
+.function-panel {
+	position: relative;
+	border-radius: 24rpx;
+	overflow: hidden;
+	padding: 30rpx 20rpx;
+	box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.08);
+	background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 240, 250, 0.85));
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
-.function-item {
+/* 背景纹理效果 */
+.function-panel-texture {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	opacity: 0.04;
+	background-image:
+		linear-gradient(0deg, transparent 24%, rgba(0, 0, 0, 0.5) 25%, rgba(0, 0, 0, 0.5) 26%, transparent 27%, transparent 74%, rgba(0, 0, 0, 0.5) 75%, rgba(0, 0, 0, 0.5) 76%, transparent 77%, transparent),
+		linear-gradient(90deg, transparent 24%, rgba(0, 0, 0, 0.5) 25%, rgba(0, 0, 0, 0.5) 26%, transparent 27%, transparent 74%, rgba(0, 0, 0, 0.5) 75%, rgba(0, 0, 0, 0.5) 76%, transparent 77%, transparent);
+	background-size: 50rpx 50rpx;
+}
+
+/* 光泽高光效果 */
+.function-panel-highlight {
+	position: absolute;
+	top: -50%;
+	left: -50%;
+	right: -50%;
+	bottom: -50%;
+	background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+	transform: rotate(-45deg);
+	pointer-events: none;
+}
+
+/* 功能菜单布局 */
+.function-menu-elegant {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+}
+
+/* 功能项样式 */
+.function-item-elegant {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	padding: 20rpx;
 	width: 22%;
-	border-radius: 16rpx;
-	transition: all 0.2s ease;
+	position: relative;
+	transition: all 0.3s ease;
 }
 
-.function-item:active {
-	background-color: #F9FAFB;
-	transform: scale(0.98);
+.function-item-elegant:active {
+	transform: scale(0.95);
 }
 
-.function-icon {
-	width: 100rpx;
-	height: 100rpx;
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
+/* 图标样式 */
+.function-item-elegant image {
+	width: 32px;
+	height: 32px;
 	margin-bottom: 16rpx;
-	box-shadow: 0 4rpx 6rpx rgba(0, 0, 0, 0.05);
+	filter: drop-shadow(0 2rpx 4rpx rgba(0, 0, 0, 0.1));
+	transition: all 0.3s ease;
 }
 
-.function-text {
-	font-size: 28rpx;
+.function-item-elegant:active image {
+	filter: drop-shadow(0 1rpx 2rpx rgba(0, 0, 0, 0.1));
+}
+
+/* 文本样式 */
+.function-text-elegant {
+	font-size: 26rpx;
 	font-weight: 500;
 	white-space: nowrap;
+	letter-spacing: 1rpx;
+	color: rgba(0, 0, 0, 0.75);
+	text-shadow: 0 1rpx 2rpx rgba(255, 255, 255, 0.5);
 }
 
 /* 销售数据统计创意简约版样式 */
@@ -2659,21 +2846,21 @@ function loadCustomerData() {
 
 
 
-/* 卡片颜色主题 - 移除左侧竖线 */
+/* 卡片颜色主题 */
 .card-amber {
-	/* 苹果风格玻璃效果 */
+	background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.2));
 }
 
 .card-orange {
-	/* 苹果风格玻璃效果 */
+	background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(234, 88, 12, 0.2));
 }
 
 .card-red {
-	/* 苹果风格玻璃效果 */
+	background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.2));
 }
 
 .card-emerald {
-	/* 苹果风格玻璃效果 */
+	background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.2));
 }
 
 

@@ -1,39 +1,47 @@
 <template>
-	<view class="user-info-container">
-		<!-- 头部导航栏 -->
-		<view class="header">
-			<view class="flex items-center">
-				<view class="back-icon" @tap="goBack">
-					<uni-icons type="back" size="24" color="#FFFFFF"></uni-icons>
-				</view>
-				<text class="title">个人信息</text>
+	<view class="page-container">
+		<!-- 顶部白色栏 -->
+		<view class="page-header">
+			<view class="header-left" @tap="goBack">
+				<text class="iconfont icon-left"></text>
 			</view>
+			<view class="page-title">个人信息</view>
+			<view class="header-right"></view>
 		</view>
 
 		<!-- 内容区域 -->
-		<view class="content-container">
-			<view class="info-list">
+		<view class="content-section">
+			<!-- 内容标题栏 -->
+			<view class="content-header">
+				<view class="content-header-left">
+					<view class="section-indicator"></view>
+					<text class="list-title">基本信息</text>
+				</view>
+			</view>
+
+			<!-- 信息卡片 -->
+			<view class="info-card">
 				<!-- 头像 -->
 				<view class="info-item" @tap="editAvatar">
 					<text class="item-label">头像</text>
-					<view class="item-content flex items-center">
+					<view class="item-content">
 						<image class="avatar" :src="userInfo.avatar" mode="aspectFill"></image>
-						<uni-icons type="camera-filled" size="20" color="#0D9488"></uni-icons>
+						<text class="iconfont icon-camera edit-icon"></text>
 					</view>
 				</view>
 
 				<!-- 姓名 -->
 				<view class="info-item">
 					<text class="item-label">姓名</text>
-					<view class="item-content flex items-center">
-						<input type="text" v-model="userInfo.name" placeholder="请输入姓名" class="form-input" />
+					<view class="item-content">
+						<input type="text" v-model="userInfo.name" placeholder="请输入姓名" class="app-input" />
 					</view>
 				</view>
 
 				<!-- 档口名称(只读) -->
 				<view class="info-item">
 					<text class="item-label">档口名称</text>
-					<view class="item-content flex items-center">
+					<view class="item-content">
 						<text class="item-value">{{userInfo.stallName}}</text>
 					</view>
 				</view>
@@ -41,37 +49,33 @@
 				<!-- 联系方式 -->
 				<view class="info-item">
 					<text class="item-label">联系方式</text>
-					<view class="item-content flex items-center">
-						<input type="text" v-model="userInfo.phone" placeholder="请输入联系方式" class="form-input" maxlength="11" />
+					<view class="item-content">
+						<input type="text" v-model="userInfo.phone" placeholder="请输入联系方式" class="app-input" maxlength="11" />
 					</view>
 				</view>
 
 				<!-- 角色(只读) -->
 				<view class="info-item">
 					<text class="item-label">业务身份</text>
-					<view class="item-content flex items-center">
+					<view class="item-content">
 						<text class="item-value">{{userInfo.role}}</text>
 					</view>
 				</view>
 			</view>
 
 			<!-- 底部保存按钮 -->
-			<view class="save-btn-container">
-				<button class="save-btn" @tap="saveUserInfo">保存修改</button>
+			<view class="button-container">
+				<button class="app-confirm-btn" @tap="saveUserInfo">保存修改</button>
 			</view>
 		</view>
 	</view>
 </template>
 
 <script>
-import { ref, reactive, onMounted } from 'vue';
-import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
+import { ref, onMounted } from 'vue';
 import { getUserProfile, updateUserProfile, uploadAvatar } from '@/services/authService.js';
 
 export default {
-	components: {
-		uniIcons
-	},
 	setup() {
 		const userInfo = ref({
 			name: '默认用户',
@@ -293,108 +297,134 @@ export default {
 
 <style>
 page {
-	background-color: #F9FAFB;
+	background-color: #F5F5F5;
+	height: 100%;
 }
 
-.user-info-container {
-	width: 100%;
-	height: 100vh;
+.page-container {
 	display: flex;
 	flex-direction: column;
-	animation: slideIn 0.3s ease-out forwards;
+	height: 100vh;
+	animation: fadeIn 0.3s ease-out forwards;
 }
 
-@keyframes slideIn {
+@keyframes fadeIn {
 	from {
-		transform: translateX(100%);
+		opacity: 0.8;
 	}
 	to {
-		transform: translateX(0);
+		opacity: 1;
 	}
 }
 
-.header {
+/* 顶部标题栏样式 */
+.page-header {
+	background-color: #FFFFFF;
 	padding: 20rpx 30rpx;
-	position: relative;
-	height: 100rpx;
 	display: flex;
 	align-items: center;
-	background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
-	box-shadow: 0 4rpx 12rpx rgba(13, 148, 136, 0.2);
+	justify-content: space-between;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 	z-index: 10;
+	position: relative;
 }
 
-.back-icon {
-	padding: 10rpx 20rpx 10rpx 0;
+.header-left {
 	width: 60rpx;
 	height: 60rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border-radius: 50%;
-	background-color: rgba(255, 255, 255, 0.15);
-	transition: all 0.3s ease;
 }
 
-.back-icon:active {
-	background-color: rgba(255, 255, 255, 0.25);
-	transform: scale(0.92);
+.header-left .iconfont {
+	font-size: 36rpx;
+	color: #333333;
 }
 
-.title {
+.page-title {
 	font-size: 36rpx;
 	font-weight: 600;
-	color: #FFFFFF;
+	color: #333333;
+	letter-spacing: 1rpx;
 	flex: 1;
 	text-align: center;
-	margin-right: 60rpx; /* 为了居中，抵消返回按钮的宽度 */
-	letter-spacing: 1rpx;
-	text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
 }
 
-.content-container {
+.header-right {
+	width: 60rpx;
+}
+
+/* 内容区域样式 */
+.content-section {
 	flex: 1;
-	padding: 30rpx;
-	overflow-y: auto;
+	padding: 20rpx;
 	display: flex;
 	flex-direction: column;
-	position: relative;
-	margin-top: -20rpx;
 }
 
-.info-list {
-	background-color: #FFFFFF;
-	border-radius: 24rpx;
-	overflow: hidden;
-	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.08);
-	margin-bottom: 40rpx;
+/* 内容标题栏样式 */
+.content-header {
+	padding: 24rpx 24rpx 16rpx;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
 	position: relative;
-	z-index: 5;
-	border: 1rpx solid rgba(229, 231, 235, 0.8);
+	background-color: #FFFFFF;
+	border-bottom: 1rpx solid #E2E8F0;
+	margin-top: 16rpx;
+	border-radius: 16rpx 16rpx 0 0;
+	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.03);
+	box-sizing: border-box;
+}
+
+.content-header-left {
+	display: flex;
+	align-items: center;
+}
+
+.section-indicator {
+	width: 4rpx;
+	height: 28rpx;
+	background: linear-gradient(to bottom, #3B82F6, #2563EB);
+	border-radius: 2rpx;
+	margin-right: 12rpx;
+}
+
+.list-title {
+	font-size: 28rpx;
+	color: #1E293B;
+	font-weight: 600;
+	letter-spacing: 0.5rpx;
+}
+
+/* 信息卡片样式 */
+.info-card {
+	background-color: #FFFFFF;
+	border-radius: 0 0 16rpx 16rpx;
+	overflow: hidden;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	margin-bottom: 30rpx;
+	border: 1rpx solid #E2E8F0;
+	border-top: none;
 }
 
 .info-item {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 32rpx 36rpx;
+	padding: 24rpx;
 	border-bottom: 1rpx solid #F3F4F6;
-	transition: all 0.3s ease;
 }
 
-.info-item:active {
-	background-color: #F9FAFB;
-}
-
-.info-list .info-item:last-child {
+.info-item:last-child {
 	border-bottom: none;
 }
 
 .item-label {
-	font-size: 32rpx;
-	color: #374151;
-	font-weight: 600;
-	letter-spacing: 0.5rpx;
+	font-size: 28rpx;
+	color: #4B5563;
+	font-weight: 500;
 }
 
 .item-content {
@@ -403,80 +433,73 @@ page {
 }
 
 .item-value {
-	font-size: 32rpx;
-	color: #111827;
-	font-weight: 500;
-	margin-right: 16rpx;
-	letter-spacing: 0.5rpx;
+	font-size: 28rpx;
+	color: #1F2937;
+	text-align: right;
 }
 
 .avatar {
-	width: 120rpx;
-	height: 120rpx;
-	border-radius: 50%;
-	margin-right: 24rpx;
-	background-color: #F3F4F6;
-	border: 6rpx solid #FFFFFF;
-	box-shadow: 0 8rpx 20rpx rgba(13, 148, 136, 0.15);
-	transition: all 0.3s ease;
-	object-fit: cover;
-}
-
-.form-input {
-	text-align: right;
-	height: 70rpx;
-	font-size: 32rpx;
-	font-weight: 500;
-	color: #111827;
-	padding: 0 10rpx;
-	min-width: 200rpx;
-	background-color: transparent;
-	transition: all 0.3s ease;
-}
-
-.form-input:focus {
-	background-color: #F9FAFB;
-	border-radius: 8rpx;
-}
-
-.save-btn-container {
-	margin-top: auto;
-	padding: 40rpx 0;
-}
-
-.save-btn {
-	width: 90%;
+	width: 100rpx;
 	height: 100rpx;
-	margin: 0 auto;
-	background: linear-gradient(135deg, #10B981 0%, #0D9488 100%);
+	border-radius: 50%;
+	background-color: #F3F4F6;
+	border: 2rpx solid #E5E7EB;
+	box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
+	object-fit: cover;
+	position: relative;
+}
+
+.edit-icon {
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	width: 36rpx;
+	height: 36rpx;
+	background-color: #0D9488;
+	color: white;
+	border-radius: 50%;
+	font-size: 20rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-left: 10rpx;
+}
+
+/* 按钮容器样式 */
+.button-container {
+	margin-top: 40rpx;
+	padding: 0 20rpx;
+}
+
+/* 确认按钮样式 */
+.app-confirm-btn {
+	width: 100%;
+	height: 90rpx;
+	background: linear-gradient(135deg, #0D9488, #0F766E);
 	color: #FFFFFF;
-	border-radius: 50rpx;
-	font-size: 34rpx;
+	border-radius: 45rpx;
+	font-size: 32rpx;
 	font-weight: 600;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-shadow: 0 8rpx 20rpx rgba(13, 148, 136, 0.25);
+	box-shadow: 0 4rpx 12rpx rgba(13, 148, 136, 0.2);
 	transition: all 0.3s ease;
-	letter-spacing: 2rpx;
+	border: none;
 }
 
-.save-btn:active {
-	opacity: 0.9;
-	transform: scale(0.96);
-	background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
-	box-shadow: 0 4rpx 10rpx rgba(13, 148, 136, 0.2);
+.app-confirm-btn:active {
+	transform: scale(0.98);
+	box-shadow: 0 2rpx 8rpx rgba(13, 148, 136, 0.15);
 }
 
-.bg-teal-600 {
-	background-color: #0D9488;
-}
-
-.text-white {
-	color: #FFFFFF;
-}
-
-.mt-3 {
-	margin-top: 30rpx;
+/* 输入框样式 */
+.app-input {
+	text-align: right;
+	height: 70rpx;
+	font-size: 28rpx;
+	color: #1F2937;
+	min-width: 200rpx;
+	background-color: transparent;
 }
 </style>

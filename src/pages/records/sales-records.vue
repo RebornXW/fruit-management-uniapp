@@ -112,12 +112,12 @@ onMounted(async () => {
 
 // 列表视图列配置
 const columns = [
-	{ title: '记录编号', field: 'orderNo', type: 'text', width: '120rpx' },
-	{ title: '销售时间', field: 'date', type: 'datetime', timeField: 'time', width: '180rpx' },
+	{ title: '记录编号', field: 'orderNo', type: 'text', width: '150rpx' }, // 增加宽度
+	{ title: '销售时间', field: 'date', type: 'datetime', timeField: 'time', width: '200rpx' }, // 增加宽度
 	{ title: '用户名称', field: 'salesPerson', type: 'text', width: '120rpx' },
-	{ title: '客户名称', field: 'customerName', type: 'text', width: '150rpx' },
-	{ title: '水果名称', field: 'productName', type: 'text', width: '150rpx' },
-	{ title: '规格', field: 'spec', type: 'text', width: '120rpx' },
+	{ title: '客户名称', field: 'customerName', type: 'text', width: '200rpx' }, // 增加宽度
+	{ title: '水果名称', field: 'productName', type: 'text', width: '200rpx' }, // 增加宽度
+	{ title: '规格', field: 'spec', type: 'text', width: '150rpx' }, // 增加宽度
 	{ title: '单价', field: 'unitPrice', type: 'price', width: '100rpx' },
 	{ title: '数量', field: 'quantity', type: 'number', width: '80rpx' },
 	{ title: '总价', field: 'amount', type: 'price', width: '120rpx' },

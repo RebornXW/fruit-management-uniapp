@@ -1,118 +1,123 @@
 <template>
-	<view class="inventory-container" @tap="handlePageClick">
-		<!-- 头部 -->
-		<view class="header-section">
-			<view class="header-content">
-				<text class="header-title">库存管理</text>
-				<view class="date-display">
-					<text class="date-text">{{currentDate}}</text>
-				</view>
-			</view>
+	<view class="page-container" @tap="handlePageClick">
+		<!-- 顶部白色栏 -->
+		<view class="page-header">
+			<view class="page-title">库存管理</view>
+		</view>
 
-			<!-- 搜索框和操作按钮并排 -->
-			<view class="header-tools">
-				<view class="app-search-box app-search-box-header">
-					<text class="iconfont icon-search app-search-icon"></text>
-					<input v-model="searchText" type="text" placeholder="搜索水果..." class="app-search-input" />
-					<text v-if="searchText" class="app-search-clear" @tap="searchText = ''">×</text>
+		<!-- 搜索框和操作按钮 -->
+		<view class="search-section">
+			<view class="app-search-box app-search-box-header">
+				<text class="iconfont icon-search app-search-icon"></text>
+				<input v-model="searchText" type="text" placeholder="搜索水果..." class="app-search-input" />
+				<text v-if="searchText" class="app-search-clear" @tap="searchText = ''">×</text>
+			</view>
+			<view class="header-actions">
+				<button class="app-add-btn" @tap="showAddRecord">
+					<text class="iconfont icon-clipboard"></text>
+				</button>
+				<button class="app-add-btn" @tap="showAddFruit">
+					<text class="iconfont icon-add"></text>
+				</button>
+			</view>
+		</view>
+
+		<!-- 库存数据统计卡片 - 新设计 -->
+		<view class="stats-container">
+			<view class="stats-wrapper">
+				<!-- 库存总量卡片 - 新布局 -->
+				<view class="stat-card">
+					<view class="stat-header">
+						<text class="stat-title">库存总量</text>
+						<view class="stat-icon-wrapper blue">
+							<text class="iconfont icon-star"></text>
+						</view>
+					</view>
+					<view class="stat-value-container">
+						<text class="stat-value">{{totalStock}}</text>
+						<text class="stat-unit">箱</text>
+					</view>
 				</view>
-				<view class="header-actions">
-					<button class="app-add-btn" @tap="showAddRecord">
-						<text class="iconfont icon-clipboard"></text>
-					</button>
-					<button class="app-add-btn" @tap="showAddFruit">
-						<text class="iconfont icon-add"></text>
-					</button>
+
+				<!-- 今日入库卡片 - 新布局 -->
+				<view class="stat-card">
+					<view class="stat-header">
+						<text class="stat-title">今日入库</text>
+						<view class="stat-icon-wrapper green">
+							<text class="iconfont icon-arrow-down"></text>
+						</view>
+					</view>
+					<view class="stat-value-container">
+						<text class="stat-value">{{todayIn}}</text>
+						<text class="stat-unit">箱</text>
+					</view>
+				</view>
+
+				<!-- 今日出库卡片 - 新布局 -->
+				<view class="stat-card">
+					<view class="stat-header">
+						<text class="stat-title">今日出库</text>
+						<view class="stat-icon-wrapper red">
+							<text class="iconfont icon-arrow-up"></text>
+						</view>
+					</view>
+					<view class="stat-value-container">
+						<text class="stat-value">{{todayOut}}</text>
+						<text class="stat-unit">箱</text>
+					</view>
 				</view>
 			</view>
 		</view>
 
-		<!-- 库存数据统计 -->
-		<view class="dashboard-container">
-			<!-- 三卡片水平布局 -->
-			<view class="stats-row">
-				<!-- 库存总量 -->
-				<view class="stat-card total-card">
-					<view class="stat-icon-container total-icon">
-						<text class="iconfont icon-warehouse"></text>
-					</view>
-					<view class="stat-content">
-						<text class="stat-label">库存总量</text>
-						<view class="stat-value-row">
-							<text class="stat-value">{{totalStock}}</text>
-							<text class="stat-unit">箱</text>
-						</view>
-					</view>
-				</view>
+		<!-- 内容区标题栏 - 新设计 -->
+		<view class="content-header">
+			<view class="content-header-left">
+				<view class="section-indicator"></view>
+				<text class="list-title">库存水果列表</text>
+			</view>
+			<view class="list-actions">
+				<button class="filter-button" @tap.stop="toggleFilterPopup">
+					<text class="iconfont icon-filter"></text>
+					<text class="filter-text">筛选</text>
+				</button>
+			</view>
+		</view>
 
-				<!-- 今日入库 -->
-				<view class="stat-card in-card">
-					<view class="stat-icon-container in-icon">
-						<text class="iconfont icon-arrow-down"></text>
-					</view>
-					<view class="stat-content">
-						<text class="stat-label">今日入库</text>
-						<view class="stat-value-row">
-							<text class="stat-value">{{todayIn}}</text>
-							<text class="stat-unit">箱</text>
-						</view>
-					</view>
+		<!-- 添加筛选条件弹出层 -->
+		<view class="filter-popup" v-if="showFilter" @tap.stop>
+			<view class="filter-header">
+				<text class="filter-title">筛选条件</text>
+				<text class="filter-close" @tap.stop="toggleFilterPopup">✕</text>
+			</view>
+			<view class="filter-content">
+				<view class="filter-item">
+					<text class="filter-label">水果品类</text>
+					<picker @change="onFilterCategoryChange" :value="filterCategoryIndex" :range="fruitCategories" class="filter-picker">
+						<view class="picker-text">{{fruitCategories[filterCategoryIndex]}}</view>
+					</picker>
 				</view>
-
-				<!-- 今日出库 -->
-				<view class="stat-card out-card">
-					<view class="stat-icon-container out-icon">
-						<text class="iconfont icon-arrow-up"></text>
-					</view>
-					<view class="stat-content">
-						<text class="stat-label">今日出库</text>
-						<view class="stat-value-row">
-							<text class="stat-value">{{todayOut}}</text>
-							<text class="stat-unit">箱</text>
-						</view>
-					</view>
+				<view class="filter-item">
+					<text class="filter-label">水果品种</text>
+					<picker @change="onFilterVarietyChange" :value="filterVarietyIndex" :range="filteredVarieties" class="filter-picker">
+						<view class="picker-text">{{filteredVarieties[filterVarietyIndex]}}</view>
+					</picker>
+				</view>
+				<view class="filter-actions">
+					<button class="filter-reset-btn" @tap.stop="resetFilters">重置</button>
+					<button class="filter-apply-btn" @tap.stop="applyFilters">应用</button>
 				</view>
 			</view>
 		</view>
 
 		<!-- 内容区 - 库存列表 -->
-		<scroll-view scroll-y class="content-section" @tap.stop="closeAllMoreActions">
-			<view class="list-header">
-				<text class="list-title">库存水果列表</text>
-				<view class="list-actions">
-					<button class="filter-button" @tap.stop="toggleFilterPopup">
-						<text class="iconfont icon-filter"></text>
-						<text class="filter-text">筛选</text>
-					</button>
-				</view>
-			</view>
-
-			<!-- 添加筛选条件弹出层 -->
-			<view class="filter-popup" v-if="showFilter" @tap.stop>
-				<view class="filter-header">
-					<text class="filter-title">筛选条件</text>
-					<text class="filter-close" @tap.stop="toggleFilterPopup">✕</text>
-				</view>
-				<view class="filter-content">
-					<view class="filter-item">
-						<text class="filter-label">水果品类</text>
-						<picker @change="onFilterCategoryChange" :value="filterCategoryIndex" :range="fruitCategories" class="filter-picker">
-							<view class="picker-text">{{fruitCategories[filterCategoryIndex]}}</view>
-						</picker>
-					</view>
-					<view class="filter-item">
-						<text class="filter-label">水果品种</text>
-						<picker @change="onFilterVarietyChange" :value="filterVarietyIndex" :range="filteredVarieties" class="filter-picker">
-							<view class="picker-text">{{filteredVarieties[filterVarietyIndex]}}</view>
-						</picker>
-					</view>
-					<view class="filter-actions">
-						<button class="filter-reset-btn" @tap.stop="resetFilters">重置</button>
-						<button class="filter-apply-btn" @tap.stop="applyFilters">应用</button>
-					</view>
-				</view>
-			</view>
-
+		<scroll-view
+			scroll-y
+			class="content-section"
+			@tap.stop="closeAllMoreActions"
+			:show-scrollbar="false"
+			:enhanced="true"
+			:bounces="false"
+		>
 			<view class="fruit-list">
 				<!-- 水果列表 -->
 				<view
@@ -131,13 +136,9 @@
 							</view>
 							<view class="fruit-info-row">
 								<text class="fruit-spec">{{fruit.spec}}</text>
-								<view class="fruit-stock-card" :class="getStockLevelClass(fruit.stock)">
-									<view class="stock-card-glow"></view>
-									<view class="stock-card-content">
-										<text class="stock-value">{{fruit.stock}}</text>
-										<text class="stock-unit">箱</text>
-										<text class="iconfont icon-warehouse stock-icon"></text>
-									</view>
+								<view class="fruit-stock" :class="getStockLevelClass(fruit.stock)">
+									<text class="stock-value">{{fruit.stock}}</text>
+									<text class="stock-unit">箱</text>
 								</view>
 							</view>
 						</view>
@@ -428,6 +429,8 @@ function getStockLevelClass(stock) {
 const inventoryPopup = ref(null);
 const editFruitPopup = ref(null);
 const deletePopup = ref(null);
+
+
 
 // 显示入库/出库操作弹窗
 function showInventoryOperation(type, fruit) {
@@ -1331,55 +1334,29 @@ page {
 	position: relative;
 }
 
-.inventory-container {
+.page-container {
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
 	padding-bottom: 120rpx; /* 增加底部导航栏留出空间 */
-	background-color: #F5F8FA;
+	background: #F1F5F9; /* 统一使用这一种浅灰蓝色背景 */
 	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 	overflow: hidden; /* 防止整个页面滚动 */
+	position: relative;
 }
 
-/* 头部样式 */
-.header-section {
-	background: linear-gradient(135deg, #0D9488, #0F766E);
-	padding: 40rpx 30rpx 30rpx;
-	border-bottom-left-radius: 0;
-	border-bottom-right-radius: 0;
-	box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
-}
-
-.header-content {
+/* 搜索区域样式 */
+.search-section {
+	padding: 20rpx 30rpx;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	margin-bottom: 24rpx;
-}
-
-.header-title {
-	font-size: 36rpx;
-	font-weight: bold;
-	color: white;
-	letter-spacing: 1rpx;
-}
-
-.date-display {
-	background-color: rgba(255, 255, 255, 0.2);
-	padding: 8rpx 16rpx;
-	border-radius: 30rpx;
-}
-
-.date-text {
-	color: white;
-	font-size: 24rpx;
-}
-
-.header-tools {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 15rpx;
+	gap: 20rpx;
+	background-color: rgba(255, 255, 255, 0.8);
+	backdrop-filter: blur(15px);
+	-webkit-backdrop-filter: blur(15px);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
 }
 
 /* 使用统一搜索框样式 */
@@ -1422,114 +1399,173 @@ page {
 
 /* 使用统一新增按钮样式 */
 
-/* 数据统计面板样式 */
-.dashboard-container {
-	padding: 10rpx 14rpx 6rpx;
+/* 统计卡片新样式 */
+.stats-container {
+	padding: 20rpx 20rpx;
 	margin-bottom: 0;
-	overflow: hidden;
+	box-sizing: border-box;
 }
 
-.stats-row {
+.stats-wrapper {
 	display: flex;
-	gap: 8rpx;
+	justify-content: space-between;
+	gap: 16rpx;
+	width: 100%;
+	margin: 0 auto;
+	max-width: 100%;
+	padding: 0;
+	box-sizing: border-box;
 }
 
 .stat-card {
 	flex: 1;
 	display: flex;
+	flex-direction: column;
+	background-color: #FFFFFF;
+	border-radius: 16rpx;
+	padding: 16rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+	position: relative;
+	overflow: hidden;
+	border: 1rpx solid #E2E8F0;
+}
+
+.stat-header {
+	display: flex;
+	justify-content: space-between;
 	align-items: center;
-	padding: 12rpx;
-	border-radius: 12rpx;
-	height: 70rpx;
-	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.08);
+	margin-bottom: 8rpx;
 }
 
-.total-card {
-	background: linear-gradient(135deg, #0D9488, #0F766E);
-}
-
-.in-card {
-	background: linear-gradient(135deg, #065F46, #10B981);
-}
-
-.out-card {
-	background: linear-gradient(135deg, #991B1B, #EF4444);
-}
-
-.stat-icon-container {
-	width: 38rpx;
-	height: 38rpx;
-	border-radius: 8rpx;
-	background: rgba(255, 255, 255, 0.15);
+.stat-icon-wrapper {
+	width: 36rpx;
+	height: 36rpx;
+	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	margin-right: 10rpx;
+	flex-shrink: 0;
+	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+	position: relative;
+	overflow: hidden;
 }
 
-.stat-icon-container .iconfont {
-	font-size: 22rpx;
-	color: white;
+.stat-icon-wrapper::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 1rpx;
+	background: rgba(255, 255, 255, 0.5);
 }
 
-.stat-content {
-	flex: 1;
-}
-
-.stat-label {
+.stat-icon-wrapper .iconfont {
 	font-size: 20rpx;
-	color: rgba(255, 255, 255, 0.85);
-	margin-bottom: 4rpx;
+	color: #FFFFFF;
 }
 
-.stat-value-row {
+.blue {
+	background: linear-gradient(to bottom, #3B82F6, #2563EB);
+}
+
+.green {
+	background: linear-gradient(to bottom, #10B981, #059669);
+}
+
+.red {
+	background: linear-gradient(to bottom, #EF4444, #DC2626);
+}
+
+.stat-title {
+	font-size: 24rpx;
+	color: #6B7280;
+	font-weight: 500;
+}
+
+.stat-value-container {
 	display: flex;
 	align-items: baseline;
+	margin-top: 4rpx;
 }
 
 .stat-value {
-	font-size: 28rpx;
-	font-weight: bold;
-	color: white;
-	margin-right: 4rpx;
+	font-size: 40rpx;
+	font-weight: 600;
+	color: #111827;
+	line-height: 1;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 90%;
 }
 
 .stat-unit {
-	font-size: 20rpx;
-	color: rgba(255, 255, 255, 0.8);
+	font-size: 22rpx;
+	color: #6B7280;
+	margin-left: 4rpx;
 }
 
-/* 列表头部区域样式 */
-.list-header {
-	padding: 20rpx 30rpx 16rpx;
+/* 内容标题栏样式 - 新设计 */
+.content-header {
+	padding: 24rpx 24rpx 16rpx;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	position: relative;
+	background-color: #FFFFFF; /* 纯白色背景 */
+	border-bottom: 1rpx solid #E2E8F0;
+	margin-top: 16rpx;
+	border-radius: 16rpx 16rpx 0 0;
+	margin-left: 20rpx;
+	margin-right: 20rpx;
+	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.03);
+	box-sizing: border-box;
+	width: calc(100% - 40rpx); /* 确保宽度正确 */
+}
+
+.content-header-left {
+	display: flex;
+	align-items: center;
+}
+
+.section-indicator {
+	width: 4rpx;
+	height: 28rpx;
+	background: linear-gradient(to bottom, #3B82F6, #2563EB);
+	border-radius: 2rpx;
+	margin-right: 12rpx;
 }
 
 .list-title {
 	font-size: 28rpx;
-	color: #6B7280;
-	font-weight: 500;
+	color: #1E293B;
+	font-weight: 600;
+	letter-spacing: 0.5rpx;
 }
 
 .list-actions {
 	display: flex;
 	align-items: center;
-	z-index: 10;
 }
 
 .filter-button {
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	background-color: #F3F4F6;
-	border-radius: 30rpx;
+	background: linear-gradient(to bottom, #FFFFFF, #F8FAFC);
+	border: 1rpx solid #E2E8F0;
+	border-radius: 28rpx;
 	padding: 0 20rpx;
-	height: 60rpx;
-	border: none;
-	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+	height: 56rpx;
+	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.03);
+	transition: all 0.2s ease;
+	line-height: 1;
+}
+
+.filter-button:active {
+	transform: scale(0.98);
+	background: linear-gradient(to bottom, #F8FAFC, #F1F5F9);
 }
 
 .filter-button::after {
@@ -1537,45 +1573,62 @@ page {
 }
 
 .filter-button .iconfont {
-	font-size: 28rpx;
-	color: #6B7280;
-	margin-right: 6rpx;
+	font-size: 24rpx;
+	color: #3B82F6;
+	margin-right: 8rpx;
 }
 
 .filter-text {
 	font-size: 24rpx;
-	color: #6B7280;
+	color: #334155;
+	font-weight: 500;
 }
 
 /* 内容区 */
 .content-section {
 	flex: 1;
-	margin-top: 16rpx;
 	margin-bottom: 120rpx; /* 增加底部空间 */
-	height: calc(100vh - 400rpx); /* 设置固定高度，减去头部、统计面板和底部导航的高度 */
+	height: calc(100vh - 420rpx); /* 设置固定高度，减去头部、统计面板、标题栏和底部导航的高度 */
 	overflow: hidden; /* 防止内容溢出 */
+	background-color: #FFFFFF; /* 纯白色背景 */
+	margin-left: 20rpx;
+	margin-right: 20rpx;
+	border-radius: 0 0 16rpx 16rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	padding: 0; /* 确保没有内边距 */
+	width: calc(100% - 40rpx); /* 确保宽度正确 */
+	box-sizing: border-box;
 }
 
 .fruit-list {
-	padding: 0 24rpx 120rpx; /* 增加底部内边距，确保最后一项可见 */
+	padding: 20rpx 10rpx 120rpx; /* 减少左右内边距 */
+	display: flex;
+	flex-direction: column;
+	align-items: center; /* 水平居中 */
+	width: 100%; /* 确保宽度正确 */
+	box-sizing: border-box;
 }
 
 .fruit-card {
-	background: white;
-	border-radius: 16rpx;
+	background: #FFFFFF;
+	border-radius: 12rpx;
 	overflow: hidden;
-	margin-bottom: 24rpx;
-	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
-	transition: all 0.3s;
+	margin-bottom: 16rpx;
+	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.03);
+	border: 1rpx solid #E2E8F0;
+	width: 100%; /* 使用100%宽度 */
+	max-width: 680rpx; /* 减小最大宽度，确保有边距 */
+	box-sizing: border-box;
 }
 
 .fruit-card:active {
-	transform: scale(0.99);
+	background-color: #F8FAFC;
+	transform: scale(0.995);
 }
 
 .fruit-info {
 	display: flex;
-	padding: 24rpx;
+	padding: 20rpx;
 }
 
 .fruit-image-container {
@@ -1633,17 +1686,66 @@ page {
 	text-overflow: ellipsis;
 }
 
-.fruit-stock-tag {
-	flex-shrink: 0;
+.fruit-stock {
+	padding: 6rpx 12rpx;
+	border-radius: 6rpx;
+	display: inline-flex;
+	align-items: center;
+	font-size: 22rpx;
+	font-weight: 500;
+	box-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.05);
+	position: relative;
+	overflow: hidden;
 }
 
-.stock-text {
-	font-size: 22rpx;
-	background-color: #E6FFFA;
-	color: #0D9488;
-	padding: 6rpx 16rpx;
-	border-radius: 999rpx;
-	font-weight: 500;
+.fruit-stock::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 1rpx;
+	background: rgba(255, 255, 255, 0.7);
+}
+
+.stock-value {
+	margin-right: 2rpx;
+	font-weight: 600;
+}
+
+.stock-unit {
+	font-size: 18rpx;
+	opacity: 0.9;
+}
+
+.stock-normal {
+	background: linear-gradient(to bottom, #10B981, #059669);
+	color: white;
+}
+
+.stock-low {
+	background: linear-gradient(to bottom, #F59E0B, #D97706);
+	color: white;
+}
+
+.stock-critical {
+	background: linear-gradient(to bottom, #EF4444, #DC2626);
+	color: white;
+}
+
+.stock-empty {
+	background: linear-gradient(to bottom, #9CA3AF, #6B7280);
+	color: white;
+}
+
+.stock-medium {
+	background: linear-gradient(to bottom, #38BDF8, #0284C7);
+	color: white;
+}
+
+.stock-high {
+	background: linear-gradient(to bottom, #60A5FA, #2563EB);
+	color: white;
 }
 
 .fruit-actions {

@@ -1,16 +1,8 @@
 <template>
-	<view class="customer-container">
-		<!-- 标题栏 -->
-		<view class="customer-header">
-			<view class="header-left">
-				<text class="customer-title">客户管理</text>
-			</view>
-			<view class="header-right">
-				<view class="date-box">
-					<uni-icons type="calendar" size="16" color="#FFFFFF"></uni-icons>
-					<text class="date-text">{{currentDate}}</text>
-				</view>
-			</view>
+	<view class="page-container">
+		<!-- 顶部白色栏 -->
+		<view class="page-header">
+			<view class="page-title">客户管理</view>
 		</view>
 
 		<!-- 搜索框 - 替代原分类标签 -->
@@ -250,6 +242,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import CustomIcon from '@/components/CustomIcon.vue';
+import CustomNavBar from '@/components/CustomNavBar.vue';
 import PaymentPopup from './PaymentPopup.vue';
 import { processPayment } from '@/services/paymentService.js';
 import { getDefaultFruitImage } from '@/services/fruitService.js';
@@ -1161,14 +1154,15 @@ function loadCustomersData() {
 .date-box {
 	display: flex;
 	align-items: center;
-	background-color: rgba(255, 255, 255, 0.2);
-	padding: 6rpx 16rpx;
-	border-radius: 30rpx;
+	background-color: rgba(255, 255, 255, 0.8);
+	padding: 8rpx 16rpx;
+	border-radius: 16rpx;
 	max-width: 220rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
 }
 
 .date-text {
-	color: white;
+	color: #666;
 	font-size: 24rpx;
 	margin-left: 8rpx;
 	white-space: nowrap;
@@ -1178,10 +1172,12 @@ function loadCustomersData() {
 
 /* 搜索框样式 */
 .search-container {
-	background-color: #FFFFFF;
-	padding: 16rpx 24rpx;
-	border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.03);
+	padding: 20rpx 30rpx;
+	background-color: rgba(255, 255, 255, 0.8);
+	backdrop-filter: blur(15px);
+	-webkit-backdrop-filter: blur(15px);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+	box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.03);
 	display: flex;
 	align-items: center;
 }

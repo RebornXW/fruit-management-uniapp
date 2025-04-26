@@ -2,82 +2,71 @@
 	<view class="record-viewer" @tap="onPageClick">
 		<view class="record-viewer-fixed">
 			<!-- 顶部标题和操作栏 -->
-			<view class="header-container">
-				<view class="header-inner">
-					<view class="back-button" @tap="goBack">
-						<uni-icons type="left" size="16" color="#ffffff"></uni-icons>
-					</view>
-					<view class="search-container">
-						<uni-icons type="search" size="16" color="#ffffff80"></uni-icons>
-						<input type="text"
-							:placeholder="isFocused ? '' : title"
-							placeholder-style="color: rgba(255, 255, 255, 0.6); font-weight: normal; font-size: 24rpx;"
-							class="search-field"
-							v-model="searchKeyword"
-							@input="filterRecords"
-							@focus="handleFocus"
-							@blur="handleBlur" />
-					</view>
-					<view class="filter-container" @tap="showAdvancedFilter">
-						<uni-icons type="gear" size="16" color="#ffffff"></uni-icons>
-					</view>
+			<view class="page-header">
+				<view class="page-title">{{title}}</view>
+			</view>
+
+			<!-- 搜索框和操作按钮 -->
+			<view class="search-section">
+				<view class="back-button" @tap="goBack">
+					<text class="iconfont icon-left"></text>
+				</view>
+				<view class="app-search-box">
+					<text class="iconfont icon-search app-search-icon"></text>
+					<input
+						v-model="searchKeyword"
+						type="text"
+						:placeholder="`搜索${title}...`"
+						class="app-search-input"
+						@input="filterRecords"
+						@focus="handleFocus"
+						@blur="handleBlur"
+					/>
+					<text v-if="searchKeyword" class="app-search-clear" @tap="searchKeyword = ''">×</text>
+				</view>
+				<view class="advanced-filter-button" @tap="showAdvancedFilter">
+					<text class="iconfont icon-setting"></text>
 				</view>
 			</view>
 
-			<!-- 筛选控制区域 -->
-			<view class="filter-control-container">
-				<view class="segment-control">
+			<!-- 简化筛选控制区域 -->
+			<view class="simple-filter">
+				<!-- 数据汇总 -->
+				<view class="summary-item">
+					<text class="summary-label">总计:</text>
+					<text class="summary-value">{{filteredRecords.length}}条</text>
+				</view>
+
+				<!-- 时间范围快速选择 -->
+				<view class="filter-tags">
 					<view
 						v-for="(option, index) in dateOptions"
 						:key="index"
-						class="segment-item"
-						:class="{'segment-active': dateRange === option.value}"
+						class="filter-tag"
+						:class="{'filter-tag-active': dateRange === option.value}"
 						@tap="setDateRange(option.value)"
 					>
 						<text>{{option.label}}</text>
 					</view>
 				</view>
 
-				<view class="status-dropdown" @tap.stop="toggleStatusDropdown">
-					<text>{{statusFilter === 'all' ? getStatusLabel() : getCurrentStatusLabel()}}</text>
-					<text class="iconfont icon-down"></text>
+				<!-- 高级筛选按钮 -->
+				<view class="filter-more-btn" @tap="showFilterPopup">
+					<text class="iconfont icon-filter"></text>
+					<text class="filter-more-text">筛选</text>
 				</view>
 			</view>
 
-			<!-- 状态下拉菜单 -->
-			<view class="status-dropdown-menu" v-if="showStatusDropdown" @tap.stop>
-				<view
-					class="status-option"
-					:class="{'status-option-active': statusFilter === 'all'}"
-					@tap="setStatusFilter('all')"
-				>
-					<text>{{ getStatusLabel() }}</text>
-				</view>
-				<view
-					v-for="(option, index) in props.statusOptions"
-					:key="index"
-					class="status-option"
-					:class="{'status-option-active': statusFilter === option.value}"
-					@tap="setStatusFilter(option.value)"
-				>
-					<text>{{option.label}}</text>
-				</view>
-			</view>
-
-			<!-- 点击其他区域关闭下拉菜单的遮罩层 -->
-			<view v-if="showStatusDropdown" class="dropdown-mask" @tap="closeStatusDropdown"></view>
-
-			<!-- 数据汇总条 -->
-			<view class="data-summary">
-				<view class="summary-item">
-					<text class="summary-label">总计:</text>
-					<text class="summary-value">{{filteredRecords.length}} 条记录</text>
-				</view>
-			</view>
-
-			<!-- 列表视图 - 不允许滚动 -->
-			<view class="table-content-wrapper">
-				<view v-if="viewType === 'list'" class="table-content">
+			<!-- 内容区域 -->
+			<scroll-view
+				scroll-y
+				class="content-section"
+				:show-scrollbar="false"
+				:enhanced="true"
+				:bounces="false"
+			>
+				<!-- 列表视图 -->
+				<view class="table-content">
 					<!-- 横向可滚动区域 -->
 					<scroll-view scroll-x class="table-scroll-container" show-scrollbar="false" @scroll="handleTableScroll">
 						<!-- 表头 -->
@@ -92,15 +81,14 @@
 										<text class="column-title">{{column.title}}</text>
 										<!-- 排序图标 - 只在已排序的列显示 -->
 										<view v-if="isSortableColumn(column.field) && sortField === column.field" class="sort-icon">
-											<uni-icons v-if="sortOrder === 'asc'" type="arrow-up" size="12" color="#4B5563"></uni-icons>
-											<uni-icons v-else type="arrow-down" size="12" color="#4B5563"></uni-icons>
+											<text class="iconfont" :class="sortOrder === 'asc' ? 'icon-arrow-up' : 'icon-arrow-down'"></text>
 										</view>
 									</view>
 								</view>
 							</view>
 						</view>
 
-						<!-- 表格内容 - 显示固定数量的行 -->
+						<!-- 表格内容 -->
 						<view class="table-body">
 							<view v-for="(item, index) in currentPageRecords" :key="index"
 								class="table-row" :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
@@ -120,7 +108,7 @@
 											<text class="block text-sm text-ellipsis">{{item[column.field]}}{{column.unit || ''}}</text>
 										</block>
 										<block v-else-if="column.type === 'price'">
-											<text class="block text-sm text-emerald-600 text-ellipsis">¥{{item[column.field]}}</text>
+											<text class="block text-sm price-text text-ellipsis">¥{{item[column.field]}}</text>
 										</block>
 										<block v-else-if="column.type === 'status'">
 											<view class="status-tag" :class="getStatusTagClass(item[column.field])">
@@ -134,30 +122,32 @@
 					</scroll-view>
 				</view>
 
-				<!-- 卡片视图 - 不允许滚动 -->
-				<view v-if="viewType === 'card'" class="card-content">
-					<view class="grid-cards px-4 py-2">
+				<!-- 卡片视图 (保留但默认不显示) -->
+				<view v-if="false" class="card-content">
+					<view class="grid-cards">
 						<view v-for="(item, index) in currentPageRecords" :key="index"
 							class="record-card" @tap="showRecordDetail(item)">
-							<view class="card-header flex justify-between items-center">
-								<view class="flex items-center">
-									<text class="text-xs text-gray-400">{{cardNoPrefix}}{{item[cardNoField] || 'S' + item[cardDateField].replace(/-/g, '')}}</text>
+							<view class="card-glow" :class="getCardGlowClass(item[cardStatusField])"></view>
+
+							<view class="card-header">
+								<view class="card-id">
+									<text>{{cardNoPrefix}}{{item[cardNoField] || 'S' + item[cardDateField].replace(/-/g, '')}}</text>
 								</view>
-								<text class="text-xs text-gray-400">{{item[cardDateField]}} {{item['time'] || ''}}</text>
+								<text class="card-date">{{item[cardDateField]}} {{item['time'] || ''}}</text>
 							</view>
 
-							<view class="card-customer flex justify-between items-center mt-2">
-								<text class="text-sm font-medium text-ellipsis">{{item[cardTitleField]}}</text>
+							<view class="card-title-row">
+								<text class="card-title">{{item[cardTitleField]}}</text>
 								<view class="status-tag" :class="getStatusTagClass(item[cardStatusField])">
 									{{item[cardStatusField]}}
 								</view>
 							</view>
 
-							<view class="card-divider my-2"></view>
+							<view class="card-divider"></view>
 
-							<view class="card-product">
-								<view class="flex justify-between">
-									<text class="text-sm text-ellipsis">
+							<view class="card-content-row">
+								<view class="card-content-main">
+									<text class="card-product-name">
 										<!-- 支持多字段内容显示 -->
 										<template v-if="cardContentField.includes(',')">
 											{{ cardContentField.split(',').map(field => item[field.trim()]).filter(Boolean).join(' ') }}
@@ -166,31 +156,30 @@
 											{{item[cardContentField]}}
 										</template>
 									</text>
-									<text class="text-sm">{{item[cardQuantityField]}}{{cardQuantityUnit}}</text>
+									<text class="card-spec">{{item[cardSpecField] || '--'}}</text>
 								</view>
-								<view class="flex justify-between items-center mt-1">
-									<text class="text-xs text-gray-400 text-ellipsis">{{item[cardSpecField] || '--'}}</text>
-									<text class="text-xs text-gray-400" v-if="showUnitPrice">¥{{item[cardUnitPriceField] || '--'}}{{cardUnitPriceUnit}}</text>
+								<view class="card-quantity-price">
+									<text class="card-quantity">{{item[cardQuantityField]}}{{cardQuantityUnit}}</text>
+									<text class="card-unit-price" v-if="showUnitPrice">¥{{item[cardUnitPriceField] || '--'}}{{cardUnitPriceUnit}}</text>
 								</view>
 							</view>
 
-							<view class="card-divider my-2"></view>
+							<view class="card-divider"></view>
 
-							<view class="card-footer flex justify-between items-center">
-								<text class="text-xs text-gray-400">{{cardFooterLabel}}: {{item[cardFooterField]}}</text>
-								<text class="text-emerald-600 font-medium">¥{{item[cardPriceField]}}</text>
+							<view class="card-footer">
+								<text class="card-footer-label" v-if="cardFooterLabel">{{cardFooterLabel}}: {{item[cardFooterField]}}</text>
+								<text class="card-price">¥{{item[cardPriceField]}}</text>
 							</view>
 						</view>
 					</view>
 				</view>
-			</view>
+			</scroll-view>
 
-			<!-- 分页控制 - 固定在底部 -->
+			<!-- 分页控制 -->
 			<view class="pagination">
 				<view class="pagination-inner">
 					<button class="page-btn prev-btn" :disabled="currentPage === 1" :class="{'disabled': currentPage === 1}" @tap="prevPage">
-						<uni-icons type="left" size="14" color="#4B5563"></uni-icons>
-						<text class="page-btn-text">上一页</text>
+						<text class="iconfont icon-left"></text>
 					</button>
 					<view class="page-indicator">
 						<view class="page-counter">
@@ -200,8 +189,7 @@
 						</view>
 					</view>
 					<button class="page-btn next-btn" :disabled="currentPage === totalPages" :class="{'disabled': currentPage === totalPages}" @tap="nextPage">
-						<text class="page-btn-text">下一页</text>
-						<uni-icons type="right" size="14" color="#4B5563"></uni-icons>
+						<text class="iconfont icon-right"></text>
 					</button>
 				</view>
 			</view>
@@ -209,22 +197,21 @@
 
 		<!-- 详情弹窗 -->
 		<uni-popup ref="recordDetailPopup" type="bottom">
-			<view class="record-detail-popup bg-white rounded-t-xl">
+			<view class="app-popup-container">
 				<view class="drag-handle"></view>
 
-				<view class="p-4">
-					<view class="flex justify-between items-center mb-4">
-						<view class="flex items-center">
-							<text class="text-lg font-bold">{{detailTitle}}</text>
+				<view class="app-popup-header">
+					<text class="app-popup-title">{{detailTitle}}</text>
+					<text class="app-popup-close" @tap="closeRecordDetail">×</text>
+				</view>
 
-						</view>
-						<uni-icons type="close" size="20" color="#9CA3AF" @tap="closeRecordDetail"></uni-icons>
-					</view>
-
+				<view class="app-popup-content">
 					<view class="detail-sections">
 						<template v-for="(section, sectionIndex) in detailSections" :key="sectionIndex">
 							<view v-if="shouldRenderSection(section)" class="detail-section">
-								<view class="section-title">{{section.title}}</view>
+								<view class="section-title">
+									<text>{{section.title}}</text>
+								</view>
 								<view class="section-content">
 									<template v-for="(field, fieldIndex) in section.fields" :key="fieldIndex">
 										<view v-if="shouldRenderField(field)" class="detail-item" :class="{ 'remark-item': field.type === 'remark' }">
@@ -239,7 +226,7 @@
 											</template>
 
 											<template v-else-if="field.type === 'price'">
-												<text class="value text-emerald-600 font-medium">¥{{selectedRecord[field.field] || '--'}}</text>
+												<text class="value price-text">¥{{selectedRecord[field.field] || '--'}}</text>
 											</template>
 
 											<template v-else-if="field.type === 'number'">
@@ -264,43 +251,106 @@
 				</view>
 
 				<!-- 底部操作区 -->
-				<view class="detail-footer p-4 border-t border-gray-100">
-					<view class="flex space-x-2">
-						<button class="action-btn secondary flex-1" @tap="closeRecordDetail">关闭</button>
-						<button v-if="showPrintButton" class="action-btn primary flex-1" @tap="printRecord">打印小票</button>
-					</view>
+				<view class="button-container">
+					<button class="app-cancel-btn" @tap="closeRecordDetail">关闭</button>
+					<button v-if="showPrintButton" class="app-confirm-btn" @tap="printRecord">打印小票</button>
 				</view>
 			</view>
 		</uni-popup>
 
 		<!-- 高级筛选弹窗 -->
 		<uni-popup ref="advancedFilterPopup" type="bottom">
-			<view class="advanced-filter-popup bg-white rounded-t-xl">
+			<view class="app-popup-container">
 				<view class="drag-handle"></view>
 
-				<view class="p-4">
-					<view class="flex justify-between items-center mb-4">
-						<text class="text-lg font-bold">高级筛选</text>
-						<view class="close-btn" @tap="closeAdvancedFilter">
-						<uni-icons type="closeempty" size="20" color="#9CA3AF"></uni-icons>
-						</view>
-					</view>
+				<view class="app-popup-header">
+					<text class="app-popup-title">显示列设置</text>
+					<text class="app-popup-close" @tap="closeAdvancedFilter">×</text>
+				</view>
 
+				<view class="app-popup-content">
 					<view class="column-selector">
 						<!-- 列选项 -->
 						<view v-for="(column, index) in props.columns" :key="index" class="column-option">
-							<checkbox :checked="columnVisibility.get(column.title)" @tap="toggleColumnVisibility(column)" color="#4f46e5" />
+							<checkbox :checked="columnVisibility.get(column.title)" @tap="toggleColumnVisibility(column)" color="#0D9488" />
 							<text class="column-label">{{column.title}}</text>
 						</view>
 					</view>
 				</view>
 
-				<view class="filter-footer p-4 border-t border-gray-100">
-					<view class="flex space-x-2">
-						<button class="action-btn secondary flex-1" @tap="toggleAllColumns">
-							<text>{{isAllSelected ? '取消全选' : '全选'}}</text>
+				<view class="button-container">
+					<view class="button-wrapper">
+						<button class="app-cancel-btn" @tap="toggleAllColumns">
+							{{isAllSelected ? '取消全选' : '全选'}}
 						</button>
-						<button class="action-btn primary flex-1" @tap="applyColumnFilter">确定</button>
+					</view>
+					<view class="button-wrapper">
+						<button class="app-confirm-btn" @tap="applyColumnFilter">确定</button>
+					</view>
+				</view>
+			</view>
+		</uni-popup>
+
+		<!-- 筛选条件弹窗 -->
+		<uni-popup ref="filterPopup" type="bottom">
+			<view class="app-popup-container">
+				<view class="drag-handle"></view>
+
+				<view class="app-popup-header">
+					<text class="app-popup-title">筛选条件</text>
+					<text class="app-popup-close" @tap="closeFilterPopup">×</text>
+				</view>
+
+				<view class="app-popup-content">
+					<!-- 时间范围筛选 -->
+					<view class="filter-section">
+						<text class="filter-section-title">时间范围</text>
+						<view class="filter-options">
+							<view
+								v-for="(option, index) in dateOptions"
+								:key="index"
+								class="filter-option"
+								:class="{'filter-option-active': dateRange === option.value}"
+								@tap="setDateRange(option.value)"
+							>
+								<text>{{option.label}}</text>
+							</view>
+						</view>
+					</view>
+
+					<!-- 状态筛选 -->
+					<view class="filter-section">
+						<text class="filter-section-title">{{getStatusLabel()}}</text>
+						<view class="filter-options">
+							<view
+								class="filter-option"
+								:class="{'filter-option-active': statusFilter === 'all'}"
+								@tap="setStatusFilter('all')"
+							>
+								<text>全部</text>
+							</view>
+							<view
+								v-for="(option, index) in props.statusOptions"
+								:key="index"
+								class="filter-option"
+								:class="{'filter-option-active': statusFilter === option.value}"
+								@tap="setStatusFilter(option.value)"
+							>
+								<text>{{option.label}}</text>
+							</view>
+						</view>
+					</view>
+
+					<!-- 子页面可以通过插槽添加更多筛选条件 -->
+					<slot name="filter-content"></slot>
+				</view>
+
+				<view class="button-container">
+					<view class="button-wrapper">
+						<button class="app-cancel-btn" @tap="resetFilters">重置</button>
+					</view>
+					<view class="button-wrapper">
+						<button class="app-confirm-btn" @tap="applyFilter">确定</button>
 					</view>
 				</view>
 			</view>
@@ -310,7 +360,6 @@
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
-import uniIcons from '@dcloudio/uni-ui/lib/uni-icons/uni-icons.vue';
 import uniPopup from '@dcloudio/uni-ui/lib/uni-popup/uni-popup.vue';
 
 // 定义事件
@@ -358,7 +407,6 @@ const props = defineProps({
 });
 
 // 视图状态
-const viewType = ref('list'); // 默认始终使用列表视图
 const currentPage = ref(1);
 const pageSize = ref(10); // 默认每页显示10条记录，可以根据屏幕大小适当调整
 const searchKeyword = ref('');
@@ -476,6 +524,13 @@ function filterRecords() {
 				if (!record.date) return false;
 				return record.date >= monthStartStr;
 			});
+		} else if (dateRange.value === 'year') {
+			const yearStart = new Date(today.getFullYear(), 0, 1);
+			const yearStartStr = yearStart.toISOString().split('T')[0];
+			filtered = filtered.filter(record => {
+				if (!record.date) return false;
+				return record.date >= yearStartStr;
+			});
 		}
 	}
 
@@ -544,7 +599,8 @@ function filterRecords() {
 const dateOptions = [
 	{ label: '今日', value: 'today' },
 	{ label: '本周', value: 'week' },
-	{ label: '本月', value: 'month' }
+	{ label: '本月', value: 'month' },
+	{ label: '今年', value: 'year' }
 ];
 
 // 添加一个"全部"的日期范围值
@@ -593,6 +649,16 @@ function setDateRange(range) {
 
 			dateRangeData = {
 				startDate: monthStartStr,
+				endDate: todayStr
+			};
+		} else if (dateRange.value === 'year') {
+			// 计算今年初的日期
+			const yearStart = new Date(today.getFullYear(), 0, 1);
+			const yearStartStr = yearStart.toISOString().split('T')[0];
+			const todayStr = today.toISOString().split('T')[0];
+
+			dateRangeData = {
+				startDate: yearStartStr,
 				endDate: todayStr
 			};
 		}
@@ -671,11 +737,6 @@ function printRecord() {
 	});
 }
 
-// 获取状态类名
-function getStatusClass(status) {
-	return props.statusMap[status] || 'bg-gray-500';
-}
-
 // 获取状态标签类名
 function getStatusTagClass(status) {
 	// 特殊状态颜色处理
@@ -685,11 +746,47 @@ function getStatusTagClass(status) {
 		return 'danger';
 	} else if (status === '部分付款') {
 		return 'warning';
+	} else if (status === '入库') {
+		return 'in';
+	} else if (status === '出库') {
+		return 'out';
 	}
 
 	// 默认使用原来的逻辑
 	const className = props.statusMap[status] ? props.statusMap[status].replace('bg-', '') : '';
 	return className ? className : 'gray';
+}
+
+// 获取卡片发光效果类名
+function getCardGlowClass(status) {
+	if (status === '已付款') {
+		return 'emerald-glow';
+	} else if (status === '未付款') {
+		return 'red-glow';
+	} else if (status === '部分付款') {
+		return 'amber-glow';
+	} else if (status === '入库') {
+		return 'emerald-glow';
+	} else if (status === '出库') {
+		return 'red-glow';
+	}
+
+	return 'gray-glow';
+}
+
+// 重置所有筛选条件
+function resetFilters() {
+	dateRange.value = 'all';
+	statusFilter.value = 'all';
+	searchKeyword.value = '';
+
+	// 发射事件
+	emit('date-filter', null);
+	emit('status-filter', null);
+	emit('search', '');
+
+	// 重新筛选记录
+	filterRecords();
 }
 
 // 判断是否应该渲染某个详情部分
@@ -766,17 +863,7 @@ function getStatusLabel() {
 	return statusOption ? statusOption.label : '全部';
 }
 
-// 获取当前选中的状态标签
-function getCurrentStatusLabel() {
-	// 如果是全部状态
-	if (statusFilter.value === 'all') {
-		return getStatusLabel();
-	}
 
-	// 使用状态选项中的标签
-	const statusOption = props.statusOptions.find(option => option.value === statusFilter.value);
-	return statusOption ? statusOption.label : '全部';
-}
 
 // 搜索框焦点状态
 const isFocused = ref(false);
@@ -791,32 +878,7 @@ function handleBlur() {
 	isFocused.value = false;
 }
 
-// 获取主标题（第一部分）
-function getMainTitle(title) {
-	if (!title) return '';
-	// 检查是否有分隔符如"/"、"-"、"："等
-	const separators = ['/', '-', '：', ':', '(', '（'];
-	for (const sep of separators) {
-		if (title.includes(sep)) {
-			return title.split(sep)[0];
-		}
-	}
-	return title;
-}
 
-// 获取副标题（第二部分）
-function getSubTitle(title) {
-	if (!title) return '';
-	// 检查是否有分隔符如"/"、"-"、"："等
-	const separators = ['/', '-', '：', ':', '(', '（'];
-	for (const sep of separators) {
-		if (title.includes(sep)) {
-			const parts = title.split(sep);
-			return parts.slice(1).join(sep);
-		}
-	}
-	return '';
-}
 
 // 表格滚动处理
 const tableScrollLeft = ref(0);
@@ -861,24 +923,29 @@ function applyColumnFilter() {
 	closeAdvancedFilter();
 }
 
-// 状态下拉控制
-const showStatusDropdown = ref(false);
+// 筛选弹框相关逻辑
+const filterPopup = ref(null);
 
-// 切换状态下拉
-function toggleStatusDropdown() {
-	showStatusDropdown.value = !showStatusDropdown.value;
+function showFilterPopup() {
+	filterPopup.value.open();
 }
 
-// 关闭状态下拉
-function closeStatusDropdown() {
-	showStatusDropdown.value = false;
+function closeFilterPopup() {
+	filterPopup.value.close();
 }
 
-// 监听页面点击，关闭下拉菜单
+function applyFilter() {
+	closeFilterPopup();
+	filterRecords();
+	emit('date-filter', dateRange.value);
+	emit('status-filter', statusFilter.value);
+}
+
+
+
+// 监听页面点击
 function onPageClick() {
-	if(showStatusDropdown.value) {
-		showStatusDropdown.value = false;
-	}
+	// 可以在这里添加其他需要处理的页面点击事件
 }
 
 // 表格标题点击排序功能
@@ -898,14 +965,16 @@ function handleSort(field) {
 </script>
 
 <style>
+/* 全局页面样式 */
 .record-viewer {
 	position: relative;
 	width: 100%;
 	height: 100vh;
 	overflow: hidden;
-	background-color: #f8f9fa;
+	background-color: #FFFFFF; /* 使用纯白色背景 */
 	display: flex;
 	flex-direction: column;
+	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 }
 
 .record-viewer-fixed {
@@ -916,216 +985,264 @@ function handleSort(field) {
 	flex-direction: column;
 }
 
-.header-container {
-	background: linear-gradient(135deg, #0088ff, #4f46e5);
-	padding: 0;
+/* 顶部标题栏样式 */
+.page-header {
+	background-color: #FFFFFF;
+	padding: 10rpx 30rpx;
 	position: relative;
 	overflow: hidden;
-	box-shadow: 0 4rpx 20rpx rgba(79, 70, 229, 0.2);
+	z-index: 10;
 }
 
-.header-container::after {
-	content: '';
-	position: absolute;
-	top: -100rpx;
-	right: -100rpx;
-	width: 300rpx;
-	height: 300rpx;
-	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.08);
-	z-index: 0;
+.page-title {
+	font-size: 32rpx;
+	font-weight: 600;
+	color: #333333;
+	letter-spacing: 1rpx;
+	text-align: center;
 }
 
-.header-inner {
+/* 搜索框和按钮样式 */
+.search-section {
+	padding: 10rpx 20rpx;
+	background-color: #FFFFFF;
+	margin-bottom: 10rpx;
 	display: flex;
 	align-items: center;
-	padding: 24rpx 30rpx;
-	position: relative;
-	z-index: 1;
+	gap: 10rpx;
 }
 
 .back-button {
-	width: 64rpx;
-	height: 64rpx;
-	border-radius: 50%;
-	background-color: rgba(255, 255, 255, 0.15);
+	width: 60rpx;
+	height: 60rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
 }
 
-.search-container {
-	flex: 1;
-	margin: 0 20rpx;
-	display: flex;
-	align-items: center;
-	background-color: rgba(255, 255, 255, 0.15);
-	border-radius: 100rpx;
-	padding: 0 24rpx;
-	height: 72rpx;
-}
-
-.search-field {
-	flex: 1;
+.back-button .iconfont {
 	font-size: 28rpx;
-	padding-left: 12rpx;
-	background-color: transparent;
-	color: #ffffff;
+	color: #0D9488;
 }
 
-.filter-container {
-	width: 64rpx;
-	height: 64rpx;
-	border-radius: 50%;
-	background-color: rgba(255, 255, 255, 0.15);
+.app-search-box {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	background-color: #F3F4F6;
+	border-radius: 30rpx;
+	padding: 0 16rpx;
+	height: 60rpx;
+}
+
+.app-search-icon {
+	font-size: 24rpx;
+	color: #6B7280;
+	margin-right: 8rpx;
+}
+
+.app-search-input {
+	flex: 1;
+	font-size: 24rpx;
+	height: 60rpx;
+	color: #333333;
+}
+
+.app-search-clear {
+	font-size: 24rpx;
+	color: #6B7280;
+	width: 40rpx;
+	height: 40rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.advanced-filter-button {
+	width: 60rpx;
+	height: 60rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
 }
 
-/* 筛选控制区域样式 */
-.filter-control-container {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding: 20rpx 30rpx;
-	background-color: #ffffff;
-	border-bottom: 1px solid #f0f0f0;
+.advanced-filter-button .iconfont {
+	font-size: 28rpx;
+	color: #0D9488;
 }
 
-.segment-control {
-	display: flex;
-	background-color: #f3f4f6;
-	border-radius: 8rpx;
-	overflow: hidden;
-	border: 1px solid #e5e7eb;
-}
-
-.segment-item {
-	padding: 0 20rpx;
-	height: 64rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 26rpx;
-	color: #4b5563;
-	min-width: 120rpx;
-}
-
-.segment-active {
-	background-color: #ffffff;
-	color: #4f46e5;
-	font-weight: 500;
-	box-shadow: 0 2rpx 6rpx rgba(0,0,0,0.05);
-}
-
-.status-dropdown {
-	position: relative;
-	display: flex;
-	align-items: center;
-	padding: 0 20rpx;
-	height: 64rpx;
-	border-radius: 8rpx;
-	border: 1px solid #e5e7eb;
-	font-size: 26rpx;
-	color: #4b5563;
-	background-color: #ffffff;
-	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.03);
-	transition: all 0.2s ease;
-}
-
-.status-dropdown:active {
-	background-color: #f9fafb;
-	transform: translateY(1rpx);
-}
-
-.status-dropdown text {
-	margin-right: 8rpx;
-	font-weight: 500;
-}
-
-.status-dropdown-menu {
-	position: absolute;
-	top: 210rpx; /* 将位置向下调整 */
-	right: 30rpx;
-	width: 200rpx;
-	background-color: #ffffff;
-	border-radius: 8rpx;
-	box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.1);
-	z-index: 100;
-}
-
-.status-option {
+/* 简化筛选样式 */
+.simple-filter {
+	margin: 0 30rpx 10rpx;
 	padding: 16rpx 20rpx;
-	font-size: 26rpx;
-	border-bottom: 1px solid #f3f4f6;
-}
-
-.status-option:last-child {
-	border-bottom: none;
-}
-
-.status-option-active {
-	color: #4f46e5;
-	font-weight: 500;
-}
-
-.data-summary {
+	background-color: #FFFFFF;
+	border-bottom: 1rpx solid #E5E7EB;
 	display: flex;
-	justify-content: center;
 	align-items: center;
-	padding: 20rpx 40rpx;
-	background-color: #ffffff;
-	border-bottom: 1px solid #f0f0f0;
-	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.03);
+	justify-content: space-between;
 }
 
 .summary-item {
 	display: flex;
 	align-items: center;
+	padding: 0 16rpx;
+	border-right: 1rpx solid #E5E7EB;
+	margin-right: 20rpx;
 }
 
 .summary-label {
-	font-size: 28rpx;
-	color: #6b7280;
+	font-size: 26rpx;
+	color: #4285F4;
 	margin-right: 8rpx;
 }
 
 .summary-value {
-	font-size: 28rpx;
+	font-size: 26rpx;
 	font-weight: 600;
-	color: #4f46e5;
+	color: #4285F4;
 }
 
-.view-options {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding: 20rpx 30rpx;
-	background-color: #ffffff;
-}
-
-.view-btn {
-	padding: 8rpx 16rpx;
-	border-radius: 8rpx;
-	font-size: 24rpx;
-	color: #666666;
-}
-
-.view-btn.active {
-	background-color: #f0f7ff;
-	color: #2563eb;
-	font-weight: 500;
-}
-
-.table-content-wrapper {
+.filter-tags {
 	flex: 1;
 	display: flex;
-	flex-direction: column;
-	background-color: #ffffff;
-	position: relative;
+	align-items: center;
+	overflow-x: auto;
+	white-space: nowrap;
+}
+
+.filter-tag {
+	padding: 8rpx 20rpx;
+	background-color: #F3F4F6;
+	border-radius: 24rpx;
+	font-size: 24rpx;
+	color: #666666;
+	margin-right: 12rpx;
+	transition: all 0.2s ease;
+}
+
+.filter-tag-active {
+	background: linear-gradient(135deg, #4285F4, #3367D6);
+	color: #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(66, 133, 244, 0.3);
+}
+
+.filter-more-btn {
+	display: flex;
+	align-items: center;
+	padding: 8rpx 20rpx;
+	background-color: rgba(142, 154, 175, 0.1);
+	border-radius: 24rpx;
+	margin-left: 16rpx;
+}
+
+.filter-more-btn .iconfont {
+	font-size: 24rpx;
+	color: #8E9AAF;
+	margin-right: 6rpx;
+}
+
+.filter-more-text {
+	font-size: 24rpx;
+	color: #8E9AAF;
+}
+
+/* 筛选弹框样式 */
+.filter-section {
+	margin-bottom: 24rpx;
+}
+
+.filter-section-title {
+	font-size: 26rpx;
+	font-weight: 600;
+	color: #333333;
+	margin-bottom: 16rpx;
+}
+
+.filter-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12rpx;
+}
+
+.filter-option {
+	padding: 10rpx 24rpx;
+	background-color: #F3F4F6;
+	border-radius: 30rpx;
+	font-size: 26rpx;
+	color: #666666;
+	transition: all 0.2s ease;
+	margin-bottom: 10rpx;
+	margin-right: 10rpx;
+}
+
+.filter-option-active {
+	background: linear-gradient(135deg, #4285F4, #3367D6);
+	color: #FFFFFF;
+	box-shadow: 0 2rpx 6rpx rgba(66, 133, 244, 0.3);
+}
+
+.filter-row {
+	flex: 1;
+	overflow-x: auto;
+}
+
+.filter-tags {
+	display: flex;
+	align-items: center;
+	white-space: nowrap;
+	padding: 0 4rpx;
+}
+
+.filter-tag {
+	padding: 6rpx 16rpx;
+	background-color: #F3F4F6;
+	border-radius: 20rpx;
+	font-size: 22rpx;
+	color: #6B7280;
+	margin-right: 8rpx;
+	transition: all 0.2s ease;
+}
+
+.filter-tag-active {
+	background: linear-gradient(135deg, #0D9488, #14B8A6);
+	color: #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(13, 148, 136, 0.2);
+}
+
+.filter-divider {
+	width: 1rpx;
+	height: 24rpx;
+	background-color: #E5E7EB;
+	margin: 0 8rpx;
+}
+
+.filter-reset-tag {
+	padding: 6rpx 12rpx;
+	background-color: rgba(13, 148, 136, 0.1);
+	border-radius: 20rpx;
+	font-size: 22rpx;
+	color: #0D9488;
+	margin-right: 8rpx;
+}
+
+.summary-item {
+	padding: 0 10rpx;
+	border-left: 1rpx solid #E5E7EB;
+}
+
+.summary-value {
+	font-size: 22rpx;
+	font-weight: 600;
+	color: #0D9488;
+}
+
+/* 内容区样式 */
+.content-section {
+	flex: 1;
+	margin: 0 30rpx 10rpx;
+	background-color: #FFFFFF;
 	overflow: hidden;
 }
 
@@ -1148,8 +1265,8 @@ function handleSort(field) {
 .table-header {
 	display: flex;
 	flex-direction: row;
-	background-color: #f9fafb;
-	border-bottom: 1px solid #f0f0f0;
+	background-color: #FFFFFF;
+	border-bottom: 1px solid #E5E7EB;
 	position: sticky;
 	top: 0;
 	left: 0;
@@ -1159,12 +1276,16 @@ function handleSort(field) {
 
 .table-header-column {
 	flex-shrink: 0;
-	padding: 16rpx 12rpx;
-	min-height: 80rpx;
+	padding: 12rpx 8rpx;
+	min-height: 60rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background-color: #f9fafb;
+	border-right: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.table-header-column:last-child {
+	border-right: none;
 }
 
 .column-title-wrapper {
@@ -1181,7 +1302,7 @@ function handleSort(field) {
 }
 
 .sortable:hover {
-	background-color: #f3f4f6;
+	background-color: rgba(13, 148, 136, 0.05);
 }
 
 .column-title-container {
@@ -1193,13 +1314,12 @@ function handleSort(field) {
 }
 
 .column-title {
-	font-size: 28rpx;
-	color: #4b5563;
+	font-size: 24rpx;
+	color: #333333;
 	font-weight: 600;
 	line-height: 1.2;
 	text-align: center;
 	white-space: nowrap;
-	font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 .sort-icon {
@@ -1209,6 +1329,11 @@ function handleSort(field) {
 	justify-content: center;
 }
 
+.sort-icon .iconfont {
+	font-size: 22rpx;
+	color: #0D9488;
+}
+
 .table-body {
 	width: max-content;
 }
@@ -1216,246 +1341,301 @@ function handleSort(field) {
 .table-row {
 	display: flex;
 	flex-direction: row;
-	border-bottom: 1px solid #f0f0f0;
-	min-height: 80rpx;
-	padding: 12rpx 0;
+	border-bottom: 1px solid #F3F4F6;
+	min-height: 60rpx;
+	padding: 8rpx 0;
 	width: max-content;
+	transition: all 0.2s ease;
+}
+
+.table-row:active {
+	background-color: #F9FAFB;
 }
 
 .table-cell {
 	flex-shrink: 0;
-	padding: 0 12rpx;
+	padding: 0 8rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	min-height: 48rpx;
+	min-height: 36rpx;
+	font-size: 24rpx;
+	color: #333333;
+	border-right: 1rpx solid #F3F4F6;
+}
+
+.table-cell:last-child {
+	border-right: none;
 }
 
 .bg-white {
-	background-color: #ffffff !important;
+	background-color: #ffffff;
 }
 
 .bg-gray-50 {
-	background-color: #f9fafb !important;
+	background-color: #f9fafb;
 }
 
-.status-dot {
-	width: 16rpx;
-	height: 16rpx;
-	border-radius: 50%;
-	margin-left: 8rpx;
+.price-text {
+	color: #0D9488;
+	font-weight: 600;
 }
 
+/* 卡片视图样式 */
 .grid-cards {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(320rpx, 1fr));
 	gap: 20rpx;
+	padding: 20rpx;
 }
 
 .record-card {
-	background-color: #ffffff;
+	background-color: rgba(255, 255, 255, 0.9);
 	border-radius: 16rpx;
 	padding: 24rpx;
-	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+	box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.08);
+	border: 1rpx solid rgba(255, 255, 255, 0.3);
+	backdrop-filter: blur(5rpx);
+	-webkit-backdrop-filter: blur(5rpx);
+	display: flex;
+	flex-direction: column;
+	position: relative;
+	overflow: hidden;
+	transition: all 0.2s ease;
+}
+
+.record-card:active {
+	transform: scale(0.98);
+	box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.card-glow {
+	position: absolute;
+	width: 150rpx;
+	height: 150rpx;
+	border-radius: 50%;
+	filter: blur(30rpx);
+	opacity: 0.5;
+	top: -50rpx;
+	right: -50rpx;
+	z-index: 0;
+}
+
+.emerald-glow {
+	background: rgba(16, 185, 129, 0.6);
+}
+
+.amber-glow {
+	background: rgba(245, 158, 11, 0.6);
+}
+
+.red-glow {
+	background: rgba(239, 68, 68, 0.6);
+}
+
+.gray-glow {
+	background: rgba(156, 163, 175, 0.6);
+}
+
+.card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 16rpx;
+	position: relative;
+	z-index: 1;
+}
+
+.card-id {
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
+.card-date {
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
+.card-title-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 16rpx;
+	position: relative;
+	z-index: 1;
+}
+
+.card-title {
+	font-size: 30rpx;
+	font-weight: 600;
+	color: #333333;
 }
 
 .card-divider {
 	height: 1px;
-	background-color: #f5f5f5;
+	background-color: rgba(0, 0, 0, 0.05);
+	margin: 16rpx 0;
+	position: relative;
+	z-index: 1;
 }
 
-.filter-tag {
-	padding: 6rpx 16rpx;
-	border-radius: 8rpx;
-	font-size: 24rpx;
-	margin-right: 16rpx;
-	background-color: #f3f4f6;
-	color: #4b5563;
-	border: 1px solid #e5e7eb;
-}
-
-.filter-tag.active {
-	background-color: #eef2ff;
-	color: #4f46e5;
-	font-weight: 500;
-	border-color: #c7d2fe;
-}
-
-.empty-tip {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	padding: 80rpx 0;
-}
-
-.search-box {
-	display: flex;
-	align-items: center;
-	background-color: #f3f4f6;
-	border-radius: 8rpx;
-	padding: 8rpx 16rpx;
-	margin: 0 12rpx;
-}
-
-.search-input {
-	font-size: 24rpx;
-	padding-left: 8rpx;
-	width: 100%;
-	background-color: transparent;
-}
-
-.view-toggle {
-	display: flex;
-	align-items: center;
-}
-
-.view-toggle-btn {
-	padding: 8rpx 16rpx;
-	border-radius: 100rpx;
-}
-
-.view-toggle-btn.active {
-	background-color: #ffffff;
-	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
-}
-
-.filter-btn {
-	padding: 8rpx;
-}
-
-.record-detail-popup {
-	border-radius: 32rpx 32rpx 0 0;
-	max-height: 80vh;
-	overflow-y: auto;
-}
-
-.drag-handle {
-	width: 60rpx;
-	height: 6rpx;
-	background-color: #e5e7eb;
-	border-radius: 3rpx;
-	margin: 16rpx auto;
-}
-
-.detail-section {
-	margin-bottom: 32rpx;
-}
-
-.section-title {
-	font-size: 28rpx;
-	font-weight: 600;
-	color: #374151;
-	margin-bottom: 16rpx;
-	padding-bottom: 8rpx;
-	border-bottom: 1px solid #f3f4f6;
-}
-
-.section-content {
-	margin-top: 16rpx;
-}
-
-.detail-item {
+.card-content-row {
 	display: flex;
 	justify-content: space-between;
-	padding: 8rpx 0;
-	align-items: center;
-}
-
-.remark-item {
-	flex-direction: column;
-	align-items: flex-start;
-}
-
-.label {
-	font-size: 24rpx;
-	color: #6b7280;
-	margin-right: 16rpx;
-}
-
-.value {
-	font-size: 24rpx;
-	color: #1f2937;
-	text-align: right;
-}
-
-.full-width {
-	width: 100%;
-	margin-top: 8rpx;
-	text-align: left;
-	line-height: 1.5;
-	white-space: pre-wrap;
-}
-
-.detail-footer {
-	padding: 24rpx;
-	margin-top: 16rpx;
-}
-
-.action-btn {
-	border-radius: 8rpx;
-	padding: 16rpx;
-	font-size: 28rpx;
-	text-align: center;
-}
-
-.action-btn.primary {
-	background-color: #4f46e5;
-	color: #ffffff;
-}
-
-.action-btn.secondary {
-	background-color: #f3f4f6;
-	color: #4b5563;
-}
-
-.pagination {
+	margin: 16rpx 0;
 	position: relative;
-	z-index: 10;
-	background-color: #ffffff;
-	box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.05);
-	border-top: 1px solid #f0f0f0;
-	padding: 16rpx 0;
-	margin-top: auto;
+	z-index: 1;
+}
+
+.card-content-main {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+.card-product-name {
+	font-size: 28rpx;
+	color: #333333;
+	margin-bottom: 8rpx;
+}
+
+.card-spec {
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
+.card-quantity-price {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+}
+
+.card-quantity {
+	font-size: 28rpx;
+	font-weight: 600;
+	color: #333333;
+	margin-bottom: 8rpx;
+}
+
+.card-unit-price {
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
+.card-footer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	position: relative;
+	z-index: 1;
+}
+
+.card-footer-label {
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
+.card-price {
+	font-size: 30rpx;
+	font-weight: 600;
+	color: #0D9488;
+}
+
+/* 状态标签样式 */
+.status-tag {
+	padding: 6rpx 16rpx;
+	border-radius: 30rpx;
+	font-size: 22rpx;
+	display: inline-block;
+	line-height: 1.4;
+	text-align: center;
+	min-width: 80rpx;
+	font-weight: 500;
+	position: relative;
+	overflow: hidden;
+	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+}
+
+.status-tag::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 1rpx;
+	background: rgba(255, 255, 255, 0.7);
+}
+
+.status-tag.success {
+	background: linear-gradient(135deg, #34A853, #0F9D58);
+	color: white;
+}
+
+.status-tag.warning {
+	background: linear-gradient(135deg, #FBBC05, #F9AB00);
+	color: white;
+}
+
+.status-tag.danger {
+	background: linear-gradient(135deg, #EA4335, #C5221F);
+	color: white;
+}
+
+.status-tag.gray {
+	background: linear-gradient(135deg, #9CA3AF, #6B7280);
+	color: white;
+}
+
+.status-tag.in {
+	background: linear-gradient(135deg, #34A853, #0F9D58);
+	color: white;
+}
+
+.status-tag.out {
+	background: linear-gradient(135deg, #4285F4, #3367D6);
+	color: white;
+}
+
+/* 分页控制样式 */
+.pagination {
+	background-color: #FFFFFF;
+	padding: 12rpx 0;
+	margin: 0 30rpx 10rpx;
+	border-top: 1rpx solid #E5E7EB;
 }
 
 .pagination-inner {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 16rpx 30rpx;
+	padding: 0 20rpx;
 }
 
 .page-btn {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	height: 68rpx;
-	padding: 0 28rpx;
-	border-radius: 100rpx;
-	font-size: 26rpx;
-	font-weight: 500;
-	color: #ffffff;
+	width: 60rpx;
+	height: 60rpx;
+	border-radius: 30rpx;
+	font-size: 24rpx;
+	color: #FFFFFF;
 	border: none;
-	background: linear-gradient(135deg, #38bdf8, #0284c7);
-	box-shadow: 0 4rpx 10rpx rgba(2, 132, 199, 0.15);
+	background: linear-gradient(135deg, #4285F4, #3367D6);
+	box-shadow: 0 2rpx 6rpx rgba(66, 133, 244, 0.3);
 	transition: all 0.2s ease;
 }
 
 .page-btn.disabled {
-	opacity: 0.3;
-	background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-	color: #0284c7;
+	opacity: 0.5;
+	background: #E5E7EB;
+	color: #9CA3AF;
 	box-shadow: none;
 }
 
 .page-btn:active:not(.disabled) {
 	transform: translateY(2rpx);
-	box-shadow: 0 2rpx 6rpx rgba(2, 132, 199, 0.1);
-}
-
-.page-btn-text {
-	margin: 0 6rpx;
+	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
 }
 
 .page-indicator {
@@ -1466,32 +1646,249 @@ function handleSort(field) {
 
 .page-counter {
 	display: flex;
-	align-items: baseline;
-	padding: 6rpx 24rpx;
-	border-radius: 8rpx;
-	background-color: #f0f9ff;
-	border: 1px solid #bae6fd;
+	align-items: center; /* 改为center确保垂直居中 */
+	justify-content: center; /* 水平居中 */
+	padding: 4rpx 16rpx;
+	border-radius: 6rpx;
+	background-color: rgba(66, 133, 244, 0.1);
+	border: 1px solid rgba(66, 133, 244, 0.2);
 }
 
 .page-current {
-	color: #0284c7;
+	color: #4285F4;
 	font-weight: bold;
-	font-size: 34rpx;
+	font-size: 28rpx;
+	line-height: 1; /* 添加行高确保文本对齐 */
 }
 
 .page-divider {
-	color: #7dd3fc;
-	margin: 0 8rpx;
-	font-size: 24rpx;
+	color: #4285F4;
+	margin: 0 6rpx;
+	font-size: 22rpx;
+	line-height: 1; /* 添加行高确保文本对齐 */
 }
 
 .page-total {
-	color: #0369a1;
-	font-size: 28rpx;
+	color: #4285F4;
+	font-size: 24rpx;
+	line-height: 1; /* 添加行高确保文本对齐 */
 }
 
 .prev-btn, .next-btn {
-	min-width: 160rpx;
+	min-width: 60rpx;
+}
+
+/* 弹窗样式 */
+.app-popup-container {
+	border-radius: 32rpx 32rpx 0 0;
+	background-color: #FFFFFF;
+	max-height: 80vh;
+	overflow-y: auto;
+	width: 100%;
+	box-shadow: 0 -8rpx 32rpx rgba(0, 0, 0, 0.1);
+}
+
+.drag-handle {
+	width: 60rpx;
+	height: 6rpx;
+	background-color: #E2E8F0;
+	border-radius: 3rpx;
+	margin: 16rpx auto;
+}
+
+.app-popup-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 24rpx 30rpx;
+	border-bottom: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+.app-popup-title {
+	font-size: 32rpx;
+	font-weight: bold;
+	color: #333333;
+}
+
+.app-popup-close {
+	font-size: 32rpx;
+	color: #EA4335;
+	width: 60rpx;
+	height: 60rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background-color: rgba(234, 67, 53, 0.1);
+}
+
+.app-popup-content {
+	padding: 30rpx;
+}
+
+/* 详情部分样式 */
+.detail-section {
+	margin-bottom: 30rpx;
+	background-color: rgba(249, 250, 251, 0.6);
+	border-radius: 16rpx;
+	padding: 24rpx;
+	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.03);
+	border: 1rpx solid rgba(0, 0, 0, 0.03);
+}
+
+.section-title {
+	font-size: 28rpx;
+	font-weight: 600;
+	color: #4285F4;
+	margin-bottom: 16rpx;
+	padding-bottom: 10rpx;
+	border-bottom: 1px solid rgba(66, 133, 244, 0.1);
+	display: flex;
+	align-items: center;
+}
+
+.section-title::before {
+	content: '';
+	display: inline-block;
+	width: 8rpx;
+	height: 28rpx;
+	background: linear-gradient(to bottom, #4285F4, #3367D6);
+	border-radius: 4rpx;
+	margin-right: 12rpx;
+}
+
+.section-content {
+	margin-top: 16rpx;
+}
+
+.detail-item {
+	display: flex;
+	justify-content: space-between;
+	padding: 12rpx 0;
+	align-items: center;
+	border-bottom: 1rpx solid rgba(0, 0, 0, 0.03);
+}
+
+.detail-item:last-child {
+	border-bottom: none;
+}
+
+.remark-item {
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.label {
+	font-size: 26rpx;
+	color: #6B7280;
+	margin-right: 16rpx;
+}
+
+.value {
+	font-size: 26rpx;
+	color: #333333;
+	text-align: right;
+	font-weight: 500;
+}
+
+.full-width {
+	width: 100%;
+	margin-top: 10rpx;
+	text-align: left;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	background-color: #FFFFFF;
+	padding: 16rpx;
+	border-radius: 8rpx;
+	border: 1rpx solid rgba(0, 0, 0, 0.05);
+}
+
+/* 按钮样式 */
+.button-container {
+	display: flex;
+	gap: 20rpx;
+	padding: 30rpx;
+	margin-top: 20rpx;
+	border-top: 1rpx solid rgba(0, 0, 0, 0.05);
+	align-items: center; /* 确保垂直居中对齐 */
+	justify-content: space-between; /* 确保水平均匀分布 */
+}
+
+.app-confirm-btn {
+	width: 50%;
+	height: 90rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 30rpx;
+	color: #FFFFFF;
+	background: linear-gradient(135deg, #4285F4, #3367D6);
+	border-radius: 45rpx;
+	box-shadow: 0 4rpx 12rpx rgba(66, 133, 244, 0.3);
+	border: none;
+	font-weight: 500;
+	transition: all 0.2s ease;
+}
+
+.app-confirm-btn:active {
+	transform: translateY(2rpx);
+	box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.05);
+}
+
+.app-cancel-btn {
+	width: 50%;
+	height: 90rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 30rpx;
+	color: #6B7280;
+	background-color: #F3F4F6;
+	border-radius: 45rpx;
+	border: none;
+	font-weight: 500;
+	transition: all 0.2s ease;
+}
+
+.app-cancel-btn:active {
+	transform: translateY(2rpx);
+	background-color: #E5E7EB;
+}
+
+/* 按钮包装器，确保按钮完全对齐 */
+.button-wrapper {
+	width: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.button-wrapper button {
+	width: 100%;
+}
+
+/* 高级筛选样式 */
+.column-selector {
+	display: flex;
+	flex-direction: column;
+	gap: 24rpx;
+}
+
+.column-option {
+	display: flex;
+	align-items: center;
+	gap: 16rpx;
+	padding: 12rpx 0;
+	border-bottom: 1rpx solid rgba(0, 0, 0, 0.03);
+}
+
+.column-option:last-child {
+	border-bottom: none;
+}
+
+.column-label {
+	font-size: 28rpx;
+	color: #333333;
 }
 
 /* 工具类 */
@@ -1516,15 +1913,11 @@ function handleSort(field) {
 }
 
 .text-gray-400 {
-	color: #9ca3af;
-}
-
-.text-gray-500 {
-	color: #6b7280;
+	color: #9CA3AF;
 }
 
 .text-emerald-600 {
-	color: #059669;
+	color: #0D9488;
 }
 
 .flex {
@@ -1543,30 +1936,12 @@ function handleSort(field) {
 	justify-content: space-between;
 }
 
-.p-4 {
-	padding: 32rpx;
+.mt-1 {
+	margin-top: 8rpx;
 }
 
 .mt-2 {
 	margin-top: 16rpx;
-}
-
-.mb-4 {
-	margin-bottom: 32rpx;
-}
-
-.ml-2 {
-	margin-left: 16rpx;
-}
-
-.px-4 {
-	padding-left: 32rpx;
-	padding-right: 32rpx;
-}
-
-.py-2 {
-	padding-top: 16rpx;
-	padding-bottom: 16rpx;
 }
 
 .my-2 {
@@ -1582,191 +1957,8 @@ function handleSort(field) {
 	line-height: 1.4;
 }
 
-.space-x-2 > view:not(:first-child),
-.space-x-2 > button:not(:first-child) {
-	margin-left: 16rpx;
-}
-
 .block {
 	display: block;
-}
-
-.status-tag {
-	padding: 4rpx 12rpx;
-	border-radius: 8rpx;
-	font-size: 26rpx; /* 增大字体大小，使其与其他文本更协调 */
-	display: inline-block;
-	line-height: 1.4;
-	text-align: center;
-	min-width: 80rpx;
-	font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-	font-weight: 500;
-}
-
-.bg-white {
-	background-color: #ffffff !important;
-}
-
-.bg-gray-50 {
-	background-color: #f9fafb !important;
-}
-
-.rounded-t-xl {
-	border-top-left-radius: 24rpx;
-	border-top-right-radius: 24rpx;
-}
-
-.border-t {
-	border-top-width: 1px;
-	border-top-style: solid;
-}
-
-.border-gray-100 {
-	border-color: #f3f4f6;
-}
-
-.advanced-filter-btn {
-	width: 64rpx;
-	height: 64rpx;
-	border-radius: 50%;
-	background-color: #f3f4f6;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	margin-left: 16rpx;
-}
-
-.advanced-filter-popup {
-	max-height: 80vh;
-	overflow-y: auto;
-}
-
-.column-selector {
-	display: flex;
-	flex-direction: column;
-	gap: 24rpx;
-}
-
-.column-option {
-	display: flex;
-	align-items: center;
-	gap: 16rpx;
-}
-
-.column-label {
-	font-size: 28rpx;
-	color: #374151;
-}
-
-.filter-footer {
-	position: sticky;
-	bottom: 0;
-	background-color: #ffffff;
-	box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.05);
-}
-
-.close-btn {
-	width: 64rpx;
-	height: 64rpx;
-	border-radius: 50%;
-	box-sizing: border-box;
-	background-color: #f3f4f6;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	transition: all 0.2s ease;
-}
-
-.close-btn:active {
-	background-color: #e5e7eb;
-	transform: scale(0.95);
-}
-
-.all-select-option {
-	padding: 16rpx 0;
-	margin-bottom: 20rpx;
-	border-bottom: 1px solid #f3f4f6;
-}
-
-.column-divider {
-	height: 1px;
-	background-color: #f3f4f6;
-	margin: 8rpx 0 20rpx 0;
-}
-
-/* 美化字体样式 */
-.column-title {
-	font-size: 28rpx;
-	color: #4b5563;
-	font-weight: 600;
-	line-height: 1.2;
-	text-align: center;
-	white-space: nowrap;
-	font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-}
-
-.table-cell text {
-	font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-	font-size: 26rpx;
-}
-
-.status-tag {
-	padding: 4rpx 12rpx;
-	border-radius: 8rpx;
-	font-size: 22rpx;
-	display: inline-block;
-	line-height: 1.4;
-	text-align: center;
-	min-width: 80rpx;
-	font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-	font-weight: 500;
-}
-
-.status-dropdown text {
-	margin-right: 8rpx;
-	font-weight: 500;
-	font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-}
-
-.status-option text {
-	font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-	font-size: 26rpx;
-}
-
-.segment-item text {
-	font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-	font-size: 26rpx;
-}
-
-/* 操作类型标签样式 */
-.status-tag.in {
-	background-color: #ecfdf5;
-	color: #059669;
-	border: 1px solid #a7f3d0;
-}
-
-.status-tag.out {
-	background-color: #fef2f2;
-	color: #dc2626;
-	border: 1px solid #fecaca;
-}
-
-.status-tag.add {
-	background-color: #eff6ff;
-	color: #2563eb;
-	border: 1px solid #bfdbfe;
-}
-
-.status-tag.edit {
-	background-color: #faf5ff;
-	color: #9333ea;
-	border: 1px solid #e9d5ff;
-}
-
-.status-tag.delete {
-	background-color: #fef2f2;
-	color: #dc2626;
-	border: 1px solid #fecaca;
 }
 
 .dropdown-mask {
