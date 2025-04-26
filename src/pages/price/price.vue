@@ -67,7 +67,7 @@
 							<text class="price-fruit-spec">{{fruit.spec}}</text>
 							<view class="price-fruit-footer">
 								<view class="price-fruit-stock">
-									<text class="price-stock-text">
+									<text class="price-stock-text" :class="getStockClass(fruit.stock)">
 										库存: {{fruit.stock}}箱
 									</text>
 								</view>
@@ -229,6 +229,7 @@ function closePopup() {
 function onMinPriceChange(e) {
 	minPrice.value = e.detail.value;
 	if (minPrice.value > maxPrice.value) {
+		// 当最低价格高于最高价格时，将最高价格设置为等于最低价格
 		maxPrice.value = minPrice.value;
 	}
 }
@@ -237,8 +238,8 @@ function onMinPriceChange(e) {
 function onMaxPriceChange(e) {
 	maxPrice.value = e.detail.value;
 	if (maxPrice.value < minPrice.value) {
-		// 当最高价格小于最低价格时，保持最高价格不低于最低价格
-		maxPrice.value = minPrice.value;
+		// 当最高价格低于最低价格时，将最低价格设置为等于最高价格
+		minPrice.value = maxPrice.value;
 	}
 }
 
@@ -257,9 +258,6 @@ function confirmPriceAdjust() {
 				// 更新报价页面的价格
 				fruitData.value[index].minPrice = minPrice.value;
 				fruitData.value[index].maxPrice = maxPrice.value;
-
-				// 触发页面刷新事件，通知其他页面更新数据
-				uni.$emit('pageRefresh');
 
 				// 显示成功提示
 				uni.showToast({
@@ -280,6 +278,19 @@ function confirmPriceAdjust() {
 }
 
 // 使用fruitService中的getDefaultFruitImage方法替代原来的getDefaultImageByCategory函数
+
+// 根据库存量返回不同的类名
+function getStockClass(stock) {
+	if (stock <= 0) {
+		return 'stock-empty';
+	} else if (stock < 10) {
+		return 'stock-low';
+	} else if (stock < 30) {
+		return 'stock-medium';
+	} else {
+		return 'stock-high';
+	}
+}
 
 // 页面加载时获取数据
 onMounted(() => {
@@ -825,11 +836,27 @@ page {
 
 .price-stock-text {
 	font-size: 22rpx;
-	background-color: #E6FFFA;
-	color: #0D9488;
+	background-color: rgba(233, 226, 226, 0.341); /* 灰色背景 */
 	padding: 8rpx 20rpx;
 	border-radius: 20rpx;
-	box-shadow: 0 2rpx 4rpx rgba(13, 148, 136, 0.1);
+	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 不同库存级别的文字颜色 */
+.stock-high {
+	color: #10B981; /* 高库存 - 绿色 */
+}
+
+.stock-medium {
+	color: #F59E0B; /* 中等库存 - 黄色 */
+}
+
+.stock-low {
+	color: #EF4444; /* 低库存 - 红色 */
+}
+
+.stock-empty {
+	color: #6B7280; /* 无库存 - 灰色 */
 }
 
 .price-fruit-price-container {

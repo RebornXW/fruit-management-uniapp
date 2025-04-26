@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onShow } from 'vue';
 import RecordViewer from '@/components/RecordViewer.vue';
 import { getSystemLogs } from '@/services/systemLogService.js';
 
@@ -180,6 +180,12 @@ function handlePageChange(page) {
 // 页面加载时获取数据
 onMounted(() => {
 	console.log('系统日志页面加载');
+	loadSystemLogs();
+});
+
+// 每次页面显示时都重新加载数据
+onShow(() => {
+	console.log('系统日志页面显示');
 	loadSystemLogs();
 });
 

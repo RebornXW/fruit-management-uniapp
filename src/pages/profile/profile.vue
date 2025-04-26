@@ -187,7 +187,7 @@
 						<image src="/static/icons/operation-records.png" style="width: 32px; height: 32px;"></image>
 						<text class="function-text-elegant">系统日志</text>
 					</view>
-					<view class="function-item-elegant" @tap="showFunction('reconciliation')">
+					<view class="function-item-elegant" @tap="navigateTo('/pages/records/payment-records')">
 						<image src="/static/icons/payment-records.png" style="width: 32px; height: 32px;"></image>
 						<text class="function-text-elegant">付款记录</text>
 					</view>
@@ -1216,21 +1216,6 @@ function getCurrentData() {
 	} else {
 		return dashboardData.yearly;
 	}
-}
-
-// 显示功能弹窗
-function showFunction(type) {
-	switch(type) {
-
-		case 'reconciliation':
-			currentFunction.value = {
-				title: '还没想好',
-				content: 'XW还在苦思冥想中这里该放什么功能中。'
-			};
-			break;
-	}
-
-	functionPopup.value.open();
 }
 
 // 获取当前报表类型文本

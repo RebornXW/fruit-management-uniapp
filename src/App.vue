@@ -181,6 +181,11 @@ page {
   content: "\f005";
 }
 
+/* 隐藏所有滚动条 */
+::-webkit-scrollbar {
+	display: none;
+}
+
 /* 通用样式 */
 .flex {
 	display: flex;

@@ -68,6 +68,13 @@
 			}
 		},
 		{
+			"path": "pages/records/payment-records",
+			"style": {
+				"navigationBarTitleText": "付款记录",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/profile/userInfo",
 			"style": {
 				"navigationStyle": "custom",

@@ -1,9 +1,9 @@
 <template>
 	<view class="record-viewer" @tap="onPageClick">
 		<view class="record-viewer-fixed">
-			<!-- 顶部标题和操作栏 -->
+			<!-- 顶部空白区域 - 为挖孔屏预留空间 -->
 			<view class="page-header">
-				<view class="page-title">{{title}}</view>
+				<!-- 保留白色标题栏，但不显示标题文字 -->
 			</view>
 
 			<!-- 搜索框和操作按钮 -->
@@ -985,36 +985,30 @@ function handleSort(field) {
 	flex-direction: column;
 }
 
-/* 顶部标题栏样式 */
+/* 顶部空白区域样式 - 为挖孔屏预留空间 */
 .page-header {
 	background-color: #FFFFFF;
-	padding: 10rpx 30rpx;
+	padding: 20rpx 30rpx;
 	position: relative;
 	overflow: hidden;
 	z-index: 10;
-}
-
-.page-title {
-	font-size: 32rpx;
-	font-weight: 600;
-	color: #333333;
-	letter-spacing: 1rpx;
-	text-align: center;
+	height: 44rpx; /* 为状态栏预留足够高度 */
 }
 
 /* 搜索框和按钮样式 */
 .search-section {
-	padding: 10rpx 20rpx;
+	padding: 10rpx 30rpx;
 	background-color: #FFFFFF;
 	margin-bottom: 10rpx;
 	display: flex;
 	align-items: center;
 	gap: 10rpx;
+	box-sizing: border-box;
 }
 
 .back-button {
-	width: 60rpx;
-	height: 60rpx;
+	width: 50rpx;
+	height: 50rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1022,7 +1016,7 @@ function handleSort(field) {
 }
 
 .back-button .iconfont {
-	font-size: 28rpx;
+	font-size: 24rpx;
 	color: #0D9488;
 }
 
@@ -1033,35 +1027,40 @@ function handleSort(field) {
 	background-color: #F3F4F6;
 	border-radius: 30rpx;
 	padding: 0 16rpx;
-	height: 60rpx;
+	height: 50rpx;
+	min-width: 0; /* 防止搜索框溢出 */
 }
 
 .app-search-icon {
-	font-size: 24rpx;
+	font-size: 22rpx;
 	color: #6B7280;
 	margin-right: 8rpx;
+	flex-shrink: 0;
 }
 
 .app-search-input {
 	flex: 1;
 	font-size: 24rpx;
-	height: 60rpx;
+	height: 50rpx;
 	color: #333333;
+	min-width: 0; /* 防止输入框溢出 */
+	width: 100%;
 }
 
 .app-search-clear {
-	font-size: 24rpx;
+	font-size: 22rpx;
 	color: #6B7280;
-	width: 40rpx;
-	height: 40rpx;
+	width: 30rpx;
+	height: 30rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	flex-shrink: 0;
 }
 
 .advanced-filter-button {
-	width: 60rpx;
-	height: 60rpx;
+	width: 50rpx;
+	height: 50rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1069,7 +1068,7 @@ function handleSort(field) {
 }
 
 .advanced-filter-button .iconfont {
-	font-size: 28rpx;
+	font-size: 24rpx;
 	color: #0D9488;
 }
 
