@@ -3,6 +3,8 @@ import http from './http.js';
 import fruitService from './fruitService.js';
 // 导入缓存对象
 import { cache } from './fruitService.js';
+// 导入通用上传服务
+import { uploadAvatar as uploadAvatarService } from './uploadService.js';
 
 /**
  * 用户登录
@@ -128,34 +130,7 @@ export function changePassword(oldPassword, newPassword, confirmPassword) {
  * @returns {Promise} 上传结果
  */
 export function uploadAvatar(filePath) {
-  return new Promise((resolve, reject) => {
-    uni.uploadFile({
-      url: http.BASE_URL + '/auth/avatar',
-      filePath: filePath,
-      name: 'avatar',
-      header: {
-        'Authorization': `Bearer ${uni.getStorageSync('token') || ''}`
-      },
-      success: (res) => {
-        try {
-          const data = JSON.parse(res.data);
-          if (data.code === 200) {
-            resolve(data.data);
-          } else {
-            uni.showToast({ title: data.message || '上传失败', icon: 'none' });
-            reject(data);
-          }
-        } catch (e) {
-          uni.showToast({ title: '上传失败', icon: 'none' });
-          reject(e);
-        }
-      },
-      fail: (err) => {
-        uni.showToast({ title: '网络错误', icon: 'none' });
-        reject(err);
-      }
-    });
-  });
+  return uploadAvatarService(filePath);
 }
 
 export default {

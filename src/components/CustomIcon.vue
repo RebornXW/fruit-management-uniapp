@@ -24,7 +24,8 @@ const iconMap = {
     'chart': '\uf080',
     'users': '\uf0c0',
     'logout': '\uf2f5',
-    'close': '\uf00d'
+    'close': '\uf00d',
+    'left': '\uf104'
 };
 
 export default {
@@ -64,4 +65,4 @@ export default {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
-</style> 
+</style>

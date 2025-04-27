@@ -1116,7 +1116,7 @@ page {
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
-	padding-bottom: 120rpx; /* 增加底部导航栏留出空间 */
+	padding-bottom: 50rpx; /* 增加底部导航栏留出空间 */
 	background-color: #F5F8FA;
 	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 	box-sizing: border-box;

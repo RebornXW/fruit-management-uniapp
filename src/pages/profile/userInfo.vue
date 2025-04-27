@@ -75,7 +75,9 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import { getUserProfile, updateUserProfile, uploadAvatar, logout } from '@/services/authService.js';
+import { getUserProfile, updateUserProfile, logout } from '@/services/authService.js';
+import { uploadAvatar } from '@/services/uploadService.js';
+import http from '@/services/http.js';
 
 export default {
 	setup() {
@@ -99,16 +101,32 @@ export default {
 		// 获取用户信息
 		const getUserInfo = () => {
 			getUserProfile().then(res => {
+				console.log('获取到的用户信息:', res);
+
+				// 保存原始头像URL，用于后续比较
+				// 确保头像URL是完整的URL
+				let avatarUrl = res.avatar || '/static/default-avatar.png';
+
+				// 如果头像URL是相对路径，转换为完整URL
+				if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('/static')) {
+					// 假设后端返回的是相对路径，需要拼接基础URL
+					const baseUrl = http.BASE_URL.split('/api')[0]; // 获取API基础URL
+					avatarUrl = baseUrl + avatarUrl;
+				}
+
+				console.log('处理后的头像URL:', avatarUrl);
+
 				userInfo.value = {
 					name: res.name || '默认用户',
 					stallName: res.stall_name || '水果档口',
-					avatar: res.avatar || '/static/default-avatar.png',
+					avatar: avatarUrl,
+					originalAvatar: avatarUrl, // 保存原始头像URL
 					role: res.role || '管理员',
 					phone: res.phone || '',
 					username: res.username || 'admin',
 					id: res.id
 				};
-				console.log('获取用户信息成功:', res);
+				console.log('设置用户信息成功:', userInfo.value);
 				uni.hideLoading();
 			}).catch(err => {
 				console.error('获取用户信息失败', err);
@@ -149,14 +167,20 @@ export default {
 
 		// 编辑头像
 		const editAvatar = () => {
+			console.log('开始选择头像');
 			uni.chooseImage({
 				count: 1,
 				sizeType: ['compressed'],
 				sourceType: ['album', 'camera'],
 				success: (res) => {
+					console.log('选择头像成功，完整返回结果:', res);
+
 					// 直接使用临时路径
-					userInfo.value.avatar = res.tempFilePaths[0];
-					console.log('头像路径:', res.tempFilePaths[0]);
+					const avatarPath = res.tempFilePaths[0];
+					userInfo.value.avatar = avatarPath;
+					console.log('设置头像路径:', avatarPath);
+					console.log('头像路径类型:', typeof avatarPath);
+					console.log('头像路径是否为Blob URL:', avatarPath.startsWith('blob:'));
 
 					// 显示提示
 					uni.showToast({
@@ -194,6 +218,10 @@ export default {
 				return;
 			}
 
+			// 获取原始头像URL（从getUserInfo获取的数据）
+			const originalAvatar = userInfo.value.originalAvatar || '';
+			console.log('原始头像路径:', originalAvatar);
+
 			// 准备要提交的数据，使用下划线命名法
 			const profileData = {
 				name: userInfo.value.name,
@@ -201,8 +229,29 @@ export default {
 				stall_name: userInfo.value.stallName
 			};
 
-			// 如果头像发生了变化且是本地文件路径
-			if (userInfo.value.avatar && (userInfo.value.avatar.startsWith('file://') || userInfo.value.avatar.startsWith('http://tmp'))) {
+			// 如果头像发生了变化且是本地文件路径或Blob URL
+			// 添加日志输出头像路径
+			console.log('当前头像路径:', userInfo.value.avatar);
+
+			// 检查是否是新选择的头像（需要上传）
+			const isNewAvatar = userInfo.value.avatar && (
+				// 本地文件路径格式
+				userInfo.value.avatar.startsWith('file://') ||
+				userInfo.value.avatar.startsWith('http://tmp') ||
+				userInfo.value.avatar.startsWith('/storage/') ||
+				userInfo.value.avatar.startsWith('/var/mobile/') ||
+				userInfo.value.avatar.indexOf('://') === -1 || // 如果路径中不包含协议部分，可能是本地路径
+
+				// Blob URL格式 (Web环境)
+				userInfo.value.avatar.startsWith('blob:') ||
+
+				// 检查是否与原始头像不同（避免重复上传）
+				(typeof originalAvatar === 'string' && userInfo.value.avatar !== originalAvatar)
+			);
+
+			console.log('是否需要上传新头像:', isNewAvatar);
+
+			if (isNewAvatar) {
 				// 显示上传中提示
 				uni.showLoading({ title: '正在上传头像...' });
 
@@ -240,12 +289,25 @@ export default {
 				console.log('个人信息更新成功:', res);
 
 				// 更新本地用户信息
+				// 处理头像URL，确保是完整URL
+				let avatarUrl = res.avatar || userInfo.value.avatar;
+
+				// 如果头像URL是相对路径，转换为完整URL
+				if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('/static')) {
+					// 假设后端返回的是相对路径，需要拼接基础URL
+					const baseUrl = http.BASE_URL.split('/api')[0]; // 获取API基础URL
+					avatarUrl = baseUrl + avatarUrl;
+				}
+
+				console.log('保存后的头像URL:', avatarUrl);
+
 				userInfo.value = {
 					...userInfo.value,
 					name: res.name || userInfo.value.name,
 					phone: res.phone || userInfo.value.phone,
 					stallName: res.stall_name || userInfo.value.stallName,
-					avatar: res.avatar || userInfo.value.avatar
+					avatar: avatarUrl,
+					originalAvatar: avatarUrl // 更新原始头像URL
 				};
 
 				// 通知个人中心页面刷新
@@ -558,8 +620,8 @@ page {
 	background-color: #FEF2F2;
 }
 
-/* 输入框样式 */
-.app-input {
+/* 个人信息页面特定的输入框样式 */
+.info-item .app-input {
 	text-align: right;
 	height: 70rpx;
 	font-size: 28rpx;

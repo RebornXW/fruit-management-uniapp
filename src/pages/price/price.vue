@@ -725,12 +725,13 @@ page {
 .price-fruit-list-container {
 	flex: 1;
 	padding: 24rpx;
+	padding-bottom: 120rpx;
 	box-sizing: border-box;
 	width: 100%;
 	overflow: -moz-scrollbars-none; /* Firefox */
 	-ms-overflow-style: none; /* IE and Edge */
 	scrollbar-width: none; /* Firefox */
-	height: calc(100vh - 320rpx - 50px); /* 调整高度确保可滚动区域适合剩余空间，并为底部tab栏预留空间 */
+	height: calc(100vh - 320rpx - 50px - 20px); /* 调整高度确保可滚动区域适合剩余空间，考虑顶部栏高度增加20px和底部tab栏 */
 }
 
 .price-fruit-list-container::-webkit-scrollbar {

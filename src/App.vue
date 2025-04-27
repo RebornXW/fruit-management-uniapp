@@ -62,7 +62,7 @@ page {
 	justify-content: space-between;
 	box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
 	z-index: 10;
-	height: 30px; /* 减小高度，只为状态栏预留必要空间 */
+	height: 45px; /* 调整高度为50px，为状态栏预留空间 */
 	width: 100%;
 	position: relative;
 }
@@ -187,6 +187,10 @@ page {
 
 .icon-filter:before {
   content: "\f0b0";
+}
+
+.icon-left:before {
+  content: "\f104";
 }
 
 /* 隐藏所有滚动条 */

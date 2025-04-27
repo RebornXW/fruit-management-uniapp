@@ -1114,14 +1114,14 @@ function loadCustomersData() {
 </script>
 
 <style>
-.customer-container {
+.page-container {
 	display: flex;
 	flex-direction: column;
 	height: 100vh;
-	padding-bottom: 100rpx;
+	padding-bottom: 50px; /* 使用底部tab栏的实际高度 */
 	background-color: #F5F8FA;
 	font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-	box-sizing: border-box;
+	overflow: hidden; /* 防止整个页面滚动 */
 }
 
 /* 头部样式 */

@@ -20,7 +20,6 @@
 					<view class="user-avatar">
 						<image :src="userData.avatar" :alt="userData.name" class="avatar-image" mode="aspectFill"></image>
 					</view>
-					<view class="user-status-indicator"></view>
 				</view>
 
 				<view class="user-info">
@@ -758,6 +757,7 @@ import { getUserProfile, updateUserProfile, uploadAvatar, logout } from '@/servi
 import statisticsService from '@/services/statisticsService.js';
 import fruitService from '@/services/fruitService.js';
 import customerService from '@/services/customerService.js';
+import http from '@/services/http.js';
 
 // 用户数据
 const userData = ref({
@@ -1066,11 +1066,23 @@ function loadUserInfo() {
 	getUserProfile().then(res => {
 		console.log('获取到的用户信息原始数据:', res);
 
+		// 处理头像URL，确保是完整URL
+		let avatarUrl = res.avatar || '/static/default-avatar.png';
+
+		// 如果头像URL是相对路径，转换为完整URL
+		if (avatarUrl && !avatarUrl.startsWith('http') && !avatarUrl.startsWith('/static')) {
+			// 假设后端返回的是相对路径，需要拼接基础URL
+			const baseUrl = http.BASE_URL.split('/api')[0]; // 获取API基础URL
+			avatarUrl = baseUrl + avatarUrl;
+		}
+
+		console.log('处理后的头像URL:', avatarUrl);
+
 		// 根据API文档中的字段名称映射数据
 		userData.value = {
 			name: res.name,
 			shopName: res.stall_name, // API中是stall_name
-			avatar: res.avatar || '/static/default-avatar.png',
+			avatar: avatarUrl,
 			role: res.role,
 			phone: res.phone || '',
 			username: res.username || '',
@@ -1977,17 +1989,7 @@ page {
 	object-fit: cover;
 }
 
-.user-status-indicator {
-	position: absolute;
-	bottom: 0;
-	right: 0;
-	width: 24rpx;
-	height: 24rpx;
-	border-radius: 50%;
-	background-color: #10B981;
-	border: 3rpx solid #FFFFFF;
-	box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
-}
+/* 用户状态指示器已删除 */
 
 .user-info {
 	flex: 1;

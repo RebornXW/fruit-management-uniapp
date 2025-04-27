@@ -319,8 +319,8 @@
 import { ref, computed, onMounted } from 'vue';
 import fruitService from '@/services/fruitService.js';
 import inventoryRecordService from '@/services/inventoryRecordService.js';
-
 import statisticsService from '@/services/statisticsService.js';
+import { uploadFruitImage } from '@/services/uploadService.js';
 
 // 数据
 const searchText = ref('');
@@ -673,6 +673,38 @@ function confirmEditFruit() {
 	// 显示加载中提示
 	uni.showLoading({ title: '处理中...' });
 
+	// 检查是否需要上传图片
+	const imageIsLocalFile = editForm.value.image && (
+		editForm.value.image.startsWith('file://') ||
+		editForm.value.image.startsWith('http://tmp')
+	);
+
+	// 如果图片是本地文件，先上传图片
+	if (imageIsLocalFile) {
+		uploadFruitImage(editForm.value.image)
+			.then(res => {
+				// 获取上传后的图片URL
+				const imageUrl = res.image_url || res.imageUrl;
+				// 继续处理表单提交
+				processFormSubmit(imageUrl);
+			})
+			.catch(err => {
+				uni.hideLoading();
+				uni.showToast({
+					title: '图片上传失败，请重试',
+					icon: 'none'
+				});
+				console.error('图片上传失败:', err);
+			});
+	} else {
+		// 如果没有需要上传的图片，直接处理表单提交
+		const defaultImage = editForm.value.image || fruitService.getDefaultFruitImage(editForm.value.category);
+		processFormSubmit(defaultImage);
+	}
+}
+
+// 处理表单提交
+function processFormSubmit(imageUrl) {
 	// 准备数据
 	const minPrice = editForm.value.minPrice === '' ? 0 : parseInt(editForm.value.minPrice);
 	const maxPrice = editForm.value.maxPrice === '' ? 0 : parseInt(editForm.value.maxPrice);
@@ -686,7 +718,7 @@ function confirmEditFruit() {
 		weight: parseFloat(editForm.value.weight) || 0,
 		minPrice: minPrice,
 		maxPrice: maxPrice,
-		image: editForm.value.image || fruitService.getDefaultFruitImage(editForm.value.category),
+		image: imageUrl,
 		status: 1
 	};
 
@@ -694,8 +726,6 @@ function confirmEditFruit() {
 	if (isAddingFruit.value && editForm.value.stock > 0) {
 		payload.stock = parseInt(editForm.value.stock);
 	}
-
-
 
 	if (isAddingFruit.value) {
 		// 新增水果
@@ -705,8 +735,6 @@ function confirmEditFruit() {
 				uni.showToast({ title: '添加成功', icon: 'success' });
 				closePopup('edit');
 				loadFruitData(true);
-
-
 
 				// 通知其他页面刷新
 				uni.$emit('pageRefresh');
@@ -1687,7 +1715,7 @@ page {
 .content-section {
 	flex: 1;
 	margin-bottom: 0; /* 移除底部外边距 */
-	height: calc(100vh - 30px - 200rpx - 100rpx - 50px); /* 调整高度计算：减去顶部栏高度、统计面板高度、标题栏高度和底部tab栏高度 */
+	height: calc(100vh - 50px - 200rpx - 100rpx - 50px); /* 调整高度计算：减去顶部栏高度(50px)、统计面板高度(200rpx)、标题栏高度(100rpx)和底部tab栏高度(50px) */
 	overflow: hidden; /* 防止内容溢出 */
 	background-color: #FFFFFF; /* 纯白色背景 */
 	margin-left: 20rpx;
